@@ -137,10 +137,7 @@ HUEPI.Light.State = function()
         if (Ang < 0)
             Ang = Ang + 360;
         Ang = Ang % 360;
-        this.hue = 0 | (Ang / 360 * 65535);
-        this.sat = 0 | (Sat * 255);
-        this.bri = 0 | (Bri * 255);
-        return this;
+        return this.SetHSB(Math.round(Ang / 360 * 65535), Sat*255, Bri*255);
     };
     this.SetRGB = function(Red, Green, Blue) {// In RGB [0..255]
         var Ang, Sat, Bri;
