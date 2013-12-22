@@ -1,0 +1,175 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <title>Hue Immediate</title>
+    <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport" />
+    <meta name="viewport" content="width=device-width" />
+
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-title" content="Hue Immediate" />
+    <meta name="apple-mobile-web-app-title" content="Hue Immediate" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+
+    <script src="//code.jquery.com/jquery-1.10.2.min.js"></script>
+    <script src="//code.jquery.com/mobile/1.4.0/jquery.mobile-1.4.0.min.js"></script>
+    <link rel="stylesheet" href="//code.jquery.com/mobile/1.4.0/jquery.mobile-1.4.0.min.css">
+      
+    <script type="text/javascript" src="../HUEPI.js"></script>
+
+    <style type="text/css">
+      html, body, .ui-mobile, .ui-mobile-viewport, .ui-page
+      {
+        width: 100%;
+        height: 100%;
+        background:#000000;
+        border: 0px;
+        color: #ffffff;
+      }
+
+      #container {
+        width: 100%;
+        //height: 100%;
+      }
+
+      .ui-footer
+      {
+        background: #000000;
+        border: 0px;
+        color: #ffffff;
+        position: fixed;
+        width: 100%;
+        //z-index: 999;
+      }
+    </style>
+
+    <script type="text/javascript" >
+      $(document).ready(function() {
+        var HueImage = new Image();
+        HueImage.src = "images/HUE.png";
+
+        function HueImageRedraw()
+        {
+          var HueCanvas = document.getElementById("HUECanvas");
+          var HueContext = document.getElementById("HUECanvas").getContext("2d");
+          HueCanvas.width = 0.7 * (Math.min($(window).width(), $(window).height()));
+          HueCanvas.height = HueCanvas.width;
+          HueContext.drawImage(HueImage, 0, 0, HueCanvas.width, HueCanvas.height);
+        }
+
+        HueImage.onload = function() {
+          window.onresize();
+        };
+
+        window.onresize = function() {
+          HueImageRedraw();
+        };
+
+        $("#HUECanvas").bind("mousedown", function(event) {
+          var x = event.offsetX;//event.pageX - event.currentTarget.offsetLeft;
+          var y = event.offsetY;//event.pageY - event.currentTarget.offsetTop;
+          var HueContext = document.getElementById("HUECanvas").getContext("2d");
+          var HueImagedata = HueContext.getImageData(x, y, 1, 1); // one Pixel at Cursor
+          var HueImagePixel = HueImagedata.data; // data[] RGB of Pixel
+          HUEPI.Group.SetRGB(0, HueImagePixel[0], HueImagePixel[1], HueImagePixel[2]);
+        });
+
+        $("#brightnessslider").on("slidestop", function(event, ui) {
+          var Brightness = parseInt($(this).val());
+          HUEPI.Group.SetBrightness(0, Brightness);
+        });
+
+        DiscoverBridgeAndTryWhitelisting();
+      });
+      
+      // look for bridge
+      // wait for HUEPIBridgeName
+      // check if HUEPIUsernameWhitelisted
+      //   NO? -> whitelist
+      // play
+      function DiscoverBridgeAndTryWhitelisting()
+      {
+        HUEPI.Username = "085efe879ee3ed83c04efc28a0da03d3";
+
+        if (HUEPI.Bridge.IP === "")
+        {
+          $("#HUEStatus").text("Trying to Discover HUE Bridge via HUE Portal");
+          HUEPI.Portal.DiscoverLocalBridges();
+          setTimeout("DiscoverBridgeAndTryWhitelisting()", 100);
+        } else
+        {
+          $("#HUEBridgeIP").text("Bridge IP: " + HUEPI.Bridge.IP);
+          HUEPI.Config.Get();
+          if (HUEPI.Bridge.Name !== "") {
+            $("#HUEBridgeName1").text("Bridge NAME: " + HUEPI.Bridge.Name);
+          }
+          if (!HUEPI.Bridge.UsernameWhitelisted)
+          {
+            HUEPI.Config.CreateUser();
+            $("#HUEStatus").text("Checking Whitelist, If this takes longer than 5 seconds: please press connect button on Bridge.");
+            setTimeout("DiscoverBridgeAndTryWhitelisting()", 500);
+          } else
+          {
+            $("#HUEStatus").text("Found Bridge and Whitelisted, so able to Set Lights and Groups.");
+            $("#HUEInfoBar").hide("slow");
+            HUEPI.Group.On(0);
+            HUEPI.Group.EffectNone(0);
+          }
+        }
+      }
+    </script>
+
+  </head>
+  <body>
+    <div id="container">
+      <div class="page" id="HueButtons">
+        <a href="#" data-role="button" data-icon="" onclick="JavaScript:HUEPI.Group.SetHSB(0, 13198, 209, 209)">Feet Up</a>
+
+        <div align="center" data-type="horizontal">
+          <div data-type="horizontal" min-width="128";>
+            <input type="range" name="brightnessslider" id="brightnessslider" value="200" min="0" max="255" />
+          </div>
+        </div>
+
+        <div align="center" data-role="none" data-type="horizontal">
+          <a href="#" data-role="button" data-icon="" data-inline="true" onclick="JavaScript:HUEPI.Group.SetCT(0, 467);
+              HUEPI.Group.SetBrightness(0, 144)">Relax</a>
+          <a href="#" data-role="button" data-icon="" data-inline="true" onclick="JavaScript:HUEPI.Group.SetCT(0, 156);
+              HUEPI.Group.SetBrightness(0, 203)">Energize</a>
+          <a href="#" data-role="button" data-icon="" data-inline="true" onclick="JavaScript:HUEPI.Group.SetCT(0, 231);
+              HUEPI.Group.SetBrightness(0, 219)">Concentrate</a>
+          <a href="#" data-role="button" data-icon="" data-inline="true" onclick="JavaScript:HUEPI.Group.SetCT(0, 343);
+              HUEPI.Group.SetBrightness(0, 240)">Reading</a>
+        </div>
+
+      </div><!-- /page -->
+
+
+      <div class="page" id="HueDirect">
+        <div align="center">
+          <canvas id="HUECanvas" width=320 height=320 >It seems your device doesn"t support the required HTML5 Canvas</canvas>
+        </div>
+      </div><!-- /page -->
+
+    </div><!-- /container -->
+
+    <div align="center" data-role="footer" data-id="navigation" data-position="fixed">
+      <div data-role="controlgroup" data-type="horizontal">
+        <a href="#" data-role="button" data-icon="" data-inline="true" onclick="JavaScript:HUEPI.Group.Off(0)">All Off</a>
+        <a href="#" data-role="button" data-icon="" data-inline="true" onclick="JavaScript:HUEPI.Group.On(0)">All On</a>
+      </div>
+      <div id="HUEInfoBar">
+        <div class="HUEInfo" id="HUEBridgeIP">
+          Looking for Bridge IP
+        </div>
+        <div class="HUEInfo" id="HUEBridgeName">
+          Querying Bridge Name
+        </div>
+        <div class="HUEInfo" id="HUEStatus">
+          Waiting For Portal
+        </div>
+      </div>
+    </div><!-- /footer -->
+
+  </body>
+</html>
