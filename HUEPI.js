@@ -32,20 +32,21 @@ HUEPI.Bridge.IP = "";
 HUEPI.Bridge.Name = "";
 HUEPI.Bridge.UsernameWhitelisted = false; // Will be checked on Bridge.
 
+HUEPI.Lights = [];
 HUEPI.Light = function() {
 };
-HUEPI.Lights = [];
 
+HUEPI.Groups = [];
 HUEPI.Group = function() {
 };
-HUEPI.Groups = [];
+
 // To Do: Add Schedules & Scenes
+HUEPI.Schedules = [];
 HUEPI.Schedule = function() {
 };
-HUEPI.Schedules = [];
+HUEPI.Scenes = [];
 HUEPI.Scene = function() {
 };
-HUEPI.Scenes = [];
 
 
 /**
