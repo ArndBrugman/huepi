@@ -15,36 +15,38 @@
     <script src="//code.jquery.com/mobile/1.4.0/jquery.mobile-1.4.0.min.js" type="text/javascript" ></script>
     <link rel="stylesheet" href="//code.jquery.com/mobile/1.4.0/jquery.mobile-1.4.0.min.css"/>
 
-      <script src="../HUEPI.js" type="text/javascript"></script>
+    <script src="../HUEPI.js" type="text/javascript"></script>
 
-      <style type="text/css">
-        html, body, .ui-mobile, .ui-mobile-viewport, .ui-page
-        {
-          width: 100%;
-          height: 100%;
-          background:#000000;
-          border: 0px;
-          color: #ffffff;
-        }
+    <style type="text/css">
+      html, body, .ui-mobile, .ui-mobile-viewport, .ui-page
+      {
+        width: 100%;
+        height: 100%;
+        background:#000000;
+        border: 0px;
+        color: #ffffff;
+      }
 
-        #container {
-          width: 100%;
-          //height: 100%;
-        }
+      #container {
+        width: 100%;
+        //height: 100%;
+      }
 
-        .ui-footer
-        {
-          background: #000000;
-          border: 0px;
-          color: #ffffff;
-          position: fixed;
-          width: 100%;
-          //z-index: 999;
-        }
-      </style>
+      .ui-footer
+      {
+        background: #000000;
+        border: 0px;
+        color: #ffffff;
+        position: fixed;
+        width: 100%;
+        //z-index: 999;
+      }
+    </style>
   </head>
   <body>
     <script type="text/javascript" >
+      var MyHue = new HUEPI();
+
       $(document).ready(function() {
         var HueImage = new Image();
         HueImage.src = "images/HUE.png";
@@ -72,48 +74,49 @@
           var HueContext = document.getElementById("HUECanvas").getContext("2d");
           var HueImagedata = HueContext.getImageData(x, y, 1, 1); // one Pixel at Cursor
           var HueImagePixel = HueImagedata.data; // data[] RGB of Pixel
-          HUEPI.Group.SetRGB(0, HueImagePixel[0], HueImagePixel[1], HueImagePixel[2]);
+          MyHue.GroupSetRGB(0, HueImagePixel[0], HueImagePixel[1], HueImagePixel[2]);
         });
 
         $("#brightnessslider").on("slidestop", function(event, ui) {
           var Brightness = parseInt($(this).val());
-          HUEPI.Group.SetBrightness(0, Brightness);
+          MyHue.GroupSetBrightness(0, Brightness);
         });
 
         DiscoverBridgeAndTryWhitelisting();
       });
 
       // look for bridge
-      // wait for HUEPIBridgeName
-      // check if HUEPIUsernameWhitelisted
+      // wait for BridgeName
+      // check if UsernameWhitelisted
       //   NO? -> whitelist
       // play
       function DiscoverBridgeAndTryWhitelisting()
       {
-        HUEPI.Username = "085efe879ee3ed83c04efc28a0da03d3";
+        MyHue.Username = "085efe879ee3ed83c04efc28a0da03d3";
 
-        if (HUEPI.Bridge.IP === "")
+        if (MyHue.BridgeIP === "")
         {
           $("#HUEStatus").text("Trying to Discover HUE Bridge via HUE Portal");
-          HUEPI.Portal.DiscoverLocalBridges();
+          MyHue.PortalDiscoverLocalBridges();
           setTimeout("DiscoverBridgeAndTryWhitelisting()", 100);
         } else
         {
-          $("#HUEBridgeIP").text("Bridge IP: " + HUEPI.Bridge.IP);
-          HUEPI.Bridge.Get();
-          if (HUEPI.Bridge.Name !== "") {
-            $("#HUEBridgeName").text("Bridge Name " + HUEPI.Bridge.Name);
+          $("#HUEBridgeIP").text("Bridge IP: " + MyHue.BridgeIP);
+          MyHue.BridgeGet();
+          if (MyHue.BridgeName !== "") {
+            $("#HUEBridgeName").text("Bridge Name " + MyHue.BridgeName);
           }
-          if (!HUEPI.Bridge.UsernameWhitelisted)
+          if (!MyHue.UsernameWhitelisted)
           {
-            HUEPI.Bridge.CreateUser();
+            MyHue.BridgeCreateUser();
             $("#HUEStatus").text("Checking Whitelist, If this takes longer than 5 seconds: please press connect button on Bridge.");
             setTimeout("DiscoverBridgeAndTryWhitelisting()", 500);
           } else
           {
             $("#HUEStatus").text("Found Bridge and Whitelisted, so able to Set Lights and Groups.");
             $("#HUEInfoBar").hide("slow");
-            HUEPI.Group.SetState(0, new HUEPI.Lightstate().On().EffectNone());
+            MyHue.GroupOn(0);
+            MyHue.GroupEffectNone(0);
           }
         }
       }
@@ -121,7 +124,7 @@
 
     <div id="container">
       <div class="page" id="HueButtons">
-        <a href="#" data-role="button" data-icon="" onclick="JavaScript:HUEPI.Group.SetHSB(0, 7000, 207, 207)">Feet Up</a>
+        <a href="#" data-role="button" data-icon="" onclick="JavaScript:MyHue.GroupSetHSB(0, 7000, 207, 207)">Feet Up</a>
 
         <div align="center" data-type="horizontal">
           <div data-type="horizontal" min-width="128";>
@@ -130,14 +133,14 @@
         </div>
 
         <div align="center" data-role="none" data-type="horizontal">
-          <a href="#" data-role="button" data-icon="" data-inline="true" onclick="JavaScript:HUEPI.Group.SetCT(0, 467);
-              HUEPI.Group.SetBrightness(0, 144)">Relax</a>
-          <a href="#" data-role="button" data-icon="" data-inline="true" onclick="JavaScript:HUEPI.Group.SetCT(0, 156);
-              HUEPI.Group.SetBrightness(0, 203)">Energize</a>
-          <a href="#" data-role="button" data-icon="" data-inline="true" onclick="JavaScript:HUEPI.Group.SetCT(0, 231);
-              HUEPI.Group.SetBrightness(0, 219)">Concentrate</a>
-          <a href="#" data-role="button" data-icon="" data-inline="true" onclick="JavaScript:HUEPI.Group.SetCT(0, 343);
-              HUEPI.Group.SetBrightness(0, 240)">Reading</a>
+          <a href="#" data-role="button" data-icon="" data-inline="true" onclick="JavaScript:MyHue.GroupSetCT(0, 467);
+              MyHue.Group.SetBrightness(0, 144)">Relax</a>
+          <a href="#" data-role="button" data-icon="" data-inline="true" onclick="JavaScript:MyHue.GroupSetCT(0, 156);
+              MyHue.Group.SetBrightness(0, 203)">Energize</a>
+          <a href="#" data-role="button" data-icon="" data-inline="true" onclick="JavaScript:MyHue.GroupSetCT(0, 231);
+              MyHue.Group.SetBrightness(0, 219)">Concentrate</a>
+          <a href="#" data-role="button" data-icon="" data-inline="true" onclick="JavaScript:MyHue.GroupSetCT(0, 343);
+              MyHue.Group.SetBrightness(0, 240)">Reading</a>
         </div>
 
       </div><!-- /page -->
@@ -153,8 +156,8 @@
 
     <div align="center" data-role="footer" data-id="navigation" data-position="fixed">
       <div data-role="controlgroup" data-type="horizontal">
-        <a href="#" data-role="button" data-icon="" data-inline="false" onclick="JavaScript:HUEPI.Group.Off(0)">All Off</a>
-        <a href="#" data-role="button" data-icon="" data-inline="false" onclick="JavaScript:HUEPI.Group.On(0)">All On</a>
+        <a href="#" data-role="button" data-icon="" data-inline="false" onclick="JavaScript:MyHue.GroupOff(0)">All Off</a>
+        <a href="#" data-role="button" data-icon="" data-inline="false" onclick="JavaScript:MyHue.GroupOn(0)">All On</a>
       </div>
       <div id="HUEInfoBar">
         <div id="HUEBridgeIP">
