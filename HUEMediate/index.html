@@ -68,7 +68,7 @@
           HueImageRedraw();
         };
 
-        $("#HUECanvas").bind("mousedown", function(event) {
+        $("#HUECanvas").bind("mousedown", function HUECanvasMouseDown(event) {
           var x = event.offsetX;//event.pageX - event.currentTarget.offsetLeft;
           var y = event.offsetY;//event.pageY - event.currentTarget.offsetTop;
           var HueContext = document.getElementById("HUECanvas").getContext("2d");
@@ -124,7 +124,7 @@
 
     <div id="container">
       <div class="page" id="HueButtons">
-        <a href="#" data-role="button" data-icon="" onclick="JavaScript:MyHue.GroupSetHSB(0, 7000, 207, 207)">Feet Up</a>
+        <a href="#" data-role="button" data-icon="" onclick="JavaScript:MyHue.GroupSetHSB(1, 7000, 207, 207)">Feet Up</a>
 
         <div align="center" data-type="horizontal">
           <div data-type="horizontal" min-width="128";>
@@ -134,13 +134,13 @@
 
         <div align="center" data-role="none" data-type="horizontal">
           <a href="#" data-role="button" data-icon="" data-inline="true" onclick="JavaScript:MyHue.GroupSetCT(0, 467);
-              MyHue.Group.SetBrightness(0, 144)">Relax</a>
+              MyHue.GroupSetBrightness(0, 144)">Relax</a>
           <a href="#" data-role="button" data-icon="" data-inline="true" onclick="JavaScript:MyHue.GroupSetCT(0, 156);
-              MyHue.Group.SetBrightness(0, 203)">Energize</a>
+              MyHue.GroupSetBrightness(0, 203)">Energize</a>
           <a href="#" data-role="button" data-icon="" data-inline="true" onclick="JavaScript:MyHue.GroupSetCT(0, 231);
-              MyHue.Group.SetBrightness(0, 219)">Concentrate</a>
+              MyHue.GroupSetBrightness(0, 219)">Concentrate</a>
           <a href="#" data-role="button" data-icon="" data-inline="true" onclick="JavaScript:MyHue.GroupSetCT(0, 343);
-              MyHue.Group.SetBrightness(0, 240)">Reading</a>
+              MyHue.GroupSetBrightness(0, 240)">Reading</a>
         </div>
 
       </div><!-- /page -->
