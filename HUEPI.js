@@ -3,7 +3,7 @@
 // HUE (Philips Wireless Lighting) API for JavaScript
 //  +-> HUEPI sounds like Joepie which makes me smile during development...
 //
-// Requires JQuery for ajax calls
+// Requires JQuery 1.5+ for ajax calls and Deferreds
 //
 //
 
@@ -23,7 +23,7 @@ HUEPI = function() {
   this.BridgeConfig = [];
   this.BridgeIP = "";
   this.BridgeName = "";
-  this.UsernameWhitelisted = false; // Will be checked on Bridge.
+  this.UsernameWhitelisted = false; // Will be checked on Bridge in BridgeGet()
 
   this.Lights = [];
   this.Groups = [];
@@ -40,12 +40,12 @@ HUEPI = function() {
   this.PortalDiscoverLocalBridges = function()
   {
     var That = this;
-    $.get("https://www.meethue.com/api/nupnp", function(data) {
+    return $.get("https://www.meethue.com/api/nupnp", function(data) {
       if (data[0].internalipaddress) {
         That.PortalBridges = data;
         That.BridgeIP = That.PortalBridges[0].internalipaddress; // Default to 1st Bridge internalip
       }
-    }, "json");
+    });
   };
 
   /*
@@ -56,7 +56,7 @@ HUEPI = function() {
   { // GET /api/username -> data.config.whitelist.username
     var That = this;
     var url = "http://" + this.BridgeIP + "/api/" + this.Username;
-    $.get(url, function(data) {
+    return $.get(url, function(data) {
       That.Lights = data.lights;
       That.Groups = data.groups;
       That.BridgeConfig = data.config;
@@ -72,27 +72,23 @@ HUEPI = function() {
 
   this.BridgeCreateUser = function()
   { // POST /api {"devicetype": "iPhone", "username": "1234567890"}
-    var That = this;
-    $.ajax({
+    return $.ajax({
       type: "POST",
       dataType: "json",
       contentType: "application/json",
       url: "http://" + this.BridgeIP + "/api",
       data: '{"devicetype": "WebInterface", "username": "' + this.Username + '"}'
-    }).done(function(data) { // a Buttonpress on the Bridge is required
     });
   };
 
   this.BridgeDeleteUser = function(UsernameToDelete)
   { // DELETE /api/username/config/whitelist/username {"devicetype": "iPhone", "username": "1234567890"}
-    var That = this;
-    $.ajax({
+    return $.ajax({
       type: "DELETE",
       dataType: "json",
       contentType: "application/json",
       url: "http://" + this.BridgeIP + "/api/" + this.Username + "/config/whitelist/" + UsernameToDelete,
       data: '{"devicetype": "WebInterface", "username": "' + this.Username + '"}'
-    }).done(function(data) {
     });
   };
 
@@ -100,7 +96,9 @@ HUEPI = function() {
    * Helper Functions
    *
    */
-  HelperRGBtoHueAngSatBri = function(Red, Green, Blue) { // Range 0..1, return .Ang (360), .Sat, .Brig
+  HelperRGBtoHueAngSatBri = function(Red, Green, Blue)
+  { // Range 0..1, return .Ang (360), .Sat, .Brig
+    var Ang, Sat, Bri;
     var Min = Math.min(Red, Green, Blue);
     var Max = Math.max(Red, Green, Blue);
     if (Min !== Max) {
@@ -121,11 +119,13 @@ HUEPI = function() {
     return {Ang: Ang, Sat: Sat, Bri: Bri};
   };
 
-  HelperHueAngSatBritoRGB = function(Ang, Sat, Bri) { // Range 360, 1, 1, return .Red, .Green, .Blue
+  HelperHueAngSatBritoRGB = function(Ang, Sat, Bri)
+  { // Range 360, 1, 1, return .Red, .Green, .Blue
+    var Red, Green, Blue;
     if (Sat === 0) {
-      var Red = Bri;
-      var Green = Bri;
-      var Blue = Bri;
+      Red = Bri;
+      Green = Bri;
+      Blue = Bri;
     } else
     {
       var Sector = Math.floor(Ang / 60);
@@ -169,7 +169,8 @@ HUEPI = function() {
     return {Red: Red, Green: Green, Blue: Blue};
   };
 
-  HelperRGBtoXY = function(Red, Green, Blue) { // Range 0..1, return .x, .y
+  HelperRGBtoXY = function(Red, Green, Blue)
+  { // Range 0..1, return .x, .y
     // Adjust to Light XY CIE
     // https://github.com/PhilipsHue/PhilipsHueSDK-iOS-OSX/commit/f41091cf671e13fe8c32fcced12604cd31cceaf3
     // for details...
@@ -191,7 +192,6 @@ HUEPI = function() {
     var X = Red * 0.649926 + Green * 0.103455 + Blue * 0.197109;
     var Y = Red * 0.234327 + Green * 0.743075 + Blue * 0.022598;
     var Z = Red * 0.000000 + Green * 0.053077 + Blue * 1.035763;
-
     //
     // http://www.everyhue.com/vanilla/discussion/comment/635
     //
@@ -202,11 +202,12 @@ HUEPI = function() {
     //
     // But we don't want Capital X,Y,Z you want lowercase [x,y] (called the color point) as per:
     if ((X + Y + Z) === 0)
-      return {x:0, y:0};
+      return {x: 0, y: 0};
     return {x: X / (X + Y + Z), y: Y / (X + Y + Z)};
   };
 
-  HelperGamutXYforModel = function(Px, Py, Model) { // return .x, .y
+  HelperGamutXYforModel = function(Px, Py, Model)
+  { // return .x, .y
     // Check if point is inside Triangle for correct model of light
     if (Model === "LCT001") { // For the hue bulb the corners of the triangle are:
       var PRed = {x: 0.6750, y: 0.3220};
@@ -370,21 +371,48 @@ HUEPI = function() {
   { // GET /api/username/lights
     var That = this;
     var url = "http://" + this.BridgeIP + "/api/" + this.Username + "/lights";
-    $.get(url, function(data) {
+    return $.get(url, function(data) {
       if (data) {
         That.Lights = data;
-      } // else error
+      }
     });
   };
 
+  this.LightsSearchForNew = function()
+  { // POST /api/username/lights
+    return $.ajax({
+      type: "POST",
+      dataType: "json",
+      contentType: "application/json",
+      url: "http://" + this.BridgeIP + "/api/" + this.Username + "/lights"
+    });
+  };
+  
+  this.LightsGetNew = function()
+  { // GET /api/username/lights/new
+    var url = "http://" + this.BridgeIP + "/api/" + this.Username + "/lights/new";
+    return $.get(url);
+  };
+  
+  this.LightSetName = function(LightNr, Name) // Name = String[32]
+  { // PUT /api/username/lights
+    return $.ajax({
+      type: "PUT",
+      dataType: "json",
+      contentType: "application/json",
+      url: "http://" + this.BridgeIP + "/api/" + this.Username + "/light/" + LightNr,
+      data: '{"name" : "' + Name + '"}'
+    });
+  };
+  
   this.LightSetState = function(LightNr, State)
   { // PUT /api/username/lights/[LightNr]/state
-    var That = this;
-    $.ajax({
-      type: "PUT", dataType: "json", contentType: "application/json",
+    return $.ajax({
+      type: "PUT",
+      dataType: "json",
+      contentType: "application/json",
       url: "http://" + this.BridgeIP + "/api/" + this.Username + "/lights/" + LightNr + "/state",
       data: State.Get()
-    }).done(function(data) {
     });
   };
 
@@ -393,7 +421,7 @@ HUEPI = function() {
     var State = new Lightstate();
     State.On();
     State.SetTransitiontime(Transitiontime);
-    this.LightSetState(LightNr, State);
+    return this.LightSetState(LightNr, State);
   };
 
   this.LightOff = function(LightNr, Transitiontime)
@@ -401,7 +429,7 @@ HUEPI = function() {
     var State = new Lightstate();
     State.Off();
     State.SetTransitiontime(Transitiontime);
-    this.LightSetState(LightNr, State);
+    return this.LightSetState(LightNr, State);
   };
 
   this.LightSetHSB = function(LightNr, Hue, Saturation, Brightness, Transitiontime)
@@ -412,9 +440,10 @@ HUEPI = function() {
 
     var Color = HelperHueAngSatBritoRGB(Ang, Sat, Bri);
     var Point = HelperRGBtoXY(Color.Red, Color.Green, Color.Blue);
-    this.LightSetBrightness(LightNr, Brightness, Transitiontime);
-    this.LightSetXY(LightNr, Point.x, Point.y, Transitiontime);
-    return this;
+    return $.when(
+    this.LightSetBrightness(LightNr, Brightness, Transitiontime),
+    this.LightSetXY(LightNr, Point.x, Point.y, Transitiontime)
+    );
   };
 
   this.LightSetHue = function(LightNr, Hue, Transitiontime)
@@ -422,7 +451,7 @@ HUEPI = function() {
     var State = new Lightstate();
     State.SetHue(Hue);
     State.SetTransitiontime(Transitiontime);
-    this.LightSetState(LightNr, State);
+    return this.LightSetState(LightNr, State);
   };
 
   this.LightSetSaturation = function(LightNr, Saturation, Transitiontime)
@@ -430,7 +459,7 @@ HUEPI = function() {
     var State = new Lightstate();
     State.SetSaturation(Saturation);
     State.SetTransitiontime(Transitiontime);
-    this.LightSetState(LightNr, State);
+    return this.LightSetState(LightNr, State);
   };
 
   this.LightSetBrightness = function(LightNr, Brightness, Transitiontime)
@@ -438,7 +467,7 @@ HUEPI = function() {
     var State = new Lightstate();
     State.SetBrightness(Brightness);
     State.SetTransitiontime(Transitiontime);
-    this.LightSetState(LightNr, State);
+    return this.LightSetState(LightNr, State);
   };
 
   this.LightSetHueAngSatBri = function(LightNr, Ang, Sat, Bri, Transitiontime)
@@ -453,8 +482,10 @@ HUEPI = function() {
   {
     var Point = HelperRGBtoXY(Red / 255, Green / 255, Blue / 255);
     var HueAngSatBri = HelperRGBtoHueAngSatBri(Red / 255, Green / 255, Blue / 255);
-    this.LightSetBrightness(Math.round(HueAngSatBri.Bri * 255));
-    this.LightSetXY(LightNr, Point.x, Point.y, Transitiontime);
+    return $.when(
+    this.LightSetBrightness(Math.round(HueAngSatBri.Bri * 255)),
+    this.LightSetXY(LightNr, Point.x, Point.y, Transitiontime)
+    );
   };
 
   this.LightSetCT = function(LightNr, CT, Transitiontime)
@@ -462,7 +493,7 @@ HUEPI = function() {
     var State = new Lightstate();
     State.SetCT(CT);
     State.SetTransitiontime(Transitiontime);
-    this.LightSetState(LightNr, State);
+    return this.LightSetState(LightNr, State);
   };
 
   this.LightSetColortemperature = function(LightNr, Colortemperature, Transitiontime)
@@ -470,7 +501,7 @@ HUEPI = function() {
     var State = new Lightstate();
     State.SetColortemperature(Colortemperature);
     State.SetTransitiontime(Transitiontime);
-    this.LightSetState(LightNr, State);
+    return this.LightSetState(LightNr, State);
   };
 
   this.LightSetXY = function(LightNr, X, Y, Transitiontime)
@@ -480,7 +511,7 @@ HUEPI = function() {
     var State = new Lightstate();
     State.SetXY(Gamuted.x, Gamuted.y);
     State.SetTransitiontime(Transitiontime);
-    this.LightSetState(LightNr, State);
+    return this.LightSetState(LightNr, State);
   };
 
   this.LightAlertSelect = function(LightNr, Transitiontime)
@@ -488,7 +519,7 @@ HUEPI = function() {
     var State = new Lightstate();
     State.AlertSelect();
     State.SetTransitiontime(Transitiontime);
-    this.LightSetState(LightNr, State);
+    return this.LightSetState(LightNr, State);
   };
 
   this.LightAlertLSelect = function(LightNr, Transitiontime)
@@ -496,7 +527,7 @@ HUEPI = function() {
     var State = new Lightstate();
     State.AlertLSelect();
     State.SetTransitiontime(Transitiontime);
-    this.LightSetState(LightNr, State);
+    return this.LightSetState(LightNr, State);
   };
 
   this.LightAlertNone = function(LightNr, Transitiontime)
@@ -504,7 +535,7 @@ HUEPI = function() {
     var State = new Lightstate();
     State.AlertNone();
     State.SetTransitiontime(Transitiontime);
-    this.LightSetState(LightNr, State);
+    return this.LightSetState(LightNr, State);
   };
 
   this.LightEffectColorloop = function(LightNr, Transitiontime)
@@ -512,7 +543,7 @@ HUEPI = function() {
     var State = new Lightstate();
     State.EffectColorloop();
     State.SetTransitiontime(Transitiontime);
-    this.LightSetState(LightNr, State);
+    return this.LightSetState(LightNr, State);
   };
 
   this.LightEffectNone = function(LightNr, Transitiontime)
@@ -520,7 +551,7 @@ HUEPI = function() {
     var State = new Lightstate();
     State.EffectNone();
     State.SetTransitiontime(Transitiontime);
-    this.LightSetState(LightNr, State);
+    return this.LightSetState(LightNr, State);
   };
 
   /*
@@ -531,21 +562,90 @@ HUEPI = function() {
   { // GET /api/username/lights
     var That = this;
     var url = "http://" + this.BridgeIP + "/api/" + this.Username + "/groups";
-    $.get(url, function(data) {
+    return $.get(url, function(data) {
       if (data) {
         That.Groups = data;
-      } // else error
+      }
     });
   };
 
+  function HelperToStringArray(Items) {
+    if (typeof Items === "number") {
+      return '"'+Items.toString()+'"';
+    } else if (Object.prototype.toString.call( Items ) === "[object Array]") {
+       var Result="[";
+       for (var ItemNr = 0; ItemNr<Items.length; ItemNr++) {
+         Result += HelperToStringArray(Items[ItemNr]) 
+         if (ItemNr<Items.length-1) Result += ",";
+       };
+       Result = Result + "]";
+       return Result;
+    } else if (typeof Items === "string") {
+      return '"'+Items+'"';
+    }
+  }
+  this.GroupCreate = function(Name, Lights) // Bridge doesn't accept lights in a group that are unreachable!
+  { // POST /api/username/groups
+    return $.ajax({
+      type: "POST",
+      dataType: "json",
+      contentType: "application/json",
+      url: "http://" + this.BridgeIP + "/api/" + this.Username + "/groups/",
+      data: '{"name":"' + Name + '" , "lights":' + HelperToStringArray(Lights) + '}'
+    });
+  };
+  
+  this.GroupSetName = function(GroupNr, Name)
+  { // PUT /api/username/groups/[GroupNr]
+    return $.ajax({
+      type: "PUT",
+      dataType: "json",
+      contentType: "application/json",
+      url: "http://" + this.BridgeIP + "/api/" + this.Username + "/groups/" + GroupNr,
+      data: '{"name":"' + Name + '"}'
+    });
+  };
+  
+  this.GroupSetLights = function(GroupNr, Lights)
+  { // PUT /api/username/groups/[GroupNr]
+    return $.ajax({
+      type: "PUT",
+      dataType: "json",
+      contentType: "application/json",
+      url: "http://" + this.BridgeIP + "/api/" + this.Username + "/groups/" + GroupNr,
+      data: '{"lights":' + HelperToStringArray(Lights) + '}'
+    });
+  };
+  
+  this.GroupSetAttributes = function(GroupNr, Name, LightsArray)
+  { // PUT /api/username/groups/[GroupNr]
+    return $.ajax({
+      type: "PUT",
+      dataType: "json",
+      contentType: "application/json",
+      url: "http://" + this.BridgeIP + "/api/" + this.Username + "/groups/" + GroupNr,
+      data: '{"name":"' + Name + '", "lights":' + HelperToStringArray(LightsArray) + '}'
+    });
+  };
+  
+  this.GroupDelete = function(GroupNr)
+  { // DELETE /api/username/groups/[GroupNr]
+    return $.ajax({
+      type: "DELETE",
+      dataType: "json",
+      contentType: "application/json",
+      url: "http://" + this.BridgeIP + "/api/" + this.Username + "/groups/" + GroupNr
+    });
+  };
+  
   this.GroupSetState = function(GroupNr, State)
   { // PUT /api/username/groups/[GroupNr]/action
-    var That = this;
-    $.ajax({
-      type: "PUT", dataType: "json", contentType: "application/json",
+    return $.ajax({
+      type: "PUT",
+      dataType: "json",
+      contentType: "application/json",
       url: "http://" + this.BridgeIP + "/api/" + this.Username + "/groups/" + GroupNr + "/action",
       data: State.Get()
-    }).done(function(data) {
     });
   };
 
@@ -554,7 +654,7 @@ HUEPI = function() {
     var State = new Lightstate();
     State.On();
     State.SetTransitiontime(Transitiontime);
-    this.GroupSetState(GroupNr, State);
+    return this.GroupSetState(GroupNr, State);
   };
 
   this.GroupOff = function(GroupNr, Transitiontime)
@@ -562,7 +662,7 @@ HUEPI = function() {
     var State = new Lightstate();
     State.Off();
     State.SetTransitiontime(Transitiontime);
-    this.GroupSetState(GroupNr, State);
+    return this.GroupSetState(GroupNr, State);
   };
 
   this.GroupSetHSB = function(GroupNr, Hue, Saturation, Brightness, Transitiontime)
@@ -573,9 +673,11 @@ HUEPI = function() {
 
     var Color = HelperHueAngSatBritoRGB(Ang, Sat, Bri);
     var Point = HelperRGBtoXY(Color.Red, Color.Green, Color.Blue);
-    this.GroupSetBrightness(GroupNr, Brightness, Transitiontime);
-    this.GroupSetXY(GroupNr, Point.x, Point.y, Transitiontime);
-    return this;
+
+    return $.when(// return Deferred when of both Brightness and XY
+    this.GroupSetBrightness(GroupNr, Brightness, Transitiontime),
+    this.GroupSetXY(GroupNr, Point.x, Point.y, Transitiontime)
+    );
   };
 
   this.GroupSetHue = function(GroupNr, Hue, Transitiontime)
@@ -583,7 +685,7 @@ HUEPI = function() {
     var State = new Lightstate();
     State.SetHue(Hue);
     State.SetTransitiontime(Transitiontime);
-    this.GroupSetState(GroupNr, State);
+    return this.GroupSetState(GroupNr, State);
   };
 
   this.GroupSetSaturation = function(GroupNr, Saturation, Transitiontime)
@@ -591,7 +693,7 @@ HUEPI = function() {
     var State = new Lightstate();
     State.SetSaturation(Saturation);
     State.SetTransitiontime(Transitiontime);
-    this.GroupSetState(GroupNr, State);
+    return this.GroupSetState(GroupNr, State);
   };
 
   this.GroupSetBrightness = function(GroupNr, Brightness, Transitiontime)
@@ -599,7 +701,7 @@ HUEPI = function() {
     var State = new Lightstate();
     State.SetBrightness(Brightness);
     State.SetTransitiontime(Transitiontime);
-    this.GroupSetState(GroupNr, State);
+    return this.GroupSetState(GroupNr, State);
   };
 
   this.GroupSetHueAngSatBri = function(GroupNr, Ang, Sat, Bri, Transitiontime)
@@ -621,7 +723,7 @@ HUEPI = function() {
     var State = new Lightstate();
     State.SetCT(CT);
     State.SetTransitiontime(Transitiontime);
-    this.GroupSetState(GroupNr, State);
+    return this.GroupSetState(GroupNr, State);
   };
 
   this.GroupSetColortemperature = function(GroupNr, Colortemperature, Transitiontime)
@@ -629,7 +731,7 @@ HUEPI = function() {
     var State = new Lightstate();
     State.SetColortemperature(Colortemperature);
     State.SetTransitiontime(Transitiontime);
-    this.GroupSetState(GroupNr, State);
+    return this.GroupSetState(GroupNr, State);
   };
 
   this.GroupSetXY = function(GroupNr, X, Y, Transitiontime)
@@ -637,23 +739,23 @@ HUEPI = function() {
     var Lights = [];
     var LightNr = 0;
 
-    if (GroupNr === 0) // All Lights
-    {
+    if (GroupNr === 0) { // All Lights
       while (this.Lights[LightNr + 1]) // Build Group
         Lights[LightNr] = ++LightNr;
     } else
       var Lights = this.Groups[GroupNr].lights;
 
-    if (Lights.length !== 0) // For Each Light
-      for (var LightNr = 0; LightNr < Lights.length; LightNr++)
-        this.LightSetXY(Lights[LightNr], X, Y, Transitiontime);
-    else
-    { // No Lights in Group GroupNr, Set State of Group to let Bridge create the API Error
-      var State = new Lightstate();
-      State.SetXY(X, Y);
-      State.SetTransitiontime(Transitiontime);
-      this.GroupSetState(GroupNr, State);
+    if (Lights.length !== 0) {
+      var deferreds = [];
+      for (var LightNr = 0; LightNr < Lights.length; LightNr++) // For Each Light
+        deferreds.push(this.LightSetXY(Lights[LightNr], X, Y, Transitiontime));
+      return $.when.apply($, deferreds); // return Deferred when with array of deferreds
     }
+    // No Lights in Group GroupNr, Set State of Group to let Bridge create the API Error and return it.
+    var State = new Lightstate();
+    State.SetXY(X, Y);
+    State.SetTransitiontime(Transitiontime);
+    return this.GroupSetState(GroupNr, State);
   };
 
   this.GroupAlertSelect = function(GroupNr, Transitiontime)
@@ -661,7 +763,7 @@ HUEPI = function() {
     var State = new Lightstate();
     State.AlertSelect();
     State.SetTransitiontime(Transitiontime);
-    this.GroupSetState(GroupNr, State);
+    return this.GroupSetState(GroupNr, State);
   };
 
   this.GroupAlertLSelect = function(GroupNr, Transitiontime)
@@ -669,7 +771,7 @@ HUEPI = function() {
     var State = new Lightstate();
     State.AlertLSelect();
     State.SetTransitiontime(Transitiontime);
-    this.GroupSetState(GroupNr, State);
+    return this.GroupSetState(GroupNr, State);
   };
 
   this.GroupAlertNone = function(GroupNr, Transitiontime)
@@ -677,7 +779,7 @@ HUEPI = function() {
     var State = new Lightstate();
     State.AlertNone();
     State.SetTransitiontime(Transitiontime);
-    this.GroupSetState(GroupNr, State);
+    return this.GroupSetState(GroupNr, State);
   };
 
   this.GroupEffectColorloop = function(GroupNr, Transitiontime)
@@ -685,7 +787,7 @@ HUEPI = function() {
     var State = new Lightstate();
     State.EffectColorloop();
     State.SetTransitiontime(Transitiontime);
-    this.GroupSetState(GroupNr, State);
+    return this.GroupSetState(GroupNr, State);
   };
 
   this.GroupEffectNone = function(GroupNr, Transitiontime)
@@ -693,7 +795,7 @@ HUEPI = function() {
     var State = new Lightstate();
     State.EffectNone();
     State.SetTransitiontime(Transitiontime);
-    this.GroupSetState(GroupNr, State);
+    return this.GroupSetState(GroupNr, State);
   };
 
 }; // HUEPI End
@@ -719,11 +821,19 @@ HUEPI = function() {
 // Renamed deeper namespaces to top namespace so HUEPI becomes one Object
 //   e.g. Group.SetOn() -> GroupSetOn()
 //
-// 0.4 
+// 0.4
 // Added Helper functions (refactured from 0.3)
 // HueAngSatBri HSB RGB for lights and groups are set via SetXY and SetBrightness
 // GroupSetXY splits group into Light and calls LightSetXY per Light
 // LightSetXY looks up lamp Model and applies Gamut Correction for Model
 // Note: Using Lightstate objects are not Gamut Corrected
 //
-//
+// 0.5
+// Implemented Promisses by returning JQuery Promisses (Deffereds)
+// Declared local variables where applicable, cleaning up global namespace polution
+// Added LightsSearchForNew and LightsGetNew and LightSetName
+// Added GroupCreate GroupSetName GroupSetLights GroupSetAttributes GroupDelete 
+//   These need more testing ;-)
+// 
+// 
+// 
