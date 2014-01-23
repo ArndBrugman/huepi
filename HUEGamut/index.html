@@ -7,6 +7,8 @@
     <meta name="viewport" content="width=device-width" />
 
     <script src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
+
+    <script src="../HUEPI.js" type="text/javascript"></script>
   </head>
 
   <body>
@@ -26,89 +28,16 @@
         HueGamutRedraw();
       });
 
-      //For the hue bulb the corners of the triangle are:
-      var PRed = {x: 0.6750, y: 0.3220};
-      var PGreen = {x: 0.4091, y: 0.5180};
-      var PBlue = {x: 0.1670, y: 0.0400};
-
       function HueGamutRedraw() {
-        var VBR = {x: PRed.x - PBlue.x, y: PRed.y - PBlue.y}; // Blue to Red
-        var VRG = {x: PGreen.x - PRed.x, y: PGreen.y - PRed.y}; // Red to Green
-        var VGB = {x: PBlue.x - PGreen.x, y: PBlue.y - PGreen.y}; // Green to Blue
+        // For the hue bulb the corners of the triangle are:
+        var PRed = {x: 0.6750, y: 0.3220};
+        var PGreen = {x: 0.4091, y: 0.5180};
+        var PBlue = {x: 0.1670, y: 0.0400};
 
-        var GBR = (PGreen.x - PBlue.x) * VBR.y - (PGreen.y - PBlue.y) * VBR.x; // Sign Green on Blue to Red
-        var BRG = (PBlue.x - PRed.x) * VRG.y - (PBlue.y - PRed.y) * VRG.x; // Sign Blue on Red to Green
-        var RGB = (PRed.x - PGreen.x) * VGB.y - (PRed.y - PGreen.y) * VGB.x; // Sign Red on Green to Blue
+        var Corrected = HUEPI.HelperGamutXYforModel(Px, Py, "LCT001");
+        var Cx = Corrected.x;
+        var Cy = Corrected.y;
 
-        var VBP = {x: Px - PBlue.x, y: Py - PBlue.y}; // Blue to Point
-        var VRP = {x: Px - PRed.x, y: Py - PRed.y}; // Red to Point
-        var VGP = {x: Px - PGreen.x, y: Py - PGreen.y}; // Green to Point
-
-        var PBR = VBP.x * VBR.y - VBP.y * VBR.x; // Sign Point on Blue to Red
-        var PRG = VRP.x * VRG.y - VRP.y * VRG.x; // Sign Point on Red to Green
-        var PGB = VGP.x * VGB.y - VGP.y * VGB.x; // Sign Point on Green to Blue
-
-        if ((GBR * PBR >= 0) && (BRG * PRG >= 0) && (RGB * PGB >= 0)) // All Signs Match so must be in Triangle
-        {
-          var Cx = Px;
-          var Cy = Py;
-        }
-        //  Outside Triangle, Find Closesed point on Edge or Pick Vertice...
-        else if (GBR * PBR <= 0) { // Outside Blue to Red
-          var NormDot = (VBP.x * VBR.x + VBP.y * VBR.y) / (VBR.x * VBR.x + VBR.y * VBR.y);
-          if ((NormDot >= 0.0) && (NormDot <= 1.0)) // Within Edge
-          {
-            var Cx = PBlue.x + NormDot * VBR.x;
-            var Cy = PBlue.y + NormDot * VBR.y;
-          }
-          else if (NormDot < 0.0) // Outside Edge, Pick Vertice
-          {
-            var Cx = PBlue.x;
-            var Cy = PBlue.y;
-          } // Start
-          else
-          {
-            var Cx = PRed.x;
-            var Cy = PRed.y;
-          } // End
-        }
-        else if (BRG * PRG <= 0) { // Outside Red to Green
-          var NormDot = (VRP.x * VRG.x + VRP.y * VRG.y) / (VRG.x * VRG.x + VRG.y * VRG.y);
-          if ((NormDot >= 0.0) && (NormDot <= 1.0)) // Within Edge
-          {
-            var Cx = PRed.x + NormDot * VRG.x;
-            var Cy = PRed.y + NormDot * VRG.y;
-          }
-          else if (NormDot < 0.0) // Outside Edge, Pick Vertice
-          {
-            var Cx = PRed.x;
-            var Cy = PRed.y;
-          } // Start
-          else
-          {
-            var Cx = PGreen.x;
-            var Cy = PGreen.y;
-          } // End
-        }
-        else if (RGB * PGB <= 0) { // Outside Green to Blue
-          var NormDot = (VGP.x * VGB.x + VGP.y * VGB.y) / (VGB.x * VGB.x + VGB.y * VGB.y);
-          if ((NormDot >= 0.0) && (NormDot <= 1.0)) // Within Edge
-          {
-            var Cx = PGreen.x + NormDot * VGB.x;
-            var Cy = PGreen.y + NormDot * VGB.y;
-          }
-          else if (NormDot < 0.0) // Outside Edge, Pick Vertice
-          {
-            var Cx = PGreen.x;
-            var Cy = PGreen.y;
-          } // Start
-          else
-          {
-            var Cx = PBlue.x;
-            var Cy = PBlue.y;
-          } // End
-        }
-        
         HueContext.fillStyle = '#ffffff';
         HueContext.fillRect(0, 0, HueCanvas.width, HueCanvas.height);
 
@@ -122,23 +51,15 @@
         HueContext.lineTo(PGreen.x * HueCanvas.width, HueCanvas.height - PGreen.y * HueCanvas.height);
         HueContext.lineTo(PBlue.x * HueCanvas.width, HueCanvas.height - PBlue.y * HueCanvas.height);
         HueContext.lineTo(PRed.x * HueCanvas.width, HueCanvas.height - PRed.y * HueCanvas.height);
-
-        //HueContext.fill();
         HueContext.stroke();
         HueContext.closePath();
 
         // Draw C P
-        HueContext.strokeStyle = '#0CC';
+        HueContext.strokeStyle = '#F84';
         HueContext.lineWidth = 2;
         HueContext.beginPath();
         HueContext.moveTo(Px * HueCanvas.width - 1, HueCanvas.height - Py * HueCanvas.height - 1);
         HueContext.lineTo(Cx * HueCanvas.width + 1, HueCanvas.height - Cy * HueCanvas.height + 1);
-        HueContext.stroke();
-        HueContext.closePath();
-        HueContext.strokeStyle = '#C0C';
-        HueContext.beginPath();
-        HueContext.moveTo(Px * HueCanvas.width + 1, HueCanvas.height - Py * HueCanvas.height + 1);
-        HueContext.lineTo(Cx * HueCanvas.width - 1, HueCanvas.height - Cy * HueCanvas.height - 1);
         HueContext.stroke();
         HueContext.closePath();
       }
