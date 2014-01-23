@@ -12,19 +12,20 @@
         var VariableArray = SearchString.split('&');
         for (var i = 0; i < VariableArray.length; i++) {
           var KeyValuePair = VariableArray[i].split('=');
-          if (KeyValuePair[0] == VarSearch) {
+          if (KeyValuePair[0] === VarSearch) {
             return KeyValuePair[1];
           }
         }
       }
-      
+
       function HueImageRedraw() {
         var HueCanvas = document.getElementById("HUECanvas");
         var HueContext = document.getElementById("HUECanvas").getContext("2d");
-        var size=GetUrlValue('size');
-        if (size != undefined)
+        var size = GetUrlValue('size');
+        if (size !== undefined)
           HueCanvas.width = size;
-        else HueCanvas.width = 512;
+        else
+          HueCanvas.width = 512;
         HueCanvas.height = HueCanvas.width;
         var xhalf = HueCanvas.width / 2;
         var yhalf = HueCanvas.height / 2;
