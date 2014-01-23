@@ -41,6 +41,7 @@ HUEPI = function() {
   {
     var That = this;
     return $.get("https://www.meethue.com/api/nupnp", function(data) {
+      if (data.length>0)
       if (data[0].internalipaddress) {
         That.PortalBridges = data;
         That.BridgeIP = That.PortalBridges[0].internalipaddress; // Default to 1st Bridge internalip
