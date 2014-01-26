@@ -16,13 +16,13 @@ HUEPI = function() {
    * Username Overidable Username must be 10-40 digits long
    * @type String
    */
-  this.Username = "1234567890";
+  this.Username = '1234567890';
 
   this.LocalBridges = [];
 
   this.BridgeConfig = [];
-  this.BridgeIP = "";
-  this.BridgeName = "";
+  this.BridgeIP = '';
+  this.BridgeName = '';
   this.UsernameWhitelisted = false; // Will be checked on Bridge in BridgeGet()
 
   this.Lights = [];
@@ -40,7 +40,7 @@ HUEPI = function() {
 HUEPI.prototype.PortalDiscoverLocalBridges = function()
 {
   var That = this;
-  return $.get("https://www.meethue.com/api/nupnp", function(data) {
+  return $.get('https://www.meethue.com/api/nupnp', function(data) {
     if (data.length > 0)
       if (data[0].internalipaddress) {
         That.LocalBridges = data;
@@ -56,7 +56,7 @@ HUEPI.prototype.PortalDiscoverLocalBridges = function()
 HUEPI.prototype.BridgeGet = function()
 { // GET /api/username -> data.config.whitelist.username
   var That = this;
-  var url = "http://" + this.BridgeIP + "/api/" + this.Username;
+  var url = 'http://' + this.BridgeIP + '/api/' + this.Username;
   return $.get(url, function(data) {
     That.Lights = data.lights;
     That.Groups = data.groups;
@@ -74,10 +74,10 @@ HUEPI.prototype.BridgeGet = function()
 HUEPI.prototype.BridgeCreateUser = function()
 { // POST /api {"devicetype": "iPhone", "username": "1234567890"}
   return $.ajax({
-    type: "POST",
-    dataType: "json",
-    contentType: "application/json",
-    url: "http://" + this.BridgeIP + "/api",
+    type: 'POST',
+    dataType: 'json',
+    contentType: 'application/json',
+    url: 'http://' + this.BridgeIP + '/api',
     data: '{"devicetype": "WebInterface", "username": "' + this.Username + '"}'
   });
 };
@@ -85,10 +85,10 @@ HUEPI.prototype.BridgeCreateUser = function()
 HUEPI.prototype.BridgeDeleteUser = function(UsernameToDelete)
 { // DELETE /api/username/config/whitelist/username {"devicetype": "iPhone", "username": "1234567890"}
   return $.ajax({
-    type: "DELETE",
-    dataType: "json",
-    contentType: "application/json",
-    url: "http://" + this.BridgeIP + "/api/" + this.Username + "/config/whitelist/" + UsernameToDelete,
+    type: 'DELETE',
+    dataType: 'json',
+    contentType: 'application/json',
+    url: 'http://' + this.BridgeIP + '/api/' + this.Username + '/config/whitelist/' + UsernameToDelete,
     data: '{"devicetype": "WebInterface", "username": "' + this.Username + '"}'
   });
 };
@@ -210,7 +210,7 @@ HUEPI.HelperRGBtoXY = function(Red, Green, Blue)
 HUEPI.HelperGamutXYforModel = function(Px, Py, Model)
 { // return .x, .y
   // Check if point is inside Triangle for correct model of light
-  if (Model === "LCT001") { // For the hue bulb the corners of the triangle are:
+  if (Model === 'LCT001') { // For the hue bulb the corners of the triangle are:
     var PRed = {x: 0.6750, y: 0.3220};
     var PGreen = {x: 0.4091, y: 0.5180};
     var PBlue = {x: 0.1670, y: 0.0400};
@@ -317,18 +317,18 @@ HUEPI.HelperCTtoRGB = function(Temperature)
 };
 
 HUEPI.HelperToStringArray = function(Items) {
-  if (typeof Items === "number") {
+  if (typeof Items === 'number') {
     return '"' + Items.toString() + '"';
-  } else if (Object.prototype.toString.call(Items) === "[object Array]") {
-    var Result = "[";
+  } else if (Object.prototype.toString.call(Items) === '[object Array]') {
+    var Result = '[';
     for (var ItemNr = 0; ItemNr < Items.length; ItemNr++) {
       Result += HUEPI.HelperToStringArray(Items[ItemNr]);
       if (ItemNr < Items.length - 1)
-        Result += ",";
+        Result += ',';
     }
-    Result = Result + "]";
+    Result = Result + ']';
     return Result;
-  } else if (typeof Items === "string") {
+  } else if (typeof Items === 'string') {
     return '"' + Items + '"';
   }
 };
@@ -435,7 +435,7 @@ HUEPI.Lightstate = function()
 HUEPI.prototype.LightGet = function()
 { // GET /api/username/lights
   var That = this;
-  var url = "http://" + this.BridgeIP + "/api/" + this.Username + "/lights";
+  var url = 'http://' + this.BridgeIP + '/api/' + this.Username + '/lights';
   return $.get(url, function(data) {
     if (data) {
       That.Lights = data;
@@ -446,26 +446,26 @@ HUEPI.prototype.LightGet = function()
 HUEPI.prototype.LightsSearchForNew = function()
 { // POST /api/username/lights
   return $.ajax({
-    type: "POST",
-    dataType: "json",
-    contentType: "application/json",
-    url: "http://" + this.BridgeIP + "/api/" + this.Username + "/lights"
+    type: 'POST',
+    dataType: 'json',
+    contentType: 'application/json',
+    url: 'http://' + this.BridgeIP + '/api/' + this.Username + '/lights'
   });
 };
 
 HUEPI.prototype.LightsGetNew = function()
 { // GET /api/username/lights/new
-  var url = "http://" + this.BridgeIP + "/api/" + this.Username + "/lights/new";
+  var url = 'http://' + this.BridgeIP + '/api/' + this.Username + '/lights/new';
   return $.get(url);
 };
 
 HUEPI.prototype.LightSetName = function(LightNr, Name) // Name = String[32]
 { // PUT /api/username/lights
   return $.ajax({
-    type: "PUT",
-    dataType: "json",
-    contentType: "application/json",
-    url: "http://" + this.BridgeIP + "/api/" + this.Username + "/light/" + LightNr,
+    type: 'PUT',
+    dataType: 'json',
+    contentType: 'application/json',
+    url: 'http://' + this.BridgeIP + '/api/' + this.Username + '/light/' + LightNr,
     data: '{"name" : "' + Name + '"}'
   });
 };
@@ -473,10 +473,10 @@ HUEPI.prototype.LightSetName = function(LightNr, Name) // Name = String[32]
 HUEPI.prototype.LightSetState = function(LightNr, State)
 { // PUT /api/username/lights/[LightNr]/state
   return $.ajax({
-    type: "PUT",
-    dataType: "json",
-    contentType: "application/json",
-    url: "http://" + this.BridgeIP + "/api/" + this.Username + "/lights/" + LightNr + "/state",
+    type: 'PUT',
+    dataType: 'json',
+    contentType: 'application/json',
+    url:'http://' + this.BridgeIP + '/api/' + this.Username + '/lights/' + LightNr + '/state',
     data: State.Get()
   });
 };
@@ -556,10 +556,11 @@ HUEPI.prototype.LightSetRGB = function(LightNr, Red, Green, Blue, Transitiontime
 HUEPI.prototype.LightSetCT = function(LightNr, CT, Transitiontime)
 {
   var Model = this.Lights[LightNr].modelid;
-
-  if (Model !== "LCT001") {
+  
+  if (Model !== 'LCT001') { // CT->RGB->XY to ignore Brightness in RGB
     var Color = HUEPI.HelperCTtoRGB(1000000 / CT);
-    return this.LightSetRGB(LightNr, Color.Red, Color.Green, Color.Blue, Transitiontime);
+    var Point = HUEPI.HelperRGBtoXY(Color.Red, Color.Green, Color.Blue);
+    return this.LightSetXY(LightNr, Point.x, Point.y, Transitiontime);
   }
   var State = new HUEPI.Lightstate();
   State.SetCT(CT);
@@ -629,7 +630,7 @@ HUEPI.prototype.LightEffectNone = function(LightNr, Transitiontime)
 HUEPI.prototype.GroupGet = function()
 { // GET /api/username/lights
   var That = this;
-  var url = "http://" + this.BridgeIP + "/api/" + this.Username + "/groups";
+  var url = 'http://' + this.BridgeIP + '/api/' + this.Username + '/groups';
   return $.get(url, function(data) {
     if (data) {
       That.Groups = data;
@@ -640,10 +641,10 @@ HUEPI.prototype.GroupGet = function()
 HUEPI.prototype.GroupCreate = function(Name, Lights) // Bridge doesn't accept lights in a group that are unreachable!
 { // POST /api/username/groups
   return $.ajax({
-    type: "POST",
-    dataType: "json",
-    contentType: "application/json",
-    url: "http://" + this.BridgeIP + "/api/" + this.Username + "/groups/",
+    type: 'POST',
+    dataType: 'json',
+    contentType: 'application/json',
+    url: 'http://' + this.BridgeIP + '/api/' + this.Username + '/groups/',
     data: '{"name":"' + Name + '" , "lights":' + HUEPI.HelperToStringArray(Lights) + '}'
   });
 };
@@ -651,10 +652,10 @@ HUEPI.prototype.GroupCreate = function(Name, Lights) // Bridge doesn't accept li
 HUEPI.prototype.GroupSetName = function(GroupNr, Name)
 { // PUT /api/username/groups/[GroupNr]
   return $.ajax({
-    type: "PUT",
-    dataType: "json",
-    contentType: "application/json",
-    url: "http://" + this.BridgeIP + "/api/" + this.Username + "/groups/" + GroupNr,
+    type: 'PUT',
+    dataType: 'json',
+    contentType: 'application/json',
+    url: 'http://' + this.BridgeIP + '/api/' + this.Username + '/groups/' + GroupNr,
     data: '{"name":"' + Name + '"}'
   });
 };
@@ -662,10 +663,10 @@ HUEPI.prototype.GroupSetName = function(GroupNr, Name)
 HUEPI.prototype.GroupSetLights = function(GroupNr, Lights)
 { // PUT /api/username/groups/[GroupNr]
   return $.ajax({
-    type: "PUT",
-    dataType: "json",
-    contentType: "application/json",
-    url: "http://" + this.BridgeIP + "/api/" + this.Username + "/groups/" + GroupNr,
+    type: 'PUT',
+    dataType: 'json',
+    contentType: 'application/json',
+    url: 'http://' + this.BridgeIP + '/api/' + this.Username + '/groups/' + GroupNr,
     data: '{"lights":' + HUEPI.HelperToStringArray(Lights) + '}'
   });
 };
@@ -673,10 +674,10 @@ HUEPI.prototype.GroupSetLights = function(GroupNr, Lights)
 HUEPI.prototype.GroupSetAttributes = function(GroupNr, Name, LightsArray)
 { // PUT /api/username/groups/[GroupNr]
   return $.ajax({
-    type: "PUT",
-    dataType: "json",
-    contentType: "application/json",
-    url: "http://" + this.BridgeIP + "/api/" + this.Username + "/groups/" + GroupNr,
+    type: 'PUT',
+    dataType: 'json',
+    contentType: 'application/json',
+    url: 'http://' + this.BridgeIP + '/api/' + this.Username + '/groups/' + GroupNr,
     data: '{"name":"' + Name + '", "lights":' + HUEPI.HelperToStringArray(LightsArray) + '}'
   });
 };
@@ -684,20 +685,20 @@ HUEPI.prototype.GroupSetAttributes = function(GroupNr, Name, LightsArray)
 HUEPI.prototype.GroupDelete = function(GroupNr)
 { // DELETE /api/username/groups/[GroupNr]
   return $.ajax({
-    type: "DELETE",
-    dataType: "json",
-    contentType: "application/json",
-    url: "http://" + this.BridgeIP + "/api/" + this.Username + "/groups/" + GroupNr
+    type: 'DELETE',
+    dataType: 'json',
+    contentType: 'application/json',
+    url: 'http://' + this.BridgeIP + '/api/' + this.Username + '/groups/' + GroupNr
   });
 };
 
 HUEPI.prototype.GroupSetState = function(GroupNr, State)
 { // PUT /api/username/groups/[GroupNr]/action
   return $.ajax({
-    type: "PUT",
-    dataType: "json",
-    contentType: "application/json",
-    url: "http://" + this.BridgeIP + "/api/" + this.Username + "/groups/" + GroupNr + "/action",
+    type: 'PUT',
+    dataType: 'json',
+    contentType: 'application/json',
+    url: 'http://' + this.BridgeIP + '/api/' + this.Username + '/groups/' + GroupNr + '/action',
     data: State.Get()
   });
 };
@@ -909,4 +910,9 @@ HUEPI.prototype.GroupEffectNone = function(GroupNr, Transitiontime)
 // Note: Using Lightstate objects are not CT to RGB converted
 // PortalBridges[] is renamed to LocalBridges[]
 //
+// 0.61
+// LightSetCT = CT->RGB->XY to ignore Brightness in RGB
+// changed " string to ' string
+// 
+// 
 //
