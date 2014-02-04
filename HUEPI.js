@@ -28,7 +28,7 @@ HUEPI = function() {
   this.Lights = [];
   this.Groups = [];
 
-// To Do: Add Schedules & Scenes
+  // To Do: Add Schedules & Scenes
   this.Schedules = [];
   this.Scenes = [];
 };
