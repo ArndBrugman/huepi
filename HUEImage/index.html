@@ -4,6 +4,9 @@
     <title>HUE Image</title>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
+
+    <script src='../HUEPI.js' type='text/javascript'></script>
+
   </head>
   <body>
     <script type="text/javascript" >
@@ -44,56 +47,13 @@
               Brightness = 1 - 2 * (Math.sqrt(px * px + py * py) - 0.5);
             if (Math.sqrt(px * px + py * py) > 1) // Rest Of Square Outside Outer Circle
               Brightness = 0;
-            ////// Convert HSB to RGB
-            if (Saturation === 0) {
-              var Red = Brightness;
-              var Green = Brightness;
-              var Blue = Brightness;
-            } else
-            {
-              var Sector = Math.floor(Hue / 60);
-              var Fraction = (Hue / 60) - Sector;
-              var p = Brightness * (1 - Saturation);
-              var q = Brightness * (1 - Saturation * Fraction);
-              var t = Brightness * (1 - Saturation * (1 - Fraction));
-              switch (Sector) {
-                case 0:
-                  Red = Brightness;
-                  Green = t;
-                  Blue = p;
-                  break;
-                case 1:
-                  Red = q;
-                  Green = Brightness;
-                  Blue = p;
-                  break;
-                case 2:
-                  Red = p;
-                  Green = Brightness;
-                  Blue = t;
-                  break;
-                case 3:
-                  Red = p;
-                  Green = q;
-                  Blue = Brightness;
-                  break;
-                case 4:
-                  Red = t;
-                  Green = p;
-                  Blue = Brightness;
-                  break;
-                default: // case 5:
-                  Red = Brightness;
-                  Green = p;
-                  Blue = q;
-                  break;
-              }
-            }
-            //////
+
+            var Color = HUEPI.HelperHueAngSatBritoRGB(Hue, Saturation, Brightness);
+
             var Index = (x + y * HueCanvas.width) * 4; // Index of Pixel
-            HueImagedata.data[Index + 0] = Red * 255;
-            HueImagedata.data[Index + 1] = Green * 255;
-            HueImagedata.data[Index + 2] = Blue * 255;
+            HueImagedata.data[Index + 0] = Color.Red * 255;
+            HueImagedata.data[Index + 1] = Color.Green * 255;
+            HueImagedata.data[Index + 2] = Color.Blue * 255;
           }
         }
         HueContext.putImageData(HueImagedata, 0, 0);
