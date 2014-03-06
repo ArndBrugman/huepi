@@ -124,7 +124,7 @@
 
       // look for bridge
       // wait for BridgeName
-      // check if UsernameWhitelisted
+      // check if BridgeUsernameWhitelisted
       //   NO? -> whitelist
       // play
       function DiscoverBridgeAndTryWhitelisting()
@@ -132,9 +132,9 @@
         if (!localStorage.HUEPIBridgeIP) { // No Cached BridgeIP?
           $('#HUEStatus').text('Trying to Discover HUE Bridge via HUE Portal');
           MyHue.PortalDiscoverLocalBridges().then(function GetBridgeConfig() {
-            MyHue.BridgeGet().then(function EnsureWhitelisting() {
+            MyHue.BridgeGetData().then(function EnsureWhitelisting() {
               $('#HUEBridgeIP').text('Bridge IP: ' + MyHue.BridgeIP);
-              if (!MyHue.UsernameWhitelisted) {
+              if (!MyHue.BridgeUsernameWhitelisted) {
                 $('#HUEStatus').text('Please press connect button on the Hue Bridge');
                 MyHue.BridgeCreateUser().then(function ReReadBridgeConfiguration() {
                   return setTimeout(GetBridgeConfig, 1000);
@@ -154,8 +154,8 @@
         {
           MyHue.BridgeIP = localStorage.HUEPIBridgeIP;
           $('#HUEBridgeIP').text('Cached Bridge IP: ' + MyHue.BridgeIP);
-          MyHue.BridgeGet().then(function CheckWhitelisting() {
-            if (MyHue.UsernameWhitelisted) {
+          MyHue.BridgeGetData().then(function CheckWhitelisting() {
+            if (MyHue.BridgeUsernameWhitelisted) {
               return LightsOnAndStartHeartbeat();
             }
           });
@@ -175,7 +175,7 @@
       }
 
       function StatusHeartbeat() {
-        MyHue.BridgeGet().then(function UpdateUI() {
+        MyHue.BridgeGetData().then(function UpdateUI() {
           $('#brightnessslider').val(MyHue.Lights[1].state.bri); // Get 1st light brightness for now...
           $('#brightnessslider').slider('refresh');
           setTimeout(StatusHeartbeat, 2500);
@@ -218,8 +218,8 @@
 
       <div class='footer'>
         <div data-role='controlgroup' data-type='horizontal' data-inline='true' data-mini='true' >
-          <a href='#' id='onbutton' data-role='button' data-icon='' data-inline='false' class='ui-btn ui-btn-d' data-mini='true' onclick='JavaScript:MyHue.GroupOn(0)'>All On</a>
           <a href='#' id='offbutton' data-role='button' data-icon='' data-inline='false' class='ui-btn ui-btn-b' data-mini='true' onclick='JavaScript:MyHue.GroupOff(0)'>All Off</a>
+          <a href='#' id='onbutton' data-role='button' data-icon='' data-inline='false' class='ui-btn ui-btn-d' data-mini='true' onclick='JavaScript:MyHue.GroupOn(0)'>All On</a>
         </div>
         <div id='HUEInfoBar'>
           <div id='HUEBridgeIP'>

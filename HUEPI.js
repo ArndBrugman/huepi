@@ -20,10 +20,10 @@ HUEPI = function() {
 
   this.LocalBridges = [];
 
-  this.BridgeConfig = [];
   this.BridgeIP = '';
+  this.BridgeConfig = [];
   this.BridgeName = '';
-  this.UsernameWhitelisted = false; // Will be checked on Bridge in BridgeGet()
+  this.BridgeUsernameWhitelisted = false; // Will be checked on Bridge in BridgeGet()
 
   this.Lights = [];
   this.Groups = [];
@@ -53,7 +53,7 @@ HUEPI.prototype.PortalDiscoverLocalBridges = function()
  * Bridge
  *
  */
-HUEPI.prototype.BridgeGet = function()
+HUEPI.prototype.BridgeGetData = function()
 { // GET /api/username -> data.config.whitelist.username
   var That = this;
   var url = 'http://' + this.BridgeIP + '/api/' + this.Username;
@@ -66,8 +66,9 @@ HUEPI.prototype.BridgeGet = function()
     if (That.BridgeConfig !== undefined) {
       That.BridgeName = That.BridgeConfig.name;
       // if able to read Config, Username must be Whitelisted
-      That.UsernameWhitelisted = true;
-    }
+      That.BridgeUsernameWhitelisted = true;
+    } else
+      That.BridgeUsernameWhitelisted = false;
   });
 };
 
@@ -432,7 +433,7 @@ HUEPI.Lightstate = function()
  * Light
  *
  */
-HUEPI.prototype.LightGet = function()
+HUEPI.prototype.LightsGetData = function()
 { // GET /api/username/lights
   var That = this;
   var url = 'http://' + this.BridgeIP + '/api/' + this.Username + '/lights';
@@ -627,7 +628,7 @@ HUEPI.prototype.LightEffectNone = function(LightNr, Transitiontime)
  * Group
  *
  */
-HUEPI.prototype.GroupGet = function()
+HUEPI.prototype.GroupsGetData = function()
 { // GET /api/username/lights
   var That = this;
   var url = 'http://' + this.BridgeIP + '/api/' + this.Username + '/groups';
@@ -914,5 +915,11 @@ HUEPI.prototype.GroupEffectNone = function(GroupNr, Transitiontime)
 // LightSetCT = CT->RGB->XY to ignore Brightness in RGB
 // changed " string to ' string
 // 
+// 0.62
+// renamed
+// BridgeGet to BridgeGetData
+// GroupGet to GroupsGetData
+// LightGet to LightsGetData
+// UsernameWhitelisted to BridgeUsernameWhitelisted
 // 
-//
+// 
