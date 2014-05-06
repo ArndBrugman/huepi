@@ -110,9 +110,9 @@
           HueImageRedraw();
         };
 
-        $('#HUECanvas').bind('mousedown', function HUECanvasMouseDown(event) {
-          var x = event.offsetX;//event.pageX - event.currentTarget.offsetLeft;
-          var y = event.offsetY;//event.pageY - event.currentTarget.offsetTop;
+        $("#HUECanvas").click(function(event) {
+          var x = event.pageX - event.currentTarget.offsetLeft;
+          var y = event.pageY - event.currentTarget.offsetTop;
           var HueContext = document.getElementById('HUECanvas').getContext('2d');
           var HueImagedata = HueContext.getImageData(x, y, 1, 1); // one Pixel at Cursor
           var HueImagePixel = HueImagedata.data; // data[] RGB of Pixel
