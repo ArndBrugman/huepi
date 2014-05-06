@@ -1,6 +1,6 @@
 {
   "name": "HUEmediate",
-  "description": "Direct control over Philips HUE lighting",
+  "description": "Immediate control over your Philips HUE lighting",
   "launch_path": "index.html",
   "icons": {
     "128": "images/HUE128.png"
