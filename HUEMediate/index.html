@@ -81,26 +81,24 @@
   </head>
   <body>
     <script type='text/javascript' >
-
       var MyHue = new HUEPI();
-      var HeartbeatTimer;
       MyHue.Username = '085efe879ee3ed83c04efc28a0da03d3';
+      var HeartbeatInterval;
 
-      if (window.isCordovaApp)
-        document.addEventListener("deviceready", InitialStartup, false);
-      else
-        $(document).ready(InitialStartup);
-      
-      function InitialStartup() {
+      if (window.isCordovaApp) {
+        document.addEventListener("deviceready", onStartup, false);
+        document.addEventListener("pause", onPause, false);
+        document.addEventListener("resume", onResume, false);
+      } else
+        $(document).ready(onStartup);
+
+      function onStartup() {
         var HueImage = new Image();
         HueImage.src = 'images/HUE.png';
 
-        function HueImageRedraw()
-        {
+        function HueImageRedraw() {
           var HueCanvas = document.getElementById('HUECanvas');
           var HueContext = document.getElementById('HUECanvas').getContext('2d');
-          //HueCanvas.width = 0.7 * (Math.min($(window).width(), $(window).height()));
-          HueCanvas.height = HueCanvas.width;
           HueContext.drawImage(HueImage, 0, 0, HueCanvas.width, HueCanvas.height);
         }
 
@@ -109,12 +107,14 @@
         };
 
         window.onresize = function() {
-          // Canvas should be set by script not css, otherwise getting HueImagePixel doesn't match canvas sizes
-          if ($(window).width() > $(window).height()) { // Landscape
-            document.getElementById('HUECanvas').width = 0.45 * $(window).width();
-          } else { // Portrait
-            document.getElementById('HUECanvas').width = 0.45 * $(window).height();
+          var HueCanvas = document.getElementById('HUECanvas');
+          // Canvas size should be set by script not css, otherwise getting HueImagePixel doesn't match canvas sizes
+          if ($(window).width() > $(window).height()) {
+            HUECanvas.width = 0.45 * $(window).width(); // Landscape
+          } else {
+            HUECanvas.width = 0.45 * $(window).height(); // Portrait
           }
+          HueCanvas.height = HueCanvas.width;
           HueImageRedraw();
         };
 
@@ -131,28 +131,32 @@
           var Brightness = parseInt($(this).val());
           MyHue.GroupSetBrightness(0, Brightness);
         });
-        
-        document.addEventListener("pause", onPause, false);
-        document.addEventListener("resume", onResume, false);
 
-        DiscoverBridgeAndTryWhitelisting();
-      };
-      
-      // look for bridge
-      // wait for BridgeName
-      // check if BridgeUsernameWhitelisted
-      //   NO? -> whitelist
-      // play
-      function DiscoverBridgeAndTryWhitelisting() {
+        LightSwitchOnEvent = document.createEvent("Event");
+        LightSwitchOnEvent.initEvent("LightSwitchOn", true, true);
+        document.addEventListener("LightSwitchOn", onLightSwitchOn, false);
+
+        LightSwitchOffEvent = document.createEvent("Event");
+        LightSwitchOffEvent.initEvent("LightSwitchOff", true, true);
+        document.addEventListener("LightSwitchOff", onLightSwitchOff, false);
+
+        ConnectMyHue();
+      }
+
+      // Check Cached Bridge IP
+      //   Discover Bridge via Portal
+      //   Check if UserName is Whitelisted (via HEUPI.BridgeGetData)
+      //     if Not->Try to Create User
+      function ConnectMyHue() {
         if (!localStorage.HUEPIBridgeIP) { // No Cached BridgeIP?
-          $('#HUEStatus').text('Trying to Discover HUE Bridge via HUE Portal');
+          $('#HUEBridgeIP').text('Bridge IP: Trying to Discover HUE Bridge via HUE Portal');
           MyHue.PortalDiscoverLocalBridges().then(function GetBridgeConfig() {
             MyHue.BridgeGetData().then(function EnsureWhitelisting() {
               $('#HUEBridgeIP').text('Bridge IP: ' + MyHue.BridgeIP);
               if (!MyHue.BridgeUsernameWhitelisted) {
                 $('#HUEStatus').text('Please press connect button on the Hue Bridge');
                 MyHue.BridgeCreateUser().then(function ReReadBridgeConfiguration() {
-                  return setTimeout(GetBridgeConfig, 1000);
+                  return ConnectMyHue();
                 }, function UnableToCreateUseronBridge() {
                   $('#HUEStatus').text('Unable to Create User on Bridge');
                 });
@@ -161,9 +165,11 @@
               }
             }, function UnableToRetreiveBridgeConfiguration() {
               $('#HUEStatus').text('Unable to Retreive Bridge Configuration');
+              return ConnectMyHue();
             });
           }, function UnableToDiscoverLocalBridgesViaPortal() {
             $('#HUEStatus').text('Unable to find Local Bridge via Portal');
+            return ConnectMyHue();
           });
         } else {
           MyHue.BridgeIP = localStorage.HUEPIBridgeIP;
@@ -171,42 +177,73 @@
           MyHue.BridgeGetData().then(function CheckWhitelisting() {
             if (MyHue.BridgeUsernameWhitelisted) {
               return StartHeartbeat();
+            } else {
+              delete localStorage.HUEPIBridgeIP; // not Whitelisted anymore
+              return ConnectMyHue();
             }
+          }, function ErrorGettingCachedBridgeData() {
+            delete localStorage.HUEPIBridgeIP; // not found anymore
+            return ConnectMyHue();
           });
-          delete localStorage.HUEPIBridgeIP; // Not Found again, or not Whitelisted (anymore)
-          return DiscoverBridgeAndTryWhitelisting();
         }
       }
 
       function StartHeartbeat() {
         localStorage.HUEPIBridgeIP = MyHue.BridgeIP; // Store Cache BridgeIP
         $('#HUEBridgeName').text('Bridge Name: ' + MyHue.BridgeName);
-        $('#HUEStatus').text('Found Bridge and Whitelisted, so able to Set Lights and Groups');
+        $('#HUEStatus').text('Found Bridge and Whitelisted');
         $('#HUEInfoBar').slideUp(2500);
         //MyHue.GroupOn(0);
-        MyHue.GroupEffectNone(0);
-        HeartbeatTimer = setInterval(StatusHeartbeat, 2500);
+        //MyHue.GroupEffectNone(0);
+        HeartbeatInterval = setInterval(StatusHeartbeat, 1000);
         StatusHeartbeat(); // Execute Immediate Too!
       }
-      
+
       function onPause() {
-        window.clearInterval(HeartbeatTimer);
-      };
-      
+        window.clearInterval(HeartbeatInterval);
+        $('#HUEStatus').text('Paused');
+        $('#HUEInfoBar').show(1500);
+      }
+
       function onResume() {
-        HeartbeatTimer = setInterval(StatusHeartbeat, 2500);
+        $('#HUEStatus').text('Resuming');
+        $('#HUEInfoBar').slideUp(2500);
+        HeartbeatInterval = setInterval(StatusHeartbeat, 1000);
         StatusHeartbeat(); // Execute Immediate Too!
-      };
+      }
+
+      function onLightSwitchOn(Event) {
+        MyHue.GroupOn(0);
+        MyHue.GroupSetCT(0, 467);
+        MyHue.GroupSetBrightness(0, 144);
+      }
+      function onLightSwitchOff(Event) {
+        MyHue.GroupOff(0);
+      }
 
       function StatusHeartbeat() {
+        var PrevHueLights = MyHue.Lights; // Store Previous State of Lights
         MyHue.BridgeGetData().then(function UpdateUI() {
-          $('#brightnessslider').val(MyHue.Lights[1].state.bri); // Get 1st light brightness for now...
+          $('#brightnessslider').val(MyHue.Lights[1].state.bri); // Get brightness of 1st light for now...
           $('#brightnessslider').slider('refresh');
+          // Triggers on Reachable which actually means Powered On/Off in my case ;-)
+          LightNr = 1;
+          while (MyHue.Lights[LightNr]) {
+            if ((MyHue.Lights[LightNr].state.reachable) !== (PrevHueLights[LightNr].state.reachable)) {
+              LightSwitchOnEvent.LightNr = LightNr;
+              if (MyHue.Lights[LightNr].state.reachable)
+                document.dispatchEvent(LightSwitchOnEvent);
+              else
+                document.dispatchEvent(LightSwitchOffEvent);
+            }
+            LightNr++;
+          }
         }, function BridgetHeartbeatGetFailed() {
           $('#HUEStatus').text('StatusHeartbeat BridgeGet Failed');
           $('#HUEInfoBar').show(1500);
-          DiscoverBridgeAndTryWhitelisting();
+          ConnectMyHue();
         });
+
       }
     </script>
     <div class='page'>
