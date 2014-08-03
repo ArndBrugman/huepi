@@ -7,6 +7,14 @@
 //
 //
 
+if (typeof window === 'undefined') { // Running in NodeJS
+  var http=require('http');
+  var jsdom=require('jsdom');
+  var $=require('jquery')(jsdom.jsdom().createWindow());
+  var XMLHttpRequest=require('xmlhttprequest').XMLHttpRequest;
+  $.support.cors=true; // cross domain
+  $.ajaxSettings.xhr=function(){return new XMLHttpRequest();};
+}
 /*
  * HUEPI Object
  *
@@ -866,6 +874,10 @@ HUEPI.prototype.GroupEffectNone = function(GroupNr, Transitiontime)
   return this.GroupSetState(GroupNr, State);
 };
 
+if (typeof window === 'undefined') { // Running in NodeJS
+  module.exports = HUEPI;
+}
+
 ///
 //
 // Changes log
@@ -922,4 +934,9 @@ HUEPI.prototype.GroupEffectNone = function(GroupNr, Transitiontime)
 // LightGet to LightsGetData
 // UsernameWhitelisted to BridgeUsernameWhitelisted
 // 
-// 
+// 0.9
+// Added detection of NodeJS
+// Added WORKING JQuery NodeJS if running on NodeJS
+// Added Module Exports for NodeJS on NodeJS
+//
+//
