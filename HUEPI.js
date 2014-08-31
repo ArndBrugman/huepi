@@ -8,9 +8,8 @@
 //
 
 if (typeof window === 'undefined') { // Running in NodeJS
-  var http=require('http');
-  var jsdom=require('jsdom');
-  var $=require('jquery')(jsdom.jsdom().createWindow());
+  var domino=require('domino');
+  var $=require('jquery')(domino.createWindow());
   var XMLHttpRequest=require('xmlhttprequest').XMLHttpRequest;
   $.support.cors=true; // cross domain
   $.ajaxSettings.xhr=function(){return new XMLHttpRequest();};
