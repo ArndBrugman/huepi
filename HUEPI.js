@@ -7,11 +7,11 @@
 //
 //
 
-if (typeof window === 'undefined') { // Running in NodeJS
+if (typeof module !== 'undefined' && module.exports) { // Running in NodeJS
   var domino=require('domino');
   var $=require('jquery')(domino.createWindow());
   var XMLHttpRequest=require('xmlhttprequest').XMLHttpRequest;
-  $.support.cors=true; // cross domain
+  $.support.cors=true; // cross domain, Cross-origin resource sharing
   $.ajaxSettings.xhr=function(){return new XMLHttpRequest();};
 }
 /*
@@ -873,7 +873,7 @@ HUEPI.prototype.GroupEffectNone = function(GroupNr, Transitiontime)
   return this.GroupSetState(GroupNr, State);
 };
 
-if (typeof window === 'undefined') { // Running in NodeJS
+if (typeof module !== 'undefined' && module.exports) { // Running in NodeJS
   module.exports = HUEPI;
 }
 
