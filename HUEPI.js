@@ -7,13 +7,6 @@
 //
 //
 
-if (typeof module !== 'undefined' && module.exports) { // Running in NodeJS
-  var domino=require('domino');
-  var $=require('jquery')(domino.createWindow());
-  var XMLHttpRequest=require('xmlhttprequest').XMLHttpRequest;
-  $.support.cors=true; // cross domain, Cross-origin resource sharing
-  $.ajaxSettings.xhr=function(){return new XMLHttpRequest();};
-}
 /*
  * HUEPI Object
  *
@@ -39,6 +32,20 @@ HUEPI = function() {
   this.Schedules = [];
   this.Scenes = [];
 };
+
+/*
+ * Detect Running in NodeJS; module.exports exists
+ * 
+ */
+if (typeof module !== 'undefined' && module.exports) 
+{
+  var domino = require('domino');
+  var $ = require('jquery')(domino.createWindow());
+  var XMLHttpRequest = require('xmlhttprequest').XMLHttpRequest;
+  $.support.cors = true; // cross domain, Cross-origin resource sharing
+  $.ajaxSettings.xhr = function() { return new XMLHttpRequest(); };
+  exports = module.exports = HUEPI;
+}
 
 /*
  * Portal
@@ -484,7 +491,7 @@ HUEPI.prototype.LightSetState = function(LightNr, State)
     type: 'PUT',
     dataType: 'json',
     contentType: 'application/json',
-    url:'http://' + this.BridgeIP + '/api/' + this.Username + '/lights/' + LightNr + '/state',
+    url: 'http://' + this.BridgeIP + '/api/' + this.Username + '/lights/' + LightNr + '/state',
     data: State.Get()
   });
 };
@@ -564,7 +571,6 @@ HUEPI.prototype.LightSetRGB = function(LightNr, Red, Green, Blue, Transitiontime
 HUEPI.prototype.LightSetCT = function(LightNr, CT, Transitiontime)
 {
   var Model = this.Lights[LightNr].modelid;
-  
   if (Model !== 'LCT001') { // CT->RGB->XY to ignore Brightness in RGB
     var Color = HUEPI.HelperCTtoRGB(1000000 / CT);
     var Point = HUEPI.HelperRGBtoXY(Color.Red, Color.Green, Color.Blue);
@@ -872,10 +878,6 @@ HUEPI.prototype.GroupEffectNone = function(GroupNr, Transitiontime)
   State.SetTransitiontime(Transitiontime);
   return this.GroupSetState(GroupNr, State);
 };
-
-if (typeof module !== 'undefined' && module.exports) { // Running in NodeJS
-  module.exports = HUEPI;
-}
 
 ///
 //
