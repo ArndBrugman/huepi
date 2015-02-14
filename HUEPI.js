@@ -1,55 +1,69 @@
-//////////
+////////////////////////////////////////////////////////////////////////////////
 //
 // HUE (Philips Wireless Lighting) API for JavaScript
 //  +-> HUEPI sounds like Joepie which makes me smile during development...
 //
 // Requires JQuery 1.5+ for ajax calls and Deferreds
 //
-//
+////////////////////////////////////////////////////////////////////////////////
 
-/*
- * HUEPI Object
+/**
+ * HUEPI Object, Entry point for all interaction with Lights etc via the Bridge.
  *
+ * @class
  */
 HUEPI = function() {
-  /**
-   * Username Overidable Username must be 10-40 digits long
-   * @type String
-   */
+  /** @member {string} - Overidable Username for Whitelisting, must be 10-40 digits long */
   this.Username = '1234567890';
 
+  /** @member {array} - Array of all Bridges on the local network */
   this.LocalBridges = [];
 
+  /** @member {string} - IP address of the Current(active) Bridge */
   this.BridgeIP = '';
+  /** @member {array} - Configuration of the Current(active) Bridge*/
   this.BridgeConfig = [];
+  /** @member {string} - Name of the Current(active) Bridge */
   this.BridgeName = '';
-  this.BridgeUsernameWhitelisted = false; // Will be checked on Bridge in BridgeGet()
-
+  /** @member {boolean} - Indicates whitelisted username in the Current(active) Bridge, checked on Bridge in {@link HUEPI#BridgeGetData} */
+  this.BridgeUsernameWhitelisted = false;
+  
+  /** @member {array} - Array of all Lights of the Current(active) Bridge */
   this.Lights = [];
+  /** @member {array} - Array of all Groups of the Current(active) Bridge */
   this.Groups = [];
 
-  // To Do: Add Schedules & Scenes
+  // To Do: Add Schedules & Scenes manupulation functions
+  /** @member {array} - Array of all Schedules of the Current(active) Bridge, NOTE: There are no Setter functions yet */
   this.Schedules = [];
+  /** @member {array} - Array of all Scenes of the Current(active) Bridge, NOTE: There are no Setter functions yet */
   this.Scenes = [];
 };
 
-/*
- * Detect Running in NodeJS; module.exports exists
- * 
- */
-if (typeof module !== 'undefined' && module.exports) 
+////////////////////////////////////////////////////////////////////////////////
+//
+// Detect Running in NodeJS; module exisists and module.exports exists
+//
+//
+if (typeof module !== 'undefined' && module.exports)
 {
   var domino = require('domino');
   var $ = require('jquery')(domino.createWindow());
   var XMLHttpRequest = require('xmlhttprequest').XMLHttpRequest;
   $.support.cors = true; // cross domain, Cross-origin resource sharing
-  $.ajaxSettings.xhr = function() { return new XMLHttpRequest(); };
+  $.ajaxSettings.xhr = function() {
+    return new XMLHttpRequest();
+  };
   exports = module.exports = HUEPI;
 }
 
-/*
- * Portal
- *
+////////////////////////////////////////////////////////////////////////////////
+// 
+// Portal Functions
+//
+//
+
+/**
  */
 HUEPI.prototype.PortalDiscoverLocalBridges = function()
 {
@@ -63,9 +77,13 @@ HUEPI.prototype.PortalDiscoverLocalBridges = function()
   });
 };
 
-/*
- * Bridge
- *
+////////////////////////////////////////////////////////////////////////////////
+//
+//  Bridge Functions
+//
+//
+
+/**
  */
 HUEPI.prototype.BridgeGetData = function()
 { // GET /api/username -> data.config.whitelist.username
@@ -86,6 +104,8 @@ HUEPI.prototype.BridgeGetData = function()
   });
 };
 
+/**
+ */
 HUEPI.prototype.BridgeCreateUser = function()
 { // POST /api {"devicetype": "iPhone", "username": "1234567890"}
   return $.ajax({
@@ -97,6 +117,8 @@ HUEPI.prototype.BridgeCreateUser = function()
   });
 };
 
+/**
+ */
 HUEPI.prototype.BridgeDeleteUser = function(UsernameToDelete)
 { // DELETE /api/username/config/whitelist/username {"devicetype": "iPhone", "username": "1234567890"}
   return $.ajax({
@@ -108,9 +130,13 @@ HUEPI.prototype.BridgeDeleteUser = function(UsernameToDelete)
   });
 };
 
-/*
- * static Helper Functions
- *
+////////////////////////////////////////////////////////////////////////////////
+//
+//  Helper Functions (static)
+//
+//
+
+/**
  */
 HUEPI.HelperRGBtoHueAngSatBri = function(Red, Green, Blue)
 { // Range 0..1, return .Ang (360), .Sat, .Brig
@@ -135,6 +161,8 @@ HUEPI.HelperRGBtoHueAngSatBri = function(Red, Green, Blue)
   return {Ang: Ang, Sat: Sat, Bri: Bri};
 };
 
+/**
+ */
 HUEPI.HelperHueAngSatBritoRGB = function(Ang, Sat, Bri)
 { // Range 360, 1, 1, return .Red, .Green, .Blue
   var Red, Green, Blue;
@@ -185,6 +213,8 @@ HUEPI.HelperHueAngSatBritoRGB = function(Ang, Sat, Bri)
   return {Red: Red, Green: Green, Blue: Blue};
 };
 
+/**
+ */
 HUEPI.HelperRGBtoXY = function(Red, Green, Blue)
 { // Range 0..1, return .x, .y
   // Adjust to Light XY CIE
@@ -222,6 +252,8 @@ HUEPI.HelperRGBtoXY = function(Red, Green, Blue)
   return {x: X / (X + Y + Z), y: Y / (X + Y + Z)};
 };
 
+/**
+ */
 HUEPI.HelperGamutXYforModel = function(Px, Py, Model)
 { // return .x, .y
   // Check if point is inside Triangle for correct model of light
@@ -284,6 +316,8 @@ HUEPI.HelperGamutXYforModel = function(Px, Py, Model)
   }
 };
 
+/**
+ */
 HUEPI.HelperCTtoRGB = function(Temperature)
 { // http://www.tannerhelland.com/4435/convert-temperature-rgb-algorithm-code/
   var Red, Green, Blue;
@@ -331,6 +365,8 @@ HUEPI.HelperCTtoRGB = function(Temperature)
   return {Red: Red, Green: Green, Blue: Blue};
 };
 
+/**
+ */
 HUEPI.HelperToStringArray = function(Items) {
   if (typeof Items === 'number') {
     return '"' + Items.toString() + '"';
@@ -348,104 +384,130 @@ HUEPI.HelperToStringArray = function(Items) {
   }
 };
 
-/*
+/**
  * HUEPI.Lightstate Object
  *
+ * @class
  */
 HUEPI.Lightstate = function()
 {
-  //this.SetOn = function(On) {
-  //  this.on = On;
-  //};
-  this.On = function() {
-    this.on = true;
-    return this;
-  };
-  this.Off = function() {
-    this.on = false;
-    return this;
-  };
-  this.SetHSB = function(Hue, Saturation, Brightness) { // Range 65535, 255, 255
-    this.hue = Hue;
-    this.sat = Saturation;
-    this.bri = Brightness;
-    return this;
-  };
-  this.SetHue = function(Hue) {
-    this.hue = Hue;
-    return this;
-  };
-  this.SetSaturation = function(Saturation) {
-    this.sat = Saturation;
-    return this;
-  };
-  this.SetBrightness = function(Brightness) {
-    this.bri = Brightness;
-    return this;
-  };
-  this.SetHueAngSatBri = function(Ang, Sat, Bri) {
-    // In: Hue in Deg, Saturation, Brightness 0.0-1.0 Transform To Philips Hue Range...
-    if (Ang < 0)
-      Ang = Ang + 360;
-    Ang = Ang % 360;
-    return this.SetHSB(Math.round(Ang / 360 * 65535), Sat * 255, Bri * 255);
-  };
-  this.SetRGB = function(Red, Green, Blue) {// In RGB [0..255]
-    var HueAngSatBri = HUEPI.HelperRGBtoHueAngSatBri(Red / 255, Green / 255, Blue / 255);
-    return this.SetHueAngSatBri(HueAngSatBri.Ang, HueAngSatBri.Sat, HueAngSatBri.Bri);
-  };
-  this.SetCT = function(Ct) {
-    this.ct = Ct;
-    return this;
-  };
-  this.SetColortemperature = function(Colortemperature) {
-    this.ct = Math.round((1000000 / Colortemperature)); // Kelvin to micro reciprocal degree
-    return this;
-  };
-  this.SetXY = function(X, Y) {
-    this.xy = [X, Y];
-    return this;
-  };
-  //this.SetAlert = function(Alert) {
-  //  this.alert = Alert;
-  //};
-  this.AlertSelect = function() {
-    this.alert = 'select';
-    return this;
-  };
-  this.AlertLSelect = function() {
-    this.alert = 'lselect';
-    return this;
-  };
-  this.AlertNone = function() {
-    this.alert = 'none';
-    return this;
-  };
-  //this.SetEffect = function(Effect) {
-  //  this.effect = Effect;
-  //};
-  this.EffectColorloop = function() {
-    this.effect = 'colorloop';
-    return this;
-  };
-  this.EffectNone = function() {
-    this.effect = 'none';
-    return this;
-  };
-  this.SetTransitiontime = function(Transitiontime) {
-    if (typeof Transitiontime !== 'undefined') // Optional Parameter
-      this.transitiontime = Transitiontime;
-    return this;
-  };
-
-  this.Get = function() {
-    return JSON.stringify(this);
-  };
+};
+///** */
+////HUEPI.Lightstate.prototype.SetOn = function(On) {
+//  this.on = On;
+//};
+/** */
+HUEPI.Lightstate.prototype.On = function() {
+  this.on = true;
+  return this;
+};
+/** */
+HUEPI.Lightstate.prototype.Off = function() {
+  this.on = false;
+  return this;
+};
+/** */
+HUEPI.Lightstate.prototype.SetHSB = function(Hue, Saturation, Brightness) { // Range 65535, 255, 255
+  this.hue = Hue;
+  this.sat = Saturation;
+  this.bri = Brightness;
+  return this;
+};
+/** */
+HUEPI.Lightstate.prototype.SetHue = function(Hue) {
+  this.hue = Hue;
+  return this;
+};
+/** */
+HUEPI.Lightstate.prototype.SetSaturation = function(Saturation) {
+  this.sat = Saturation;
+  return this;
+};
+/** */
+HUEPI.Lightstate.prototype.SetBrightness = function(Brightness) {
+  this.bri = Brightness;
+  return this;
+};
+/** */
+HUEPI.Lightstate.prototype.SetHueAngSatBri = function(Ang, Sat, Bri) {
+  // In: Hue in Deg, Saturation, Brightness 0.0-1.0 Transform To Philips Hue Range...
+  if (Ang < 0)
+    Ang = Ang + 360;
+  Ang = Ang % 360;
+  return this.SetHSB(Math.round(Ang / 360 * 65535), Sat * 255, Bri * 255);
+};
+/** */
+HUEPI.Lightstate.prototype.SetRGB = function(Red, Green, Blue) {// In RGB [0..255]
+  var HueAngSatBri = HUEPI.HelperRGBtoHueAngSatBri(Red / 255, Green / 255, Blue / 255);
+  return this.SetHueAngSatBri(HueAngSatBri.Ang, HueAngSatBri.Sat, HueAngSatBri.Bri);
+};
+/** */
+HUEPI.Lightstate.prototype.SetCT = function(Ct) {
+  this.ct = Ct;
+  return this;
+};
+/** */
+HUEPI.Lightstate.prototype.SetColortemperature = function(Colortemperature) {
+  this.ct = Math.round((1000000 / Colortemperature)); // Kelvin to micro reciprocal degree
+  return this;
+};
+/** */
+HUEPI.Lightstate.prototype.SetXY = function(X, Y) {
+  this.xy = [X, Y];
+  return this;
+};
+///** */
+//HUEPI.Lightstate.prototype.SetAlert = function(Alert) {
+//  this.alert = Alert;
+//};
+/** */
+HUEPI.Lightstate.prototype.AlertSelect = function() {
+  this.alert = 'select';
+  return this;
+};
+/** */
+HUEPI.Lightstate.prototype.AlertLSelect = function() {
+  this.alert = 'lselect';
+  return this;
+};
+/** */
+HUEPI.Lightstate.prototype.AlertNone = function() {
+  this.alert = 'none';
+  return this;
+};
+///** */
+//HUEPI.Lightstate.prototype.SetEffect = function(Effect) {
+//  this.effect = Effect;
+//};
+/** */
+HUEPI.Lightstate.prototype.EffectColorloop = function() {
+  this.effect = 'colorloop';
+  return this;
+};
+/** */
+HUEPI.Lightstate.prototype.EffectNone = function() {
+  this.effect = 'none';
+  return this;
+};
+/** */
+HUEPI.Lightstate.prototype.SetTransitiontime = function(Transitiontime) {
+  if (typeof Transitiontime !== 'undefined') // Optional Parameter
+    this.transitiontime = Transitiontime;
+  return this;
+};
+/** */
+HUEPI.Lightstate.prototype.Get = function() {
+  return JSON.stringify(this);
 };
 
-/*
- * Light
- *
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// Light Functions
+//
+//
+
+/**
  */
 HUEPI.prototype.LightsGetData = function()
 { // GET /api/username/lights
@@ -458,6 +520,8 @@ HUEPI.prototype.LightsGetData = function()
   });
 };
 
+/**
+ */
 HUEPI.prototype.LightsSearchForNew = function()
 { // POST /api/username/lights
   return $.ajax({
@@ -468,12 +532,16 @@ HUEPI.prototype.LightsSearchForNew = function()
   });
 };
 
+/**
+ */
 HUEPI.prototype.LightsGetNew = function()
 { // GET /api/username/lights/new
   var url = 'http://' + this.BridgeIP + '/api/' + this.Username + '/lights/new';
   return $.get(url);
 };
 
+/**
+ */
 HUEPI.prototype.LightSetName = function(LightNr, Name) // Name = String[32]
 { // PUT /api/username/lights
   return $.ajax({
@@ -485,6 +553,8 @@ HUEPI.prototype.LightSetName = function(LightNr, Name) // Name = String[32]
   });
 };
 
+/**
+ */
 HUEPI.prototype.LightSetState = function(LightNr, State)
 { // PUT /api/username/lights/[LightNr]/state
   return $.ajax({
@@ -496,6 +566,8 @@ HUEPI.prototype.LightSetState = function(LightNr, State)
   });
 };
 
+/**
+ */
 HUEPI.prototype.LightOn = function(LightNr, Transitiontime)
 {
   var State = new HUEPI.Lightstate();
@@ -504,6 +576,8 @@ HUEPI.prototype.LightOn = function(LightNr, Transitiontime)
   return this.LightSetState(LightNr, State);
 };
 
+/**
+ */
 HUEPI.prototype.LightOff = function(LightNr, Transitiontime)
 {
   var State = new HUEPI.Lightstate();
@@ -512,6 +586,8 @@ HUEPI.prototype.LightOff = function(LightNr, Transitiontime)
   return this.LightSetState(LightNr, State);
 };
 
+/**
+ */
 HUEPI.prototype.LightSetHSB = function(LightNr, Hue, Saturation, Brightness, Transitiontime)
 {
   var Ang = Hue * 360 / 65535;
@@ -526,6 +602,8 @@ HUEPI.prototype.LightSetHSB = function(LightNr, Hue, Saturation, Brightness, Tra
   );
 };
 
+/**
+ */
 HUEPI.prototype.LightSetHue = function(LightNr, Hue, Transitiontime)
 {
   var State = new HUEPI.Lightstate();
@@ -534,6 +612,8 @@ HUEPI.prototype.LightSetHue = function(LightNr, Hue, Transitiontime)
   return this.LightSetState(LightNr, State);
 };
 
+/**
+ */
 HUEPI.prototype.LightSetSaturation = function(LightNr, Saturation, Transitiontime)
 {
   var State = new HUEPI.Lightstate();
@@ -542,6 +622,8 @@ HUEPI.prototype.LightSetSaturation = function(LightNr, Saturation, Transitiontim
   return this.LightSetState(LightNr, State);
 };
 
+/**
+ */
 HUEPI.prototype.LightSetBrightness = function(LightNr, Brightness, Transitiontime)
 {
   var State = new HUEPI.Lightstate();
@@ -550,6 +632,8 @@ HUEPI.prototype.LightSetBrightness = function(LightNr, Brightness, Transitiontim
   return this.LightSetState(LightNr, State);
 };
 
+/**
+ */
 HUEPI.prototype.LightSetHueAngSatBri = function(LightNr, Ang, Sat, Bri, Transitiontime)
 { // In: Hue in Deg, Saturation, Brightness 0.0-1.0 Transform To Philips Hue Range...
   if (Ang < 0)
@@ -558,6 +642,8 @@ HUEPI.prototype.LightSetHueAngSatBri = function(LightNr, Ang, Sat, Bri, Transiti
   return this.LightSetHSB(LightNr, Math.round(Ang / 360 * 65535), Sat * 255, Bri * 255, Transitiontime);
 };
 
+/**
+ */
 HUEPI.prototype.LightSetRGB = function(LightNr, Red, Green, Blue, Transitiontime) // 0-255;FF
 {
   var Point = HUEPI.HelperRGBtoXY(Red / 255, Green / 255, Blue / 255);
@@ -568,6 +654,8 @@ HUEPI.prototype.LightSetRGB = function(LightNr, Red, Green, Blue, Transitiontime
   );
 };
 
+/**
+ */
 HUEPI.prototype.LightSetCT = function(LightNr, CT, Transitiontime)
 {
   var Model = this.Lights[LightNr].modelid;
@@ -582,11 +670,15 @@ HUEPI.prototype.LightSetCT = function(LightNr, CT, Transitiontime)
   return this.LightSetState(LightNr, State);
 };
 
+/**
+ */
 HUEPI.prototype.LightSetColortemperature = function(LightNr, Colortemperature, Transitiontime)
 {
   return this.LightSetCT(LightNr, Math.round(1000000 / Colortemperature), Transitiontime);
 };
 
+/**
+ */
 HUEPI.prototype.LightSetXY = function(LightNr, X, Y, Transitiontime)
 {
   var Model = this.Lights[LightNr].modelid;
@@ -597,6 +689,8 @@ HUEPI.prototype.LightSetXY = function(LightNr, X, Y, Transitiontime)
   return this.LightSetState(LightNr, State);
 };
 
+/**
+ */
 HUEPI.prototype.LightAlertSelect = function(LightNr, Transitiontime)
 {
   var State = new HUEPI.Lightstate();
@@ -605,6 +699,8 @@ HUEPI.prototype.LightAlertSelect = function(LightNr, Transitiontime)
   return this.LightSetState(LightNr, State);
 };
 
+/**
+ */
 HUEPI.prototype.LightAlertLSelect = function(LightNr, Transitiontime)
 {
   var State = new HUEPI.Lightstate();
@@ -613,6 +709,8 @@ HUEPI.prototype.LightAlertLSelect = function(LightNr, Transitiontime)
   return this.LightSetState(LightNr, State);
 };
 
+/**
+ */
 HUEPI.prototype.LightAlertNone = function(LightNr, Transitiontime)
 {
   var State = new HUEPI.Lightstate();
@@ -621,6 +719,8 @@ HUEPI.prototype.LightAlertNone = function(LightNr, Transitiontime)
   return this.LightSetState(LightNr, State);
 };
 
+/**
+ */
 HUEPI.prototype.LightEffectColorloop = function(LightNr, Transitiontime)
 {
   var State = new HUEPI.Lightstate();
@@ -629,6 +729,8 @@ HUEPI.prototype.LightEffectColorloop = function(LightNr, Transitiontime)
   return this.LightSetState(LightNr, State);
 };
 
+/**
+ */
 HUEPI.prototype.LightEffectNone = function(LightNr, Transitiontime)
 {
   var State = new HUEPI.Lightstate();
@@ -637,9 +739,13 @@ HUEPI.prototype.LightEffectNone = function(LightNr, Transitiontime)
   return this.LightSetState(LightNr, State);
 };
 
-/*
- * Group
- *
+////////////////////////////////////////////////////////////////////////////////
+//
+// Group Functions
+//
+//
+
+/**
  */
 HUEPI.prototype.GroupsGetData = function()
 { // GET /api/username/lights
@@ -652,6 +758,8 @@ HUEPI.prototype.GroupsGetData = function()
   });
 };
 
+/**
+ */
 HUEPI.prototype.GroupCreate = function(Name, Lights) // Bridge doesn't accept lights in a group that are unreachable!
 { // POST /api/username/groups
   return $.ajax({
@@ -663,6 +771,8 @@ HUEPI.prototype.GroupCreate = function(Name, Lights) // Bridge doesn't accept li
   });
 };
 
+/**
+ */
 HUEPI.prototype.GroupSetName = function(GroupNr, Name)
 { // PUT /api/username/groups/[GroupNr]
   return $.ajax({
@@ -674,6 +784,8 @@ HUEPI.prototype.GroupSetName = function(GroupNr, Name)
   });
 };
 
+/**
+ */
 HUEPI.prototype.GroupSetLights = function(GroupNr, Lights)
 { // PUT /api/username/groups/[GroupNr]
   return $.ajax({
@@ -685,6 +797,8 @@ HUEPI.prototype.GroupSetLights = function(GroupNr, Lights)
   });
 };
 
+/**
+ */
 HUEPI.prototype.GroupSetAttributes = function(GroupNr, Name, LightsArray)
 { // PUT /api/username/groups/[GroupNr]
   return $.ajax({
@@ -696,6 +810,8 @@ HUEPI.prototype.GroupSetAttributes = function(GroupNr, Name, LightsArray)
   });
 };
 
+/**
+ */
 HUEPI.prototype.GroupDelete = function(GroupNr)
 { // DELETE /api/username/groups/[GroupNr]
   return $.ajax({
@@ -706,6 +822,8 @@ HUEPI.prototype.GroupDelete = function(GroupNr)
   });
 };
 
+/**
+ */
 HUEPI.prototype.GroupSetState = function(GroupNr, State)
 { // PUT /api/username/groups/[GroupNr]/action
   return $.ajax({
@@ -717,6 +835,8 @@ HUEPI.prototype.GroupSetState = function(GroupNr, State)
   });
 };
 
+/**
+ */
 HUEPI.prototype.GroupOn = function(GroupNr, Transitiontime)
 {
   var State = new HUEPI.Lightstate();
@@ -725,6 +845,8 @@ HUEPI.prototype.GroupOn = function(GroupNr, Transitiontime)
   return this.GroupSetState(GroupNr, State);
 };
 
+/**
+ */
 HUEPI.prototype.GroupOff = function(GroupNr, Transitiontime)
 {
   var State = new HUEPI.Lightstate();
@@ -733,6 +855,8 @@ HUEPI.prototype.GroupOff = function(GroupNr, Transitiontime)
   return this.GroupSetState(GroupNr, State);
 };
 
+/**
+ */
 HUEPI.prototype.GroupSetHSB = function(GroupNr, Hue, Saturation, Brightness, Transitiontime)
 {
   var Ang = Hue * 360 / 65535;
@@ -748,6 +872,8 @@ HUEPI.prototype.GroupSetHSB = function(GroupNr, Hue, Saturation, Brightness, Tra
   );
 };
 
+/**
+ */
 HUEPI.prototype.GroupSetHue = function(GroupNr, Hue, Transitiontime)
 {
   var State = new HUEPI.Lightstate();
@@ -756,6 +882,8 @@ HUEPI.prototype.GroupSetHue = function(GroupNr, Hue, Transitiontime)
   return this.GroupSetState(GroupNr, State);
 };
 
+/**
+ */
 HUEPI.prototype.GroupSetSaturation = function(GroupNr, Saturation, Transitiontime)
 {
   var State = new HUEPI.Lightstate();
@@ -764,6 +892,8 @@ HUEPI.prototype.GroupSetSaturation = function(GroupNr, Saturation, Transitiontim
   return this.GroupSetState(GroupNr, State);
 };
 
+/**
+ */
 HUEPI.prototype.GroupSetBrightness = function(GroupNr, Brightness, Transitiontime)
 {
   var State = new HUEPI.Lightstate();
@@ -772,6 +902,8 @@ HUEPI.prototype.GroupSetBrightness = function(GroupNr, Brightness, Transitiontim
   return this.GroupSetState(GroupNr, State);
 };
 
+/**
+ */
 HUEPI.prototype.GroupSetHueAngSatBri = function(GroupNr, Ang, Sat, Bri, Transitiontime)
 {
   if (Ang < 0)
@@ -780,12 +912,16 @@ HUEPI.prototype.GroupSetHueAngSatBri = function(GroupNr, Ang, Sat, Bri, Transiti
   return this.GroupSetHSB(GroupNr, Math.round(Ang / 360 * 65535), Sat * 255, Bri * 255, Transitiontime);
 };
 
+/**
+ */
 HUEPI.prototype.GroupSetRGB = function(GroupNr, Red, Green, Blue, Transitiontime) // 0-255;FF
 {
   var HueAngSatBri = HUEPI.HelperRGBtoHueAngSatBri(Red / 255, Green / 255, Blue / 255);
   return this.GroupSetHueAngSatBri(GroupNr, HueAngSatBri.Ang, HueAngSatBri.Sat, HueAngSatBri.Bri, Transitiontime);
 };
 
+/**
+ */
 HUEPI.prototype.GroupSetCT = function(GroupNr, CT, Transitiontime)
 {
   var Lights = [];
@@ -810,11 +946,15 @@ HUEPI.prototype.GroupSetCT = function(GroupNr, CT, Transitiontime)
   return this.GroupSetState(GroupNr, State);
 };
 
+/**
+ */
 HUEPI.prototype.GroupSetColortemperature = function(GroupNr, Colortemperature, Transitiontime)
 {
   return this.GroupSetCT(GroupNr, Math.round(1000000 / Colortemperature), Transitiontime);
 };
 
+/**
+ */
 HUEPI.prototype.GroupSetXY = function(GroupNr, X, Y, Transitiontime)
 {
   var Lights = [];
@@ -839,6 +979,8 @@ HUEPI.prototype.GroupSetXY = function(GroupNr, X, Y, Transitiontime)
   return this.GroupSetState(GroupNr, State);
 };
 
+/**
+ */
 HUEPI.prototype.GroupAlertSelect = function(GroupNr, Transitiontime)
 {
   var State = new HUEPI.Lightstate();
@@ -847,6 +989,8 @@ HUEPI.prototype.GroupAlertSelect = function(GroupNr, Transitiontime)
   return this.GroupSetState(GroupNr, State);
 };
 
+/**
+ */
 HUEPI.prototype.GroupAlertLSelect = function(GroupNr, Transitiontime)
 {
   var State = new HUEPI.Lightstate();
@@ -855,6 +999,8 @@ HUEPI.prototype.GroupAlertLSelect = function(GroupNr, Transitiontime)
   return this.GroupSetState(GroupNr, State);
 };
 
+/**
+ */
 HUEPI.prototype.GroupAlertNone = function(GroupNr, Transitiontime)
 {
   var State = new HUEPI.Lightstate();
@@ -863,6 +1009,8 @@ HUEPI.prototype.GroupAlertNone = function(GroupNr, Transitiontime)
   return this.GroupSetState(GroupNr, State);
 };
 
+/**
+ */
 HUEPI.prototype.GroupEffectColorloop = function(GroupNr, Transitiontime)
 {
   var State = new HUEPI.Lightstate();
@@ -871,6 +1019,8 @@ HUEPI.prototype.GroupEffectColorloop = function(GroupNr, Transitiontime)
   return this.GroupSetState(GroupNr, State);
 };
 
+/**
+ */
 HUEPI.prototype.GroupEffectNone = function(GroupNr, Transitiontime)
 {
   var State = new HUEPI.Lightstate();
@@ -879,9 +1029,9 @@ HUEPI.prototype.GroupEffectNone = function(GroupNr, Transitiontime)
   return this.GroupSetState(GroupNr, State);
 };
 
-///
+////////////////////////////////////////////////////////////////////////////////
 //
-// Changes log
+// Change log
 //
 // 0.1
 // Initial Public Release
