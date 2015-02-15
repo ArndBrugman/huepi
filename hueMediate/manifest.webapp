@@ -1,0 +1,13 @@
+{
+  "name": "HUEmediate",
+  "description": "Immediate control over your Philips HUE lighting",
+  "launch_path": "index.html",
+  "icons": {
+    "128": "images/HUE128.png"
+  },
+  "developer": {
+    "name": "Arnd Brugman",
+    "url": "http://github.com/ArndBrugman/HUEPI"
+  },
+  "default_locale": "en"
+}
