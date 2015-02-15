@@ -5,7 +5,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
 
-    <script src='../HUEPI.js' type='text/javascript'></script>
+    <script src='../huepi.js' type='text/javascript'></script>
 
   </head>
   <body>
@@ -48,7 +48,7 @@
             if (Math.sqrt(px * px + py * py) > 1) // Rest Of Square Outside Outer Circle
               Brightness = 0;
 
-            var Color = HUEPI.HelperHueAngSatBritoRGB(Hue, Saturation, Brightness);
+            var Color = huepi.HelperHueAngSatBritoRGB(Hue, Saturation, Brightness);
 
             var Index = (x + y * HueCanvas.width) * 4; // Index of Pixel
             HueImagedata.data[Index + 0] = Color.Red * 255;
