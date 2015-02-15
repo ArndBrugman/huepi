@@ -8,11 +8,11 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- * HUEPI Object, Entry point for all interaction with Lights etc via the Bridge.
+ * huepi Object, Entry point for all interaction with Lights etc via the Bridge.
  *
  * @class
  */
-HUEPI = function() {
+huepi = function() {
   /** @member {string} - Overidable Username for Whitelisting, must be 10-40 digits long */
   this.Username = '1234567890';
 
@@ -58,7 +58,7 @@ if (typeof module !== 'undefined' && module.exports)
   $.ajaxSettings.xhr = function() {
     return new XMLHttpRequest();
   };
-  exports = module.exports = HUEPI;
+  exports = module.exports = huepi;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -70,7 +70,7 @@ if (typeof module !== 'undefined' && module.exports)
 /**
  * Retreives the list of hue-Bridges on the local network
  */
-HUEPI.prototype.PortalDiscoverLocalBridges = function()
+huepi.prototype.PortalDiscoverLocalBridges = function()
 {
   var That = this;
   return $.get('https://www.meethue.com/api/nupnp', function(data) {
@@ -93,7 +93,7 @@ HUEPI.prototype.PortalDiscoverLocalBridges = function()
  * Consider this the main "Get" function.
  * Typically used for Heartbeat or manual updates of local data.
  */
-HUEPI.prototype.BridgeGetData = function()
+huepi.prototype.BridgeGetData = function()
 { // GET /api/username -> data.config.whitelist.username
   var That = this;
   var url = 'http://' + this.BridgeIP + '/api/' + this.Username;
@@ -120,7 +120,7 @@ HUEPI.prototype.BridgeGetData = function()
  * Whitelists the Username stored in this object.
  * Note: a buttonpress on the bridge is requered max 30 sec before this to succeed.
  */
-HUEPI.prototype.BridgeCreateUser = function()
+huepi.prototype.BridgeCreateUser = function()
 { // POST /api {"devicetype": "iPhone", "username": "1234567890"}
   return $.ajax({
     type: 'POST',
@@ -135,7 +135,7 @@ HUEPI.prototype.BridgeCreateUser = function()
  * @param {string} UsernameToDelete - Username that will be revoked from the Whitelist.
  * Note: Username stored in this object need to Whitelisted to succeed.
  */
-HUEPI.prototype.BridgeDeleteUser = function(UsernameToDelete)
+huepi.prototype.BridgeDeleteUser = function(UsernameToDelete)
 { // DELETE /api/username/config/whitelist/username {"devicetype": "iPhone", "username": "1234567890"}
   return $.ajax({
     type: 'DELETE',
@@ -158,7 +158,7 @@ HUEPI.prototype.BridgeDeleteUser = function(UsernameToDelete)
  * @param {float} Blue - Range [0..1]
  * @returns {object} [Ang, Sat, Bri] - Ranges [0..360] [0..1] [0..1]
  */
-HUEPI.HelperRGBtoHueAngSatBri = function(Red, Green, Blue)
+huepi.HelperRGBtoHueAngSatBri = function(Red, Green, Blue)
 { // Range 0..1, return .Ang (360), .Sat, .Brig
   var Ang, Sat, Bri;
   var Min = Math.min(Red, Green, Blue);
@@ -187,7 +187,7 @@ HUEPI.HelperRGBtoHueAngSatBri = function(Red, Green, Blue)
  * @param {float} Bri - Range [0..1]
  * @returns {object} [Red, Green, Blue] - Ranges [0..1] [0..1] [0..1]
  */
-HUEPI.HelperHueAngSatBritoRGB = function(Ang, Sat, Bri)
+huepi.HelperHueAngSatBritoRGB = function(Ang, Sat, Bri)
 { // Range 360, 1, 1, return .Red, .Green, .Blue
   var Red, Green, Blue;
   if (Sat === 0) {
@@ -243,7 +243,7 @@ HUEPI.HelperHueAngSatBritoRGB = function(Ang, Sat, Bri)
  * @param {float} Blue - Range [0..1]
  * @returns {object} [x, y] - Ranges [0..1] [0..1]
  */
-HUEPI.HelperRGBtoXY = function(Red, Green, Blue)
+huepi.HelperRGBtoXY = function(Red, Green, Blue)
 { // Range 0..1, return .x, .y
   // Adjust to Light XY CIE
   // https://github.com/PhilipsHue/PhilipsHueSDK-iOS-OSX/commit/f41091cf671e13fe8c32fcced12604cd31cceaf3
@@ -288,7 +288,7 @@ HUEPI.HelperRGBtoXY = function(Red, Green, Blue)
  * @param {string} Model - Modelname of the Light to Gamutcorrect Px, Py for
  * @returns {object} [x, y] - Ranges [0..1] [0..1]
  */
-HUEPI.HelperGamutXYforModel = function(Px, Py, Model)
+huepi.HelperGamutXYforModel = function(Px, Py, Model)
 { // return .x, .y
   // Check if point is inside Triangle for correct model of light
   if (Model === 'LCT001') { // For the hue bulb the corners of the triangle are:
@@ -354,7 +354,7 @@ HUEPI.HelperGamutXYforModel = function(Px, Py, Model)
  * @param {numer} Temperature ranges [1000..66000]
  * @returns {object} [Red, Green, Blue] ranges [0..255] [0..255] [0..255]
  */
-HUEPI.HelperCTtoRGB = function(Temperature)
+huepi.HelperCTtoRGB = function(Temperature)
 { // http://www.tannerhelland.com/4435/convert-temperature-rgb-algorithm-code/
   var Red, Green, Blue;
 
@@ -405,13 +405,13 @@ HUEPI.HelperCTtoRGB = function(Temperature)
  * @param {multiple} Items - Items to convert to StringArray
  * @returns {string} String array containing Items
  */
-HUEPI.HelperToStringArray = function(Items) {
+huepi.HelperToStringArray = function(Items) {
   if (typeof Items === 'number') {
     return '"' + Items.toString() + '"';
   } else if (Object.prototype.toString.call(Items) === '[object Array]') {
     var Result = '[';
     for (var ItemNr = 0; ItemNr < Items.length; ItemNr++) {
-      Result += HUEPI.HelperToStringArray(Items[ItemNr]);
+      Result += huepi.HelperToStringArray(Items[ItemNr]);
       if (ItemNr < Items.length - 1)
         Result += ',';
     }
@@ -422,13 +422,19 @@ HUEPI.HelperToStringArray = function(Items) {
   }
 };
 
+////////////////////////////////////////////////////////////////////////////////
+//
+// huepi.Lightstate Object
+//
+//
+
 /**
- * HUEPI.Lightstate Object.
+ * huepi.Lightstate Object.
  * Internal object to recieve all settings that are about to be send to the Bridge as a string.
  *
  * @class
  */
-HUEPI.Lightstate = function()
+huepi.Lightstate = function()
 {
 ///** */
 ////this.SetOn = function(On) {
@@ -494,7 +500,7 @@ HUEPI.Lightstate = function()
    * @param {number} Blue Range [0..255] 
    */
   this.SetRGB = function(Red, Green, Blue) {// In RGB [0..255]
-    var HueAngSatBri = HUEPI.HelperRGBtoHueAngSatBri(Red / 255, Green / 255, Blue / 255);
+    var HueAngSatBri = huepi.HelperRGBtoHueAngSatBri(Red / 255, Green / 255, Blue / 255);
     return this.SetHueAngSatBri(HueAngSatBri.Ang, HueAngSatBri.Sat, HueAngSatBri.Bri);
   };
   /**
@@ -577,7 +583,7 @@ HUEPI.Lightstate = function()
 
 /**
  */
-HUEPI.prototype.LightsGetData = function()
+huepi.prototype.LightsGetData = function()
 { // GET /api/username/lights
   var That = this;
   var url = 'http://' + this.BridgeIP + '/api/' + this.Username + '/lights';
@@ -590,7 +596,7 @@ HUEPI.prototype.LightsGetData = function()
 
 /**
  */
-HUEPI.prototype.LightsSearchForNew = function()
+huepi.prototype.LightsSearchForNew = function()
 { // POST /api/username/lights
   return $.ajax({
     type: 'POST',
@@ -602,7 +608,7 @@ HUEPI.prototype.LightsSearchForNew = function()
 
 /**
  */
-HUEPI.prototype.LightsGetNew = function()
+huepi.prototype.LightsGetNew = function()
 { // GET /api/username/lights/new
   var url = 'http://' + this.BridgeIP + '/api/' + this.Username + '/lights/new';
   return $.get(url);
@@ -612,7 +618,7 @@ HUEPI.prototype.LightsGetNew = function()
  * @param {number} LightNr
  * @param {string} Name New name of the light Range [1..32]
  */
-HUEPI.prototype.LightSetName = function(LightNr, Name)
+huepi.prototype.LightSetName = function(LightNr, Name)
 { // PUT /api/username/lights
   return $.ajax({
     type: 'PUT',
@@ -627,7 +633,7 @@ HUEPI.prototype.LightSetName = function(LightNr, Name)
  * @param {number} LightNr
  * @param {LightState} State
  */
-HUEPI.prototype.LightSetState = function(LightNr, State)
+huepi.prototype.LightSetState = function(LightNr, State)
 { // PUT /api/username/lights/[LightNr]/state
   return $.ajax({
     type: 'PUT',
@@ -642,9 +648,9 @@ HUEPI.prototype.LightSetState = function(LightNr, State)
  * @param {number} LightNr
  * @param {number} Transitiontime optional
  */
-HUEPI.prototype.LightOn = function(LightNr, Transitiontime)
+huepi.prototype.LightOn = function(LightNr, Transitiontime)
 {
-  var State = new HUEPI.Lightstate();
+  var State = new huepi.Lightstate();
   State.On();
   State.SetTransitiontime(Transitiontime);
   return this.LightSetState(LightNr, State);
@@ -654,9 +660,9 @@ HUEPI.prototype.LightOn = function(LightNr, Transitiontime)
  * @param {number} LightNr
  * @param {number} Transitiontime optional
  */
-HUEPI.prototype.LightOff = function(LightNr, Transitiontime)
+huepi.prototype.LightOff = function(LightNr, Transitiontime)
 {
-  var State = new HUEPI.Lightstate();
+  var State = new huepi.Lightstate();
   State.Off();
   State.SetTransitiontime(Transitiontime);
   return this.LightSetState(LightNr, State);
@@ -670,14 +676,14 @@ HUEPI.prototype.LightOff = function(LightNr, Transitiontime)
  * @param {number} Brightness Range [0..255]
  * @param {number} Transitiontime optional
  */
-HUEPI.prototype.LightSetHSB = function(LightNr, Hue, Saturation, Brightness, Transitiontime)
+huepi.prototype.LightSetHSB = function(LightNr, Hue, Saturation, Brightness, Transitiontime)
 {
   var HueAng = Hue * 360 / 65535;
   var Sat = Saturation / 255;
   var Bri = Brightness / 255;
 
-  var Color = HUEPI.HelperHueAngSatBritoRGB(HueAng, Sat, Bri);
-  var Point = HUEPI.HelperRGBtoXY(Color.Red, Color.Green, Color.Blue);
+  var Color = huepi.HelperHueAngSatBritoRGB(HueAng, Sat, Bri);
+  var Point = huepi.HelperRGBtoXY(Color.Red, Color.Green, Color.Blue);
   return $.when(
   this.LightSetBrightness(LightNr, Brightness, Transitiontime),
   this.LightSetXY(LightNr, Point.x, Point.y, Transitiontime)
@@ -689,9 +695,9 @@ HUEPI.prototype.LightSetHSB = function(LightNr, Hue, Saturation, Brightness, Tra
  * @param {number} Hue Range [0..65535]
  * @param {number} Transitiontime optional
  */
-HUEPI.prototype.LightSetHue = function(LightNr, Hue, Transitiontime)
+huepi.prototype.LightSetHue = function(LightNr, Hue, Transitiontime)
 {
-  var State = new HUEPI.Lightstate();
+  var State = new huepi.Lightstate();
   State.SetHue(Hue);
   State.SetTransitiontime(Transitiontime);
   return this.LightSetState(LightNr, State);
@@ -702,9 +708,9 @@ HUEPI.prototype.LightSetHue = function(LightNr, Hue, Transitiontime)
  * @param Saturation Range [0..255]
  * @param {number} Transitiontime optional
  */
-HUEPI.prototype.LightSetSaturation = function(LightNr, Saturation, Transitiontime)
+huepi.prototype.LightSetSaturation = function(LightNr, Saturation, Transitiontime)
 {
-  var State = new HUEPI.Lightstate();
+  var State = new huepi.Lightstate();
   State.SetSaturation(Saturation);
   State.SetTransitiontime(Transitiontime);
   return this.LightSetState(LightNr, State);
@@ -715,9 +721,9 @@ HUEPI.prototype.LightSetSaturation = function(LightNr, Saturation, Transitiontim
  * @param Brightness Range [0..255]
  * @param {number} Transitiontime optional
  */
-HUEPI.prototype.LightSetBrightness = function(LightNr, Brightness, Transitiontime)
+huepi.prototype.LightSetBrightness = function(LightNr, Brightness, Transitiontime)
 {
-  var State = new HUEPI.Lightstate();
+  var State = new huepi.Lightstate();
   State.SetBrightness(Brightness);
   State.SetTransitiontime(Transitiontime);
   return this.LightSetState(LightNr, State);
@@ -730,7 +736,7 @@ HUEPI.prototype.LightSetBrightness = function(LightNr, Brightness, Transitiontim
  * @param Bri Range [0..1]
  * @param {number} Transitiontime optional
  */
-HUEPI.prototype.LightSetHueAngSatBri = function(LightNr, Ang, Sat, Bri, Transitiontime)
+huepi.prototype.LightSetHueAngSatBri = function(LightNr, Ang, Sat, Bri, Transitiontime)
 { // In: Hue in Deg, Saturation, Brightness 0.0-1.0 Transform To Philips Hue Range...
   if (Ang < 0)
     Ang = Ang + 360;
@@ -745,10 +751,10 @@ HUEPI.prototype.LightSetHueAngSatBri = function(LightNr, Ang, Sat, Bri, Transiti
  * @param Blue Range [0..255]
  * @param {number} Transitiontime optional
  */
-HUEPI.prototype.LightSetRGB = function(LightNr, Red, Green, Blue, Transitiontime) // 0-255;FF
+huepi.prototype.LightSetRGB = function(LightNr, Red, Green, Blue, Transitiontime) // 0-255;FF
 {
-  var Point = HUEPI.HelperRGBtoXY(Red / 255, Green / 255, Blue / 255);
-  var HueAngSatBri = HUEPI.HelperRGBtoHueAngSatBri(Red / 255, Green / 255, Blue / 255);
+  var Point = huepi.HelperRGBtoXY(Red / 255, Green / 255, Blue / 255);
+  var HueAngSatBri = huepi.HelperRGBtoHueAngSatBri(Red / 255, Green / 255, Blue / 255);
   return $.when(
   this.LightSetBrightness(Math.round(HueAngSatBri.Bri * 255)),
   this.LightSetXY(LightNr, Point.x, Point.y, Transitiontime)
@@ -760,15 +766,15 @@ HUEPI.prototype.LightSetRGB = function(LightNr, Red, Green, Blue, Transitiontime
  * @param {number} CT micro reciprocal degree
  * @param {number} Transitiontime optional
  */
-HUEPI.prototype.LightSetCT = function(LightNr, CT, Transitiontime)
+huepi.prototype.LightSetCT = function(LightNr, CT, Transitiontime)
 {
   var Model = this.Lights[LightNr].modelid;
   if (Model !== 'LCT001') { // CT->RGB->XY to ignore Brightness in RGB
-    var Color = HUEPI.HelperCTtoRGB(1000000 / CT);
-    var Point = HUEPI.HelperRGBtoXY(Color.Red, Color.Green, Color.Blue);
+    var Color = huepi.HelperCTtoRGB(1000000 / CT);
+    var Point = huepi.HelperRGBtoXY(Color.Red, Color.Green, Color.Blue);
     return this.LightSetXY(LightNr, Point.x, Point.y, Transitiontime);
   }
-  var State = new HUEPI.Lightstate();
+  var State = new huepi.Lightstate();
   State.SetCT(CT);
   State.SetTransitiontime(Transitiontime);
   return this.LightSetState(LightNr, State);
@@ -779,7 +785,7 @@ HUEPI.prototype.LightSetCT = function(LightNr, CT, Transitiontime)
  * @param {number} Colortemperature Range [2000..65000] for the 2012 model
  * @param {number} Transitiontime optional
  */
-HUEPI.prototype.LightSetColortemperature = function(LightNr, Colortemperature, Transitiontime)
+huepi.prototype.LightSetColortemperature = function(LightNr, Colortemperature, Transitiontime)
 {
   return this.LightSetCT(LightNr, Math.round(1000000 / Colortemperature), Transitiontime);
 };
@@ -790,11 +796,11 @@ HUEPI.prototype.LightSetColortemperature = function(LightNr, Colortemperature, T
  * @param {float} Y
  * @param {number} Transitiontime optional
  */
-HUEPI.prototype.LightSetXY = function(LightNr, X, Y, Transitiontime)
+huepi.prototype.LightSetXY = function(LightNr, X, Y, Transitiontime)
 {
   var Model = this.Lights[LightNr].modelid;
-  var Gamuted = HUEPI.HelperGamutXYforModel(X, Y, Model);
-  var State = new HUEPI.Lightstate();
+  var Gamuted = huepi.HelperGamutXYforModel(X, Y, Model);
+  var State = new huepi.Lightstate();
   State.SetXY(Gamuted.x, Gamuted.y);
   State.SetTransitiontime(Transitiontime);
   return this.LightSetState(LightNr, State);
@@ -804,9 +810,9 @@ HUEPI.prototype.LightSetXY = function(LightNr, X, Y, Transitiontime)
  * @param {number} LightNr
  * @param {number} Transitiontime optional
  */
-HUEPI.prototype.LightAlertSelect = function(LightNr, Transitiontime)
+huepi.prototype.LightAlertSelect = function(LightNr, Transitiontime)
 {
-  var State = new HUEPI.Lightstate();
+  var State = new huepi.Lightstate();
   State.AlertSelect();
   State.SetTransitiontime(Transitiontime);
   return this.LightSetState(LightNr, State);
@@ -816,9 +822,9 @@ HUEPI.prototype.LightAlertSelect = function(LightNr, Transitiontime)
  * @param {number} LightNr
  * @param {number} Transitiontime optional
  */
-HUEPI.prototype.LightAlertLSelect = function(LightNr, Transitiontime)
+huepi.prototype.LightAlertLSelect = function(LightNr, Transitiontime)
 {
-  var State = new HUEPI.Lightstate();
+  var State = new huepi.Lightstate();
   State.AlertLSelect();
   State.SetTransitiontime(Transitiontime);
   return this.LightSetState(LightNr, State);
@@ -828,9 +834,9 @@ HUEPI.prototype.LightAlertLSelect = function(LightNr, Transitiontime)
  * @param {number} LightNr
  * @param {number} Transitiontime optional
  */
-HUEPI.prototype.LightAlertNone = function(LightNr, Transitiontime)
+huepi.prototype.LightAlertNone = function(LightNr, Transitiontime)
 {
-  var State = new HUEPI.Lightstate();
+  var State = new huepi.Lightstate();
   State.AlertNone();
   State.SetTransitiontime(Transitiontime);
   return this.LightSetState(LightNr, State);
@@ -840,9 +846,9 @@ HUEPI.prototype.LightAlertNone = function(LightNr, Transitiontime)
  * @param {number} LightNr
  * @param {number} Transitiontime optional
  */
-HUEPI.prototype.LightEffectColorloop = function(LightNr, Transitiontime)
+huepi.prototype.LightEffectColorloop = function(LightNr, Transitiontime)
 {
-  var State = new HUEPI.Lightstate();
+  var State = new huepi.Lightstate();
   State.EffectColorloop();
   State.SetTransitiontime(Transitiontime);
   return this.LightSetState(LightNr, State);
@@ -852,9 +858,9 @@ HUEPI.prototype.LightEffectColorloop = function(LightNr, Transitiontime)
  * @param {number} LightNr
  * @param {number} Transitiontime optional
  */
-HUEPI.prototype.LightEffectNone = function(LightNr, Transitiontime)
+huepi.prototype.LightEffectNone = function(LightNr, Transitiontime)
 {
-  var State = new HUEPI.Lightstate();
+  var State = new huepi.Lightstate();
   State.EffectNone();
   State.SetTransitiontime(Transitiontime);
   return this.LightSetState(LightNr, State);
@@ -868,7 +874,7 @@ HUEPI.prototype.LightEffectNone = function(LightNr, Transitiontime)
 
 /**
  */
-HUEPI.prototype.GroupsGetData = function()
+huepi.prototype.GroupsGetData = function()
 { // GET /api/username/lights
   var That = this;
   var url = 'http://' + this.BridgeIP + '/api/' + this.Username + '/groups';
@@ -884,14 +890,14 @@ HUEPI.prototype.GroupsGetData = function()
  * @param {string} Name New name of the light Range [1..32]
  * @param {multiple} Lights LightNr or Array of Lights to Group
  */
-HUEPI.prototype.GroupCreate = function(Name, Lights) 
+huepi.prototype.GroupCreate = function(Name, Lights) 
 { // POST /api/username/groups
   return $.ajax({
     type: 'POST',
     dataType: 'json',
     contentType: 'application/json',
     url: 'http://' + this.BridgeIP + '/api/' + this.Username + '/groups/',
-    data: '{"name":"' + Name + '" , "lights":' + HUEPI.HelperToStringArray(Lights) + '}'
+    data: '{"name":"' + Name + '" , "lights":' + huepi.HelperToStringArray(Lights) + '}'
   });
 };
 
@@ -899,7 +905,7 @@ HUEPI.prototype.GroupCreate = function(Name, Lights)
  * @param {number} GroupNr
  * @param {string} Name New name of the light Range [1..32]
  */
-HUEPI.prototype.GroupSetName = function(GroupNr, Name)
+huepi.prototype.GroupSetName = function(GroupNr, Name)
 { // PUT /api/username/groups/[GroupNr]
   return $.ajax({
     type: 'PUT',
@@ -915,14 +921,14 @@ HUEPI.prototype.GroupSetName = function(GroupNr, Name)
  * @param {number} GroupNr
  * @param {multiple} Lights LightNr or Array of Lights to Group
  */
-HUEPI.prototype.GroupSetLights = function(GroupNr, Lights)
+huepi.prototype.GroupSetLights = function(GroupNr, Lights)
 { // PUT /api/username/groups/[GroupNr]
   return $.ajax({
     type: 'PUT',
     dataType: 'json',
     contentType: 'application/json',
     url: 'http://' + this.BridgeIP + '/api/' + this.Username + '/groups/' + GroupNr,
-    data: '{"lights":' + HUEPI.HelperToStringArray(Lights) + '}'
+    data: '{"lights":' + huepi.HelperToStringArray(Lights) + '}'
   });
 };
 
@@ -932,21 +938,21 @@ HUEPI.prototype.GroupSetLights = function(GroupNr, Lights)
  * @param {string} Name New name of the light Range [1..32]
  * @param {multiple} Lights LightNr or Array of Lights to Group
  */
-HUEPI.prototype.GroupSetAttributes = function(GroupNr, Name, Lights)
+huepi.prototype.GroupSetAttributes = function(GroupNr, Name, Lights)
 { // PUT /api/username/groups/[GroupNr]
   return $.ajax({
     type: 'PUT',
     dataType: 'json',
     contentType: 'application/json',
     url: 'http://' + this.BridgeIP + '/api/' + this.Username + '/groups/' + GroupNr,
-    data: '{"name":"' + Name + '", "lights":' + HUEPI.HelperToStringArray(Lights) + '}'
+    data: '{"name":"' + Name + '", "lights":' + huepi.HelperToStringArray(Lights) + '}'
   });
 };
 
 /**
  * @param {number} GroupNr
  */
-HUEPI.prototype.GroupDelete = function(GroupNr)
+huepi.prototype.GroupDelete = function(GroupNr)
 { // DELETE /api/username/groups/[GroupNr]
   return $.ajax({
     type: 'DELETE',
@@ -960,7 +966,7 @@ HUEPI.prototype.GroupDelete = function(GroupNr)
  * @param {number} GroupNr
  * @param {LightState} State
  */
-HUEPI.prototype.GroupSetState = function(GroupNr, State)
+huepi.prototype.GroupSetState = function(GroupNr, State)
 { // PUT /api/username/groups/[GroupNr]/action
   return $.ajax({
     type: 'PUT',
@@ -975,9 +981,9 @@ HUEPI.prototype.GroupSetState = function(GroupNr, State)
  * @param {number} GroupNr
  * @param {number} Transitiontime optional
  */
-HUEPI.prototype.GroupOn = function(GroupNr, Transitiontime)
+huepi.prototype.GroupOn = function(GroupNr, Transitiontime)
 {
-  var State = new HUEPI.Lightstate();
+  var State = new huepi.Lightstate();
   State.On();
   State.SetTransitiontime(Transitiontime);
   return this.GroupSetState(GroupNr, State);
@@ -987,9 +993,9 @@ HUEPI.prototype.GroupOn = function(GroupNr, Transitiontime)
  * @param {number} GroupNr
  * @param {number} Transitiontime optional
  */
-HUEPI.prototype.GroupOff = function(GroupNr, Transitiontime)
+huepi.prototype.GroupOff = function(GroupNr, Transitiontime)
 {
-  var State = new HUEPI.Lightstate();
+  var State = new huepi.Lightstate();
   State.Off();
   State.SetTransitiontime(Transitiontime);
   return this.GroupSetState(GroupNr, State);
@@ -1003,14 +1009,14 @@ HUEPI.prototype.GroupOff = function(GroupNr, Transitiontime)
  * @param {number} Brightness Range [0..255]
  * @param {number} Transitiontime optional
  */
-HUEPI.prototype.GroupSetHSB = function(GroupNr, Hue, Saturation, Brightness, Transitiontime)
+huepi.prototype.GroupSetHSB = function(GroupNr, Hue, Saturation, Brightness, Transitiontime)
 {
   var Ang = Hue * 360 / 65535;
   var Sat = Saturation / 255;
   var Bri = Brightness / 255;
 
-  var Color = HUEPI.HelperHueAngSatBritoRGB(Ang, Sat, Bri);
-  var Point = HUEPI.HelperRGBtoXY(Color.Red, Color.Green, Color.Blue);
+  var Color = huepi.HelperHueAngSatBritoRGB(Ang, Sat, Bri);
+  var Point = huepi.HelperRGBtoXY(Color.Red, Color.Green, Color.Blue);
 
   return $.when(// return Deferred when of both Brightness and XY
   this.GroupSetBrightness(GroupNr, Brightness, Transitiontime),
@@ -1023,9 +1029,9 @@ HUEPI.prototype.GroupSetHSB = function(GroupNr, Hue, Saturation, Brightness, Tra
  * @param {number} Hue Range [0..65535]
  * @param {number} Transitiontime optional
  */
-HUEPI.prototype.GroupSetHue = function(GroupNr, Hue, Transitiontime)
+huepi.prototype.GroupSetHue = function(GroupNr, Hue, Transitiontime)
 {
-  var State = new HUEPI.Lightstate();
+  var State = new huepi.Lightstate();
   State.SetHue(Hue);
   State.SetTransitiontime(Transitiontime);
   return this.GroupSetState(GroupNr, State);
@@ -1036,9 +1042,9 @@ HUEPI.prototype.GroupSetHue = function(GroupNr, Hue, Transitiontime)
  * @param Saturation Range [0..255]
  * @param {number} Transitiontime optional
  */
-HUEPI.prototype.GroupSetSaturation = function(GroupNr, Saturation, Transitiontime)
+huepi.prototype.GroupSetSaturation = function(GroupNr, Saturation, Transitiontime)
 {
-  var State = new HUEPI.Lightstate();
+  var State = new huepi.Lightstate();
   State.SetSaturation(Saturation);
   State.SetTransitiontime(Transitiontime);
   return this.GroupSetState(GroupNr, State);
@@ -1049,9 +1055,9 @@ HUEPI.prototype.GroupSetSaturation = function(GroupNr, Saturation, Transitiontim
  * @param Brightness Range [0..255]
  * @param {number} Transitiontime optional
  */
-HUEPI.prototype.GroupSetBrightness = function(GroupNr, Brightness, Transitiontime)
+huepi.prototype.GroupSetBrightness = function(GroupNr, Brightness, Transitiontime)
 {
-  var State = new HUEPI.Lightstate();
+  var State = new huepi.Lightstate();
   State.SetBrightness(Brightness);
   State.SetTransitiontime(Transitiontime);
   return this.GroupSetState(GroupNr, State);
@@ -1064,7 +1070,7 @@ HUEPI.prototype.GroupSetBrightness = function(GroupNr, Brightness, Transitiontim
  * @param Bri Range [0..1]
  * @param {number} Transitiontime optional
  */
-HUEPI.prototype.GroupSetHueAngSatBri = function(GroupNr, Ang, Sat, Bri, Transitiontime)
+huepi.prototype.GroupSetHueAngSatBri = function(GroupNr, Ang, Sat, Bri, Transitiontime)
 {
   if (Ang < 0)
     Ang = Ang + 360;
@@ -1079,9 +1085,9 @@ HUEPI.prototype.GroupSetHueAngSatBri = function(GroupNr, Ang, Sat, Bri, Transiti
  * @param Blue Range [0..255]
  * @param {number} Transitiontime optional
  */
-HUEPI.prototype.GroupSetRGB = function(GroupNr, Red, Green, Blue, Transitiontime) // 0-255;FF
+huepi.prototype.GroupSetRGB = function(GroupNr, Red, Green, Blue, Transitiontime) // 0-255;FF
 {
-  var HueAngSatBri = HUEPI.HelperRGBtoHueAngSatBri(Red / 255, Green / 255, Blue / 255);
+  var HueAngSatBri = huepi.HelperRGBtoHueAngSatBri(Red / 255, Green / 255, Blue / 255);
   return this.GroupSetHueAngSatBri(GroupNr, HueAngSatBri.Ang, HueAngSatBri.Sat, HueAngSatBri.Bri, Transitiontime);
 };
 
@@ -1090,7 +1096,7 @@ HUEPI.prototype.GroupSetRGB = function(GroupNr, Red, Green, Blue, Transitiontime
  * @param {number} CT micro reciprocal degree
  * @param {number} Transitiontime optional
  */
-HUEPI.prototype.GroupSetCT = function(GroupNr, CT, Transitiontime)
+huepi.prototype.GroupSetCT = function(GroupNr, CT, Transitiontime)
 {
   var Lights = [];
   var LightNr = 0;
@@ -1108,7 +1114,7 @@ HUEPI.prototype.GroupSetCT = function(GroupNr, CT, Transitiontime)
     return $.when.apply($, deferreds); // return Deferred when with array of deferreds
   }
   // No Lights in Group GroupNr, Set State of Group to let Bridge create the API Error and return it.
-  var State = new HUEPI.Lightstate();
+  var State = new huepi.Lightstate();
   State.SetCT(CT);
   State.SetTransitiontime(Transitiontime);
   return this.GroupSetState(GroupNr, State);
@@ -1119,7 +1125,7 @@ HUEPI.prototype.GroupSetCT = function(GroupNr, CT, Transitiontime)
  * @param {number} Colortemperature Range [2000..65000] for the 2012 model
  * @param {number} Transitiontime optional
  */
-HUEPI.prototype.GroupSetColortemperature = function(GroupNr, Colortemperature, Transitiontime)
+huepi.prototype.GroupSetColortemperature = function(GroupNr, Colortemperature, Transitiontime)
 {
   return this.GroupSetCT(GroupNr, Math.round(1000000 / Colortemperature), Transitiontime);
 };
@@ -1130,7 +1136,7 @@ HUEPI.prototype.GroupSetColortemperature = function(GroupNr, Colortemperature, T
  * @param {float} Y
  * @param {number} Transitiontime optional
  */
-HUEPI.prototype.GroupSetXY = function(GroupNr, X, Y, Transitiontime)
+huepi.prototype.GroupSetXY = function(GroupNr, X, Y, Transitiontime)
 {
   var Lights = [];
   var LightNr = 0;
@@ -1148,7 +1154,7 @@ HUEPI.prototype.GroupSetXY = function(GroupNr, X, Y, Transitiontime)
     return $.when.apply($, deferreds); // return Deferred when with array of deferreds
   }
   // No Lights in Group GroupNr, Set State of Group to let Bridge create the API Error and return it.
-  var State = new HUEPI.Lightstate();
+  var State = new huepi.Lightstate();
   State.SetXY(X, Y);
   State.SetTransitiontime(Transitiontime);
   return this.GroupSetState(GroupNr, State);
@@ -1158,9 +1164,9 @@ HUEPI.prototype.GroupSetXY = function(GroupNr, X, Y, Transitiontime)
  * @param {number} GroupNr
  * @param {number} Transitiontime optional
  */
-HUEPI.prototype.GroupAlertSelect = function(GroupNr, Transitiontime)
+huepi.prototype.GroupAlertSelect = function(GroupNr, Transitiontime)
 {
-  var State = new HUEPI.Lightstate();
+  var State = new huepi.Lightstate();
   State.AlertSelect();
   State.SetTransitiontime(Transitiontime);
   return this.GroupSetState(GroupNr, State);
@@ -1170,9 +1176,9 @@ HUEPI.prototype.GroupAlertSelect = function(GroupNr, Transitiontime)
  * @param {number} GroupNr
  * @param {number} Transitiontime optional
  */
-HUEPI.prototype.GroupAlertLSelect = function(GroupNr, Transitiontime)
+huepi.prototype.GroupAlertLSelect = function(GroupNr, Transitiontime)
 {
-  var State = new HUEPI.Lightstate();
+  var State = new huepi.Lightstate();
   State.AlertLSelect();
   State.SetTransitiontime(Transitiontime);
   return this.GroupSetState(GroupNr, State);
@@ -1182,9 +1188,9 @@ HUEPI.prototype.GroupAlertLSelect = function(GroupNr, Transitiontime)
  * @param {number} GroupNr
  * @param {number} Transitiontime optional
  */
-HUEPI.prototype.GroupAlertNone = function(GroupNr, Transitiontime)
+huepi.prototype.GroupAlertNone = function(GroupNr, Transitiontime)
 {
-  var State = new HUEPI.Lightstate();
+  var State = new huepi.Lightstate();
   State.AlertNone();
   State.SetTransitiontime(Transitiontime);
   return this.GroupSetState(GroupNr, State);
@@ -1194,9 +1200,9 @@ HUEPI.prototype.GroupAlertNone = function(GroupNr, Transitiontime)
  * @param {number} GroupNr
  * @param {number} Transitiontime optional
  */
-HUEPI.prototype.GroupEffectColorloop = function(GroupNr, Transitiontime)
+huepi.prototype.GroupEffectColorloop = function(GroupNr, Transitiontime)
 {
-  var State = new HUEPI.Lightstate();
+  var State = new huepi.Lightstate();
   State.EffectColorloop();
   State.SetTransitiontime(Transitiontime);
   return this.GroupSetState(GroupNr, State);
@@ -1206,9 +1212,9 @@ HUEPI.prototype.GroupEffectColorloop = function(GroupNr, Transitiontime)
  * @param {number} GroupNr
  * @param {number} Transitiontime optional
  */
-HUEPI.prototype.GroupEffectNone = function(GroupNr, Transitiontime)
+huepi.prototype.GroupEffectNone = function(GroupNr, Transitiontime)
 {
-  var State = new HUEPI.Lightstate();
+  var State = new huepi.Lightstate();
   State.EffectNone();
   State.SetTransitiontime(Transitiontime);
   return this.GroupSetState(GroupNr, State);
@@ -1222,7 +1228,7 @@ HUEPI.prototype.GroupEffectNone = function(GroupNr, Transitiontime)
 
 /**
  */
-HUEPI.prototype.SchedulesGetData = function()
+huepi.prototype.SchedulesGetData = function()
 { // GET /api/username/schedules
   var That = this;
   var url = 'http://' + this.BridgeIP + '/api/' + this.Username + '/schedules';
@@ -1233,7 +1239,6 @@ HUEPI.prototype.SchedulesGetData = function()
   });
 };
 
-
 ////////////////////////////////////////////////////////////////////////////////
 //
 // Scenes Functions
@@ -1242,7 +1247,7 @@ HUEPI.prototype.SchedulesGetData = function()
 
 /**
  */
-HUEPI.prototype.ScenesGetData = function()
+huepi.prototype.ScenesGetData = function()
 { // GET /api/username/scenes
   var That = this;
   var url = 'http://' + this.BridgeIP + '/api/' + this.Username + '/scenes';
@@ -1253,7 +1258,6 @@ HUEPI.prototype.ScenesGetData = function()
   });
 };
 
-
 ////////////////////////////////////////////////////////////////////////////////
 //
 // Sensors Functions
@@ -1262,7 +1266,7 @@ HUEPI.prototype.ScenesGetData = function()
 
 /**
  */
-HUEPI.prototype.SensorsGetData = function()
+huepi.prototype.SensorsGetData = function()
 { // GET /api/username/sensors
   var That = this;
   var url = 'http://' + this.BridgeIP + '/api/' + this.Username + '/sensors';
@@ -1273,7 +1277,6 @@ HUEPI.prototype.SensorsGetData = function()
   });
 };
 
-
 ////////////////////////////////////////////////////////////////////////////////
 //
 // Rules Functions
@@ -1282,7 +1285,7 @@ HUEPI.prototype.SensorsGetData = function()
 
 /**
  */
-HUEPI.prototype.RulesGetData = function()
+huepi.prototype.RulesGetData = function()
 { // GET /api/username/rules
   var That = this;
   var url = 'http://' + this.BridgeIP + '/api/' + this.Username + '/rules';
@@ -1333,7 +1336,7 @@ HUEPI.prototype.RulesGetData = function()
 // Changed HUEPI object notation from literal to protoype notation
 //  to make a bigger difference between static helper methods and object interface
 // Group- and Light-SetColortemperature are set via SetCT now
-// Added HUEPI.HelperCTtoRGB to Allow ColorLights to be set with CT as RGB
+// Added huepi.HelperCTtoRGB to Allow ColorLights to be set with CT as RGB
 // GroupSetCT splits group into Light and calls LightSetCT per Light
 // LightSetCT looks up lamp Model and sets either CT or RGB based on Model
 // Note: Using Lightstate objects are not CT to RGB converted
@@ -1355,4 +1358,7 @@ HUEPI.prototype.RulesGetData = function()
 // Added WORKING JQuery NodeJS if running on NodeJS
 // Added Module Exports for NodeJS on NodeJS
 //
+// 0.95
+// renamed HUEPI to huepi to be more complient with modules and actual hue product name
+// 
 //

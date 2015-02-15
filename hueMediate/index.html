@@ -15,7 +15,7 @@
     <script src='http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js' type='text/javascript' ></script>
     <link rel='stylesheet' href='http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css'/>
 
-    <script src='../HUEPI.js' type='text/javascript'></script>
+    <script src='../huepi.js' type='text/javascript'></script>
 
     <script src='cordova.js' type='text/javascript' onload="javascript:window.isCordovaApp = true;"></script>
 
@@ -81,7 +81,7 @@
   </head>
   <body>
     <script type='text/javascript' >
-      var MyHue = new HUEPI();
+      var MyHue = new huepi();
       MyHue.Username = '085efe879ee3ed83c04efc28a0da03d3';
       var HeartbeatInterval;
 
@@ -148,7 +148,7 @@
       //   Check if UserName is Whitelisted (via HEUPI.BridgeGetData)
       //     if Not->Try to Create User
       function ConnectMyHue() {
-        if (!localStorage.HUEPIBridgeIP) { // No Cached BridgeIP?
+        if (!localStorage.MyHueBridgeIP) { // No Cached BridgeIP?
           $('#HUEBridgeIP').text('Bridge IP: Trying to Discover HUE Bridge via HUE Portal');
           MyHue.PortalDiscoverLocalBridges().then(function GetBridgeConfig() {
             MyHue.BridgeGetData().then(function EnsureWhitelisting() {
@@ -172,24 +172,24 @@
             return ConnectMyHue();
           });
         } else {
-          MyHue.BridgeIP = localStorage.HUEPIBridgeIP;
+          MyHue.BridgeIP = localStorage.MyHueBridgeIP;
           $('#HUEBridgeIP').text('Cached Bridge IP: ' + MyHue.BridgeIP);
           MyHue.BridgeGetData().then(function CheckWhitelisting() {
             if (MyHue.BridgeUsernameWhitelisted) {
               return StartHeartbeat();
             } else {
-              delete localStorage.HUEPIBridgeIP; // not Whitelisted anymore
+              delete localStorage.MyHueBridgeIP; // not Whitelisted anymore
               return ConnectMyHue();
             }
           }, function ErrorGettingCachedBridgeData() {
-            delete localStorage.HUEPIBridgeIP; // not found anymore
+            delete localStorage.MyHueBridgeIP; // not found anymore
             return ConnectMyHue();
           });
         }
       }
 
       function StartHeartbeat() {
-        localStorage.HUEPIBridgeIP = MyHue.BridgeIP; // Store Cache BridgeIP
+        localStorage.MyHueBridgeIP = MyHue.BridgeIP; // Store Cache BridgeIP
         $('#HUEBridgeName').text('Bridge Name: ' + MyHue.BridgeName);
         $('#HUEStatus').text('Found Bridge and Whitelisted');
         $('#HUEInfoBar').slideUp(2500);
