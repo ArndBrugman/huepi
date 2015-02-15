@@ -109,8 +109,10 @@ HUEPI.prototype.BridgeGetData = function()
       That.BridgeName = That.BridgeConfig.name;
       // if able to read Config, Username must be Whitelisted
       That.BridgeUsernameWhitelisted = true;
-    } else
+    } else {
+      That.BridgeName = undefined;
       That.BridgeUsernameWhitelisted = false;
+    }
   });
 };
 
@@ -551,7 +553,7 @@ HUEPI.Lightstate = function()
     return this;
   };
   /**
-   * @param {number} Transitiontime Optional Transitiontime in multiple of 100ms, defaults to 4 (on bridge)
+   * @param {number} Transitiontime Optional Transitiontime in multiple of 100ms, defaults to 4 (on bridge, meaning 400 ms)
    */
   this.SetTransitiontime = function(Transitiontime) {
     if (typeof Transitiontime !== 'undefined') // Optional Parameter
@@ -878,8 +880,11 @@ HUEPI.prototype.GroupsGetData = function()
 };
 
 /**
+ * Note: Bridge doesn't accept lights in a Group that are unreachable at moment of creation
+ * @param {string} Name New name of the light Range [1..32]
+ * @param {multiple} Lights LightNr or Array of Lights to Group
  */
-HUEPI.prototype.GroupCreate = function(Name, Lights) // Bridge doesn't accept lights in a group that are unreachable!
+HUEPI.prototype.GroupCreate = function(Name, Lights) 
 { // POST /api/username/groups
   return $.ajax({
     type: 'POST',
@@ -891,6 +896,8 @@ HUEPI.prototype.GroupCreate = function(Name, Lights) // Bridge doesn't accept li
 };
 
 /**
+ * @param {number} GroupNr
+ * @param {string} Name New name of the light Range [1..32]
  */
 HUEPI.prototype.GroupSetName = function(GroupNr, Name)
 { // PUT /api/username/groups/[GroupNr]
@@ -904,6 +911,9 @@ HUEPI.prototype.GroupSetName = function(GroupNr, Name)
 };
 
 /**
+ * Note: Bridge doesn't accept lights in a Group that are unreachable at moment of creation
+ * @param {number} GroupNr
+ * @param {multiple} Lights LightNr or Array of Lights to Group
  */
 HUEPI.prototype.GroupSetLights = function(GroupNr, Lights)
 { // PUT /api/username/groups/[GroupNr]
@@ -917,19 +927,24 @@ HUEPI.prototype.GroupSetLights = function(GroupNr, Lights)
 };
 
 /**
+ * Note: Bridge doesn't accept lights in a Group that are unreachable at moment of creation
+ * @param {number} GroupNr
+ * @param {string} Name New name of the light Range [1..32]
+ * @param {multiple} Lights LightNr or Array of Lights to Group
  */
-HUEPI.prototype.GroupSetAttributes = function(GroupNr, Name, LightsArray)
+HUEPI.prototype.GroupSetAttributes = function(GroupNr, Name, Lights)
 { // PUT /api/username/groups/[GroupNr]
   return $.ajax({
     type: 'PUT',
     dataType: 'json',
     contentType: 'application/json',
     url: 'http://' + this.BridgeIP + '/api/' + this.Username + '/groups/' + GroupNr,
-    data: '{"name":"' + Name + '", "lights":' + HUEPI.HelperToStringArray(LightsArray) + '}'
+    data: '{"name":"' + Name + '", "lights":' + HUEPI.HelperToStringArray(Lights) + '}'
   });
 };
 
 /**
+ * @param {number} GroupNr
  */
 HUEPI.prototype.GroupDelete = function(GroupNr)
 { // DELETE /api/username/groups/[GroupNr]
@@ -942,6 +957,8 @@ HUEPI.prototype.GroupDelete = function(GroupNr)
 };
 
 /**
+ * @param {number} GroupNr
+ * @param {LightState} State
  */
 HUEPI.prototype.GroupSetState = function(GroupNr, State)
 { // PUT /api/username/groups/[GroupNr]/action
@@ -955,6 +972,8 @@ HUEPI.prototype.GroupSetState = function(GroupNr, State)
 };
 
 /**
+ * @param {number} GroupNr
+ * @param {number} Transitiontime optional
  */
 HUEPI.prototype.GroupOn = function(GroupNr, Transitiontime)
 {
@@ -965,6 +984,8 @@ HUEPI.prototype.GroupOn = function(GroupNr, Transitiontime)
 };
 
 /**
+ * @param {number} GroupNr
+ * @param {number} Transitiontime optional
  */
 HUEPI.prototype.GroupOff = function(GroupNr, Transitiontime)
 {
@@ -975,6 +996,12 @@ HUEPI.prototype.GroupOff = function(GroupNr, Transitiontime)
 };
 
 /**
+ * Sets Gamut Corrected values for HSB
+ * @param {number} GroupNr
+ * @param {number} Hue Range [0..65535]
+ * @param {number} Saturation Range [0..255]
+ * @param {number} Brightness Range [0..255]
+ * @param {number} Transitiontime optional
  */
 HUEPI.prototype.GroupSetHSB = function(GroupNr, Hue, Saturation, Brightness, Transitiontime)
 {
@@ -992,6 +1019,9 @@ HUEPI.prototype.GroupSetHSB = function(GroupNr, Hue, Saturation, Brightness, Tra
 };
 
 /**
+ * @param {number} GroupNr
+ * @param {number} Hue Range [0..65535]
+ * @param {number} Transitiontime optional
  */
 HUEPI.prototype.GroupSetHue = function(GroupNr, Hue, Transitiontime)
 {
@@ -1002,6 +1032,9 @@ HUEPI.prototype.GroupSetHue = function(GroupNr, Hue, Transitiontime)
 };
 
 /**
+ * @param {number} GroupNr
+ * @param Saturation Range [0..255]
+ * @param {number} Transitiontime optional
  */
 HUEPI.prototype.GroupSetSaturation = function(GroupNr, Saturation, Transitiontime)
 {
@@ -1012,6 +1045,9 @@ HUEPI.prototype.GroupSetSaturation = function(GroupNr, Saturation, Transitiontim
 };
 
 /**
+ * @param {number} GroupNr
+ * @param Brightness Range [0..255]
+ * @param {number} Transitiontime optional
  */
 HUEPI.prototype.GroupSetBrightness = function(GroupNr, Brightness, Transitiontime)
 {
@@ -1022,6 +1058,11 @@ HUEPI.prototype.GroupSetBrightness = function(GroupNr, Brightness, Transitiontim
 };
 
 /**
+ * @param {number} GroupNr
+ * @param Ang Range [0..360]
+ * @param Sat Range [0..1]
+ * @param Bri Range [0..1]
+ * @param {number} Transitiontime optional
  */
 HUEPI.prototype.GroupSetHueAngSatBri = function(GroupNr, Ang, Sat, Bri, Transitiontime)
 {
@@ -1032,6 +1073,11 @@ HUEPI.prototype.GroupSetHueAngSatBri = function(GroupNr, Ang, Sat, Bri, Transiti
 };
 
 /**
+ * @param {number} GroupNr
+ * @param Red Range [0..255]
+ * @param Green Range [0..255]
+ * @param Blue Range [0..255]
+ * @param {number} Transitiontime optional
  */
 HUEPI.prototype.GroupSetRGB = function(GroupNr, Red, Green, Blue, Transitiontime) // 0-255;FF
 {
@@ -1040,6 +1086,9 @@ HUEPI.prototype.GroupSetRGB = function(GroupNr, Red, Green, Blue, Transitiontime
 };
 
 /**
+ * @param {number} GroupNr
+ * @param {number} CT micro reciprocal degree
+ * @param {number} Transitiontime optional
  */
 HUEPI.prototype.GroupSetCT = function(GroupNr, CT, Transitiontime)
 {
@@ -1066,6 +1115,9 @@ HUEPI.prototype.GroupSetCT = function(GroupNr, CT, Transitiontime)
 };
 
 /**
+ * @param {number} GroupNr
+ * @param {number} Colortemperature Range [2000..65000] for the 2012 model
+ * @param {number} Transitiontime optional
  */
 HUEPI.prototype.GroupSetColortemperature = function(GroupNr, Colortemperature, Transitiontime)
 {
@@ -1073,6 +1125,10 @@ HUEPI.prototype.GroupSetColortemperature = function(GroupNr, Colortemperature, T
 };
 
 /**
+ * @param {number} GroupNr
+ * @param {float} X
+ * @param {float} Y
+ * @param {number} Transitiontime optional
  */
 HUEPI.prototype.GroupSetXY = function(GroupNr, X, Y, Transitiontime)
 {
@@ -1099,6 +1155,8 @@ HUEPI.prototype.GroupSetXY = function(GroupNr, X, Y, Transitiontime)
 };
 
 /**
+ * @param {number} GroupNr
+ * @param {number} Transitiontime optional
  */
 HUEPI.prototype.GroupAlertSelect = function(GroupNr, Transitiontime)
 {
@@ -1109,6 +1167,8 @@ HUEPI.prototype.GroupAlertSelect = function(GroupNr, Transitiontime)
 };
 
 /**
+ * @param {number} GroupNr
+ * @param {number} Transitiontime optional
  */
 HUEPI.prototype.GroupAlertLSelect = function(GroupNr, Transitiontime)
 {
@@ -1119,6 +1179,8 @@ HUEPI.prototype.GroupAlertLSelect = function(GroupNr, Transitiontime)
 };
 
 /**
+ * @param {number} GroupNr
+ * @param {number} Transitiontime optional
  */
 HUEPI.prototype.GroupAlertNone = function(GroupNr, Transitiontime)
 {
@@ -1129,6 +1191,8 @@ HUEPI.prototype.GroupAlertNone = function(GroupNr, Transitiontime)
 };
 
 /**
+ * @param {number} GroupNr
+ * @param {number} Transitiontime optional
  */
 HUEPI.prototype.GroupEffectColorloop = function(GroupNr, Transitiontime)
 {
@@ -1139,6 +1203,8 @@ HUEPI.prototype.GroupEffectColorloop = function(GroupNr, Transitiontime)
 };
 
 /**
+ * @param {number} GroupNr
+ * @param {number} Transitiontime optional
  */
 HUEPI.prototype.GroupEffectNone = function(GroupNr, Transitiontime)
 {
@@ -1147,6 +1213,86 @@ HUEPI.prototype.GroupEffectNone = function(GroupNr, Transitiontime)
   State.SetTransitiontime(Transitiontime);
   return this.GroupSetState(GroupNr, State);
 };
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// Schedule Functions
+//
+//
+
+/**
+ */
+HUEPI.prototype.SchedulesGetData = function()
+{ // GET /api/username/schedules
+  var That = this;
+  var url = 'http://' + this.BridgeIP + '/api/' + this.Username + '/schedules';
+  return $.get(url, function(data) {
+    if (data) {
+      That.Schedules = data;
+    }
+  });
+};
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// Scenes Functions
+//
+//
+
+/**
+ */
+HUEPI.prototype.ScenesGetData = function()
+{ // GET /api/username/scenes
+  var That = this;
+  var url = 'http://' + this.BridgeIP + '/api/' + this.Username + '/scenes';
+  return $.get(url, function(data) {
+    if (data) {
+      That.Scenes = data;
+    }
+  });
+};
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// Sensors Functions
+//
+//
+
+/**
+ */
+HUEPI.prototype.SensorsGetData = function()
+{ // GET /api/username/sensors
+  var That = this;
+  var url = 'http://' + this.BridgeIP + '/api/' + this.Username + '/sensors';
+  return $.get(url, function(data) {
+    if (data) {
+      That.Sensors = data;
+    }
+  });
+};
+
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// Rules Functions
+//
+//
+
+/**
+ */
+HUEPI.prototype.RulesGetData = function()
+{ // GET /api/username/rules
+  var That = this;
+  var url = 'http://' + this.BridgeIP + '/api/' + this.Username + '/rules';
+  return $.get(url, function(data) {
+    if (data) {
+      That.Rules = data;
+    }
+  });
+};
+
 
 ////////////////////////////////////////////////////////////////////////////////
 //
