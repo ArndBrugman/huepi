@@ -8,7 +8,7 @@ If you re-use my gamut correction code, please give me some credits and let me k
 
 Documentation is available at http://arndbrugman.github.io/huepi/Docs/huepi.html
 
-hueMediate test can be found at: http://arndbrugman.github.io/huepi
+hueMediate test app can be found at: http://arndbrugman.github.io/huepi
 
-hueImage of hueMediate is generated with http://arndbrugman.github.io/huepi/hueImage
-Gamut Correction code can be tested with http://arndbrugman.github.io/huepi/hueGamut
+hueImage of hueMediate is generated with http://arndbrugman.github.io/huepi/hueImage/index.html?size=128
+Gamut Correction code can be tested with http://arndbrugman.github.io/huepi/hueGamut/index.html
