@@ -62,7 +62,7 @@ if (typeof module !== 'undefined' && module.exports)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// 
+//
 // Portal Functions
 //
 //
@@ -159,7 +159,7 @@ huepi.prototype.BridgeDeleteUser = function(UsernameToDelete)
  * @returns {object} [Ang, Sat, Bri] - Ranges [0..360] [0..1] [0..1]
  */
 huepi.HelperRGBtoHueAngSatBri = function(Red, Green, Blue)
-{ // Range 0..1, return .Ang (360), .Sat, .Brig
+{
   var Ang, Sat, Bri;
   var Min = Math.min(Red, Green, Blue);
   var Max = Math.max(Red, Green, Blue);
@@ -244,12 +244,8 @@ huepi.HelperHueAngSatBritoRGB = function(Ang, Sat, Bri)
  * @returns {object} [x, y] - Ranges [0..1] [0..1]
  */
 huepi.HelperRGBtoXY = function(Red, Green, Blue)
-{ // Range 0..1, return .x, .y
-  // Adjust to Light XY CIE
-  // https://github.com/PhilipsHue/PhilipsHueSDK-iOS-OSX/commit/f41091cf671e13fe8c32fcced12604cd31cceaf3
-  // for details...
-  //
-  // Gamma Correct RGB
+{ // Source: https://github.com/PhilipsHue/PhilipsHueSDK-iOS-OSX/blob/master/ApplicationDesignNotes/RGB%20to%20xy%20Color%20conversion.md
+  // Apply gamma correction
   if (Red > 0.04045)
     Red = Math.pow((Red + 0.055) / (1.055), 2.4);
   else
@@ -262,18 +258,10 @@ huepi.HelperRGBtoXY = function(Red, Green, Blue)
     Blue = Math.pow((Blue + 0.055) / (1.055), 2.4);
   else
     Blue = Blue / 12.92;
-  // Translate to XYZ
+  // Wide gamut conversion D65
   var X = Red * 0.649926 + Green * 0.103455 + Blue * 0.197109;
   var Y = Red * 0.234327 + Green * 0.743075 + Blue * 0.022598;
   var Z = Red * 0.000000 + Green * 0.053077 + Blue * 1.035763;
-  //
-  // http://www.everyhue.com/vanilla/discussion/comment/635
-  //
-  // var X = 1.076450 * Red - 0.237662 * Green + 0.161212 * Blue;
-  // var Y = 0.410964 * Red + 0.554342 * Green + 0.034694 * Blue;
-  // var Z = -0.010954 * Red - 0.013389 * Green + 1.024343 * Blue;
-
-  //
   // But we don't want Capital X,Y,Z you want lowercase [x,y] (called the color point) as per:
   if ((X + Y + Z) === 0)
     return {x: 0, y: 0};
@@ -289,16 +277,19 @@ huepi.HelperRGBtoXY = function(Red, Green, Blue)
  * @returns {object} [x, y] - Ranges [0..1] [0..1]
  */
 huepi.HelperGamutXYforModel = function(Px, Py, Model)
-{ // return .x, .y
-  // Check if point is inside Triangle for correct model of light
-  if (Model === 'LCT001') { // For the hue bulb the corners of the triangle are:
-    var PRed = {x: 0.6750, y: 0.3220};
-    var PGreen = {x: 0.4091, y: 0.5180};
-    var PBlue = {x: 0.1670, y: 0.0400};
-  } else { // For LivingColors Bloom, Aura and Iris the triangle corners are:
-    var PRed = {x: 0.704, y: 0.296};
-    var PGreen = {x: 0.2151, y: 0.7106};
-    var PBlue = {x: 0.138, y: 0.08};
+{
+  if (Model.slice(0, 3) === 'LCT') { // For the hue bulb the corners of the triangle are:
+    var PRed = {x: 0.674, y: 0.322};
+    var PGreen = {x: 0.408, y: 0.517};
+    var PBlue = {x: 0.168, y: 0.041};
+  } else if ((Model.slice(0, 3) === 'LLC') || (Model.slice(0, 3) === 'LST')) { // For LivingColors Bloom, Aura and Iris the triangle corners are:
+    var PRed = {x: 0.703, y: 0.296};
+    var PGreen = {x: 0.214, y: 0.709};
+    var PBlue = {x: 0.139, y: 0.081};
+  } else { // Default all values
+    var PRed = {x: 1.0, y: 0.0};
+    var PGreen = {x: 0.0, y: 1.0};
+    var PBlue = {x: 0.0, y: 0.0};
   }
 
   var VBR = {x: PRed.x - PBlue.x, y: PRed.y - PBlue.y}; // Blue to Red
@@ -351,7 +342,79 @@ huepi.HelperGamutXYforModel = function(Px, Py, Model)
 };
 
 /**
- * @param {numer} Temperature ranges [1000..66000]
+ * @param {float} x
+ * @param {float} y
+ * @returns {object} [Red, Green, Blue] - Ranges [0..1] [0..1] [0..1]
+ */
+huepi.HelperXYtoRGB = function(x, y)
+{ // Source: https://github.com/PhilipsHue/PhilipsHueSDK-iOS-OSX/blob/master/ApplicationDesignNotes/RGB%20to%20xy%20Color%20conversion.md
+  var z = 1.0 - x - y;
+  var Y = 1.0;
+  var X = (Y / y) * x;
+  var Z = (Y / y) * z;
+  // sRGB D65 conversion
+  var Red = X * 3.2406 - Y * 1.5372 - Z * 0.4986;
+  var Green = -X * 0.9689 + Y * 1.8758 + Z * 0.0415;
+  var Blue = X * 0.0557 - Y * 0.2040 + Z * 1.0570;
+  // Limit RGB on [0..1]
+  if (Red > Blue && Red > Green && Red > 1.0) { // Red is too big
+    Green = Green / Red;
+    Blue = Blue / Red;
+    Red = 1.0;
+  }
+  else if (Green > Blue && Green > Red && Green > 1.0) { // Green is too big
+    Red = Red / Green;
+    Blue = Blue / Green;
+    Green = 1.0;
+  }
+  else if (Blue > Red && Blue > Green && Blue > 1.0) { // Blue is too big
+    Red = Red / Blue;
+    Green = Green / Blue;
+    Blue = 1.0;
+  }
+  // Apply gamma correction
+  if (Red <= 0.0031308) {
+    Red = Red * 12.92;
+  } else {
+    Red = 1.055 * Math.pow(Red, (1.0 / 2.4)) - 0.055;
+  }
+  if (Green <= 0.0031308) {
+    Green = Green * 12.92;
+  } else {
+    Green = 1.055 * Math.pow(Green, (1.0 / 2.4)) - 0.055;
+  }
+  if (Blue <= 0.0031308) {
+    Blue = Blue * 12.92;
+  } else {
+    Blue = 1.055 * Math.pow(Blue, (1.0 / 2.4)) - 0.055;
+  }
+  // Limit RGB on [0..1]
+  if (Red > Blue && Red > Green) { // Red is biggest
+    if (Red > 1.0) {
+      Green = Green / Red;
+      Blue = Blue / Red;
+      Red = 1.0;
+    }
+  }
+  else if (Green > Blue && Green > Red) { // Green is biggest
+    if (Green > 1.0) {
+      Red = Red / Green;
+      Blue = Blue / Green;
+      Green = 1.0;
+    }
+  }
+  else if (Blue > Red && Blue > Green) { // Blue is biggest
+    if (Blue > 1.0) {
+      Red = Red / Blue;
+      Green = Green / Blue;
+      Blue = 1.0;
+    }
+  }
+  return {Red: Red, Green: Green, Blue: Blue};
+};
+
+/**
+ * @param {number} Temperature ranges [1000..66000]
  * @returns {object} [Red, Green, Blue] ranges [0..255] [0..255] [0..255]
  */
 huepi.HelperCTtoRGB = function(Temperature)
@@ -482,7 +545,7 @@ huepi.Lightstate = function()
     this.bri = Brightness;
     return this;
   };
-  /** 
+  /**
    * @param {float} Ang Range [0..360]
    * @param {float} Sat Range [0..1]
    * @param {float} Bri Range [0..1]
@@ -497,7 +560,7 @@ huepi.Lightstate = function()
   /**
    * @param {number} Red Range [0..255]
    * @param {number} Green Range [0..255]
-   * @param {number} Blue Range [0..255] 
+   * @param {number} Blue Range [0..255]
    */
   this.SetRGB = function(Red, Green, Blue) {// In RGB [0..255]
     var HueAngSatBri = huepi.HelperRGBtoHueAngSatBri(Red / 255, Green / 255, Blue / 255);
@@ -519,7 +582,7 @@ huepi.Lightstate = function()
   };
   /**
    * @param {float} X
-   * @param {float} Y 
+   * @param {float} Y
    */
   this.SetXY = function(X, Y) {
     this.xy = [X, Y];
@@ -566,7 +629,7 @@ huepi.Lightstate = function()
       this.transitiontime = Transitiontime;
     return this;
   };
-  /** 
+  /**
    * @returns {string} Stringified version of the content of LightState ready to be sent to the Bridge.
    */
   this.Get = function() {
@@ -738,10 +801,10 @@ huepi.prototype.LightSetBrightness = function(LightNr, Brightness, Transitiontim
  */
 huepi.prototype.LightSetHueAngSatBri = function(LightNr, Ang, Sat, Bri, Transitiontime)
 { // In: Hue in Deg, Saturation, Brightness 0.0-1.0 Transform To Philips Hue Range...
-  if (Ang < 0)
+  while (Ang < 0)
     Ang = Ang + 360;
   Ang = Ang % 360;
-  return this.LightSetHSB(LightNr, Math.round(Ang / 360 * 65535), Sat * 255, Bri * 255, Transitiontime);
+  return this.LightSetHSB(LightNr, Math.round(Ang / 360 * 65535), Math.round(Sat * 255), Math.round(Bri * 255), Transitiontime);
 };
 
 /**
@@ -890,7 +953,7 @@ huepi.prototype.GroupsGetData = function()
  * @param {string} Name New name of the light Range [1..32]
  * @param {multiple} Lights LightNr or Array of Lights to Group
  */
-huepi.prototype.GroupCreate = function(Name, Lights) 
+huepi.prototype.GroupCreate = function(Name, Lights)
 { // POST /api/username/groups
   return $.ajax({
     type: 'POST',
@@ -1345,14 +1408,14 @@ huepi.prototype.RulesGetData = function()
 // 0.61
 // LightSetCT = CT->RGB->XY to ignore Brightness in RGB
 // changed " string to ' string
-// 
+//
 // 0.62
 // renamed
 // BridgeGet to BridgeGetData
 // GroupGet to GroupsGetData
 // LightGet to LightsGetData
 // UsernameWhitelisted to BridgeUsernameWhitelisted
-// 
+//
 // 0.9
 // Added detection of NodeJS
 // Added WORKING JQuery NodeJS if running on NodeJS
@@ -1360,5 +1423,5 @@ huepi.prototype.RulesGetData = function()
 //
 // 0.95
 // renamed HUEPI to huepi to be more complient with modules and actual hue product name
-// 
+//
 //

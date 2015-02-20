@@ -195,7 +195,7 @@
         $('#HUEInfoBar').slideUp(2500);
         //MyHue.GroupOn(0);
         //MyHue.GroupEffectNone(0);
-        HeartbeatInterval = setInterval(StatusHeartbeat, 1000);
+        HeartbeatInterval = setInterval(StatusHeartbeat, 2500);
         StatusHeartbeat(); // Execute Immediate Too!
       }
 
@@ -208,7 +208,7 @@
       function onResume() {
         $('#HUEStatus').text('Resuming');
         $('#HUEInfoBar').slideUp(2500);
-        HeartbeatInterval = setInterval(StatusHeartbeat, 1000);
+        HeartbeatInterval = setInterval(StatusHeartbeat, 2500);
         StatusHeartbeat(); // Execute Immediate Too!
       }
 
@@ -238,6 +238,33 @@
             }
             LightNr++;
           }
+          // Convert 6 to RGB, HSB and set on 7
+          var RGB;
+          var HueAngSatBri;
+          if (MyHue.Lights[6].state.colormode === 'hs') {
+            RGB = huepi.HelperHueAngSatBritoRGB(MyHue.Lights[6].state.hue * 360 / 65535, MyHue.Lights[6].state.sat/255, MyHue.Lights[6].state.bri/255);
+            HueAngSatBri = huepi.HelperRGBtoHueAngSatBri(RGB.Red, RGB.Green, RGB.Blue);
+            HueAngSatBri.Bri = MyHue.Lights[6].state.bri / 255;
+          } else if (MyHue.Lights[6].state.colormode === 'xy') {
+            RGB = huepi.HelperXYtoRGB(MyHue.Lights[6].state.xy[0], MyHue.Lights[6].state.xy[1]);
+            HueAngSatBri= huepi.HelperRGBtoHueAngSatBri(RGB.Red, RGB.Green, RGB.Blue);
+            HueAngSatBri.Bri = MyHue.Lights[6].state.bri / 255;
+          } else if (MyHue.Lights[6].state.colormode === 'ct') {
+            RGB = huepi.HelperCTtoRGB(Math.round(1000000 / MyHue.Lights[6].state.ct));
+            HueAngSatBri = huepi.HelperRGBtoHueAngSatBri(RGB.Red, RGB.Green, RGB.Blue);
+            HueAngSatBri.Bri = MyHue.Lights[6].state.bri / 255;
+          }
+          
+          console.log(MyHue.Lights[6].state.colormode);
+          console.log(MyHue.Lights[6].state.hue);
+          console.log(MyHue.Lights[6].state.xy);
+          console.log(MyHue.Lights[6].state.ct);
+
+          console.log(RGB);
+          console.log(HueAngSatBri);
+
+          MyHue.LightSetHueAngSatBri(7, HueAngSatBri.Ang, HueAngSatBri.Sat, HueAngSatBri.Bri);
+          //
         }, function BridgetHeartbeatGetFailed() {
           $('#HUEStatus').text('StatusHeartbeat BridgeGet Failed');
           $('#HUEInfoBar').show(1500);
