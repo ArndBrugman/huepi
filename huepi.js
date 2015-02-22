@@ -415,9 +415,9 @@ huepi.HelperXYtoRGB = function(x, y)
 
 /**
  * @param {number} Temperature ranges [1000..66000]
- * @returns {object} [Red, Green, Blue] ranges [0..255] [0..255] [0..255]
+ * @returns {object} [Red, Green, Blue] ranges [0..1] [0..1] [0..1]
  */
-huepi.HelperCTtoRGB = function(Temperature)
+huepi.HelperColortemperaturetoRGB = function(Temperature)
 { // http://www.tannerhelland.com/4435/convert-temperature-rgb-algorithm-code/
   var Red, Green, Blue;
 
@@ -461,7 +461,7 @@ huepi.HelperCTtoRGB = function(Temperature)
         Blue = 255;
     }
   }
-  return {Red: Red, Green: Green, Blue: Blue};
+  return {Red: Red/255, Green: Green/255, Blue: Blue/255};
 };
 
 /**
@@ -558,12 +558,12 @@ huepi.Lightstate = function()
     return this.SetHSB(Math.round(Ang / 360 * 65535), Sat * 255, Bri * 255);
   };
   /**
-   * @param {number} Red Range [0..255]
-   * @param {number} Green Range [0..255]
-   * @param {number} Blue Range [0..255]
+   * @param {number} Red Range [0..1]
+   * @param {number} Green Range [0..1]
+   * @param {number} Blue Range [0..1]
    */
-  this.SetRGB = function(Red, Green, Blue) {// In RGB [0..255]
-    var HueAngSatBri = huepi.HelperRGBtoHueAngSatBri(Red / 255, Green / 255, Blue / 255);
+  this.SetRGB = function(Red, Green, Blue) {// In RGB [0..1]
+    var HueAngSatBri = huepi.HelperRGBtoHueAngSatBri(Red, Green, Blue);
     return this.SetHueAngSatBri(HueAngSatBri.Ang, HueAngSatBri.Sat, HueAngSatBri.Bri);
   };
   /**
@@ -809,15 +809,15 @@ huepi.prototype.LightSetHueAngSatBri = function(LightNr, Ang, Sat, Bri, Transiti
 
 /**
  * @param {number} LightNr
- * @param Red Range [0..255]
- * @param Green Range [0..255]
- * @param Blue Range [0..255]
+ * @param Red Range [0..1]
+ * @param Green Range [0..1]
+ * @param Blue Range [0..1]
  * @param {number} Transitiontime optional
  */
-huepi.prototype.LightSetRGB = function(LightNr, Red, Green, Blue, Transitiontime) // 0-255;FF
+huepi.prototype.LightSetRGB = function(LightNr, Red, Green, Blue, Transitiontime)
 {
-  var Point = huepi.HelperRGBtoXY(Red / 255, Green / 255, Blue / 255);
-  var HueAngSatBri = huepi.HelperRGBtoHueAngSatBri(Red / 255, Green / 255, Blue / 255);
+  var Point = huepi.HelperRGBtoXY(Red, Green, Blue);
+  var HueAngSatBri = huepi.HelperRGBtoHueAngSatBri(Red, Green, Blue);
   return $.when(
   this.LightSetBrightness(Math.round(HueAngSatBri.Bri * 255)),
   this.LightSetXY(LightNr, Point.x, Point.y, Transitiontime)
@@ -833,7 +833,7 @@ huepi.prototype.LightSetCT = function(LightNr, CT, Transitiontime)
 {
   var Model = this.Lights[LightNr].modelid;
   if (Model !== 'LCT001') { // CT->RGB->XY to ignore Brightness in RGB
-    var Color = huepi.HelperCTtoRGB(1000000 / CT);
+    var Color = huepi.HelperColortemperaturetoRGB(1000000 / CT);
     var Point = huepi.HelperRGBtoXY(Color.Red, Color.Green, Color.Blue);
     return this.LightSetXY(LightNr, Point.x, Point.y, Transitiontime);
   }
@@ -1425,3 +1425,6 @@ huepi.prototype.RulesGetData = function()
 // renamed HUEPI to huepi to be more complient with modules and actual hue product name
 //
 //
+// Renamed HelperCTtoRGB to HelperColortemperaturetoRG
+// All Red, Green & Blue arguments ranges to [0..1]
+
