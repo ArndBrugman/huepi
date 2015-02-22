@@ -562,7 +562,7 @@ huepi.Lightstate = function()
    * @param {number} Green Range [0..1]
    * @param {number} Blue Range [0..1]
    */
-  this.SetRGB = function(Red, Green, Blue) {// In RGB [0..1]
+  this.SetRGB = function(Red, Green, Blue) {
     var HueAngSatBri = huepi.HelperRGBtoHueAngSatBri(Red, Green, Blue);
     return this.SetHueAngSatBri(HueAngSatBri.Ang, HueAngSatBri.Sat, HueAngSatBri.Bri);
   };
@@ -574,7 +574,7 @@ huepi.Lightstate = function()
     return this;
   };
   /**
-   * @param {number} Colortemperature Range [2000..65000] for the 2012 lights
+   * @param {number} Colortemperature Range [2000..6500] for the 2012 lights
    */
   this.SetColortemperature = function(Colortemperature) {
     this.ct = Math.round((1000000 / Colortemperature)); // Kelvin to micro reciprocal degree
@@ -1143,14 +1143,14 @@ huepi.prototype.GroupSetHueAngSatBri = function(GroupNr, Ang, Sat, Bri, Transiti
 
 /**
  * @param {number} GroupNr
- * @param Red Range [0..255]
- * @param Green Range [0..255]
- * @param Blue Range [0..255]
+ * @param Red Range [0..1]
+ * @param Green Range [0..1]
+ * @param Blue Range [0..1]
  * @param {number} Transitiontime optional
  */
-huepi.prototype.GroupSetRGB = function(GroupNr, Red, Green, Blue, Transitiontime) // 0-255;FF
+huepi.prototype.GroupSetRGB = function(GroupNr, Red, Green, Blue, Transitiontime)
 {
-  var HueAngSatBri = huepi.HelperRGBtoHueAngSatBri(Red / 255, Green / 255, Blue / 255);
+  var HueAngSatBri = huepi.HelperRGBtoHueAngSatBri(Red, Green, Blue);
   return this.GroupSetHueAngSatBri(GroupNr, HueAngSatBri.Ang, HueAngSatBri.Sat, HueAngSatBri.Bri, Transitiontime);
 };
 
