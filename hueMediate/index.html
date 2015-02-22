@@ -124,7 +124,7 @@
           var HueContext = document.getElementById('HUECanvas').getContext('2d');
           var HueImagedata = HueContext.getImageData(x, y, 1, 1); // one Pixel at Cursor
           var HueImagePixel = HueImagedata.data; // data[] RGB of Pixel
-          MyHue.GroupSetRGB(0, HueImagePixel[0], HueImagePixel[1], HueImagePixel[2]);
+          MyHue.GroupSetRGB(0, HueImagePixel[0]/255, HueImagePixel[1]/255, HueImagePixel[2]/255);
         });
 
         $('#brightnessslider').on('slidestop', function(event, ui) {
@@ -250,7 +250,7 @@
             HueAngSatBri= huepi.HelperRGBtoHueAngSatBri(RGB.Red, RGB.Green, RGB.Blue);
             HueAngSatBri.Bri = MyHue.Lights[6].state.bri / 255;
           } else if (MyHue.Lights[6].state.colormode === 'ct') {
-            RGB = huepi.HelperCTtoRGB(Math.round(1000000 / MyHue.Lights[6].state.ct));
+            RGB = huepi.HelperColortemperaturetoRGB(Math.round(1000000 / MyHue.Lights[6].state.ct));
             HueAngSatBri = huepi.HelperRGBtoHueAngSatBri(RGB.Red, RGB.Green, RGB.Blue);
             HueAngSatBri.Bri = MyHue.Lights[6].state.bri / 255;
           }
