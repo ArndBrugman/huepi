@@ -24,18 +24,28 @@
       function HueImageRedraw() {
         var HueCanvas = document.getElementById("HUECanvas");
         var HueContext = document.getElementById("HUECanvas").getContext("2d");
+        var CTCanvas = document.getElementById("CTCanvas");
+        var CTContext = document.getElementById("CTCanvas").getContext("2d");
         var size = GetUrlValue('size');
-        if (size !== undefined)
+        if (size !== undefined) {
           HueCanvas.width = size;
-        else
+          CTCanvas.width = size;
+        } else {
           HueCanvas.width = 512;
+          CTCanvas.width = 512;
+        }
         HueCanvas.height = HueCanvas.width;
+        CTCanvas.height = Math.round(CTCanvas.width / 4);
+        HueContext.fillRect(0, 0, HueCanvas.width, HueCanvas.height); // Need to Fill Canvas otherwise its unable to be modified...
+        CTContext.fillRect(0, 0, CTCanvas.width, CTCanvas.height); // Need to Fill Canvas otherwise its unable to be modified...
+        HueImagedata = HueContext.getImageData(0, 0, HueCanvas.width, HueCanvas.height);
+        CTImagedata = HueContext.getImageData(0, 0, CTCanvas.width, CTCanvas.height);
         var xhalf = HueCanvas.width / 2;
         var yhalf = HueCanvas.height / 2;
-        HueContext.fillRect(0, 0, HueCanvas.width, HueCanvas.height); // Need to Fill Canvas otherwise its unable to be modified...
-        HueImagedata = HueContext.getImageData(0, 0, HueCanvas.width, HueCanvas.height);
-        for (var y = 0; y < HueCanvas.height; y++) { // Evey ScanLine
-          for (var x = 0; x < HueCanvas.width; x++) { // Every Pixel on ScanLine
+        for (var x = 0; x < HueCanvas.width; x++) { // Every Pixel on ScanLine
+          var Colortemperature = 2000 + Math.round(x*(6500 - 2000)/CTCanvas.width); // 2000 to 6500 for 2012 model
+          var CTColor = huepi.HelperColortemperaturetoRGB(Colortemperature);
+          for (var y = 0; y < HueCanvas.height; y++) { // Every ScanLine
             var px = (x - xhalf) / xhalf; // [-1, 1]
             var py = (y - yhalf) / yhalf; // [-1, 1]
             var Hue = 360 - (Math.atan2(px, py) * 180 / Math.PI + 180); // [0..359]
@@ -51,13 +61,22 @@
             var Color = huepi.HelperHueAngSatBritoRGB(Hue, Saturation, Brightness);
 
             var Index = (x + y * HueCanvas.width) * 4; // Index of Pixel
-            HueImagedata.data[Index + 0] = Color.Red * 255;
-            HueImagedata.data[Index + 1] = Color.Green * 255;
-            HueImagedata.data[Index + 2] = Color.Blue * 255;
+            HueImagedata.data[Index + 0] = Color.Red *255;
+            HueImagedata.data[Index + 1] = Color.Green *255;
+            HueImagedata.data[Index + 2] = Color.Blue *255;
+            // Color Temp
+            if (y < CTCanvas.height) {
+              CTImagedata.data[Index + 0] = CTColor.Red *255;
+              CTImagedata.data[Index + 1] = CTColor.Green *255;
+              CTImagedata.data[Index + 2] = CTColor.Blue *255;
+            }
+
           }
         }
         HueContext.putImageData(HueImagedata, 0, 0);
         document.getElementById('HueImage').src = HueCanvas.toDataURL();
+        CTContext.putImageData(CTImagedata, 0, 0);
+        document.getElementById('CTImage').src = CTCanvas.toDataURL();
       }
 
       window.onload = function() {
@@ -72,6 +91,9 @@
     <div align="center">
       <canvas style="border:1px solid #884422;display:none;" id="HUECanvas" width=256 height=256 >It seems your device doesn"t support the required HTML5 Canvas</canvas>
       <img id="HueImage">
+      <br>
+      <canvas style="border:1px solid #884422;display:none;" id="CTCanvas" width=256 height=128 >It seems your device doesn"t support the required HTML5 Canvas</canvas>
+      <img id="CTImage">
     </div>
 
   </body>
