@@ -178,7 +178,7 @@ huepi.HelperRGBtoHueAngSatBri = function(Red, Green, Blue)
     Sat = 0;
     Bri = Max;
   }
-  return {Ang: Ang, Sat: Sat, Bri: Bri};
+  return {Ang: Ang, Sat: Math.round(Sat * 255), Bri: Math.round(Bri * 255)};
 };
 
 /**
