@@ -426,7 +426,7 @@ huepi.HelperColortemperaturetoRGB = function(Temperature)
     Red = 255;
   else {
     Red = Temperature - 60;
-    Red = Math.round(329.698727466 * Math.pow(Red, -0.1332047592));
+    Red = 329.698727466 * Math.pow(Red, -0.1332047592);
     if (Red < 0)
       Red = 0;
     if (Red > 255)
@@ -434,7 +434,7 @@ huepi.HelperColortemperaturetoRGB = function(Temperature)
   }
   if (Temperature <= 66) {
     Green = Temperature;
-    Green = Math.round(99.4708025861 * Math.log(Green) - 161.1195681661);
+    Green = 99.4708025861 * Math.log(Green) - 161.1195681661;
     if (Green < 0)
       Green = 0;
     if (Green > 255)
@@ -454,7 +454,7 @@ huepi.HelperColortemperaturetoRGB = function(Temperature)
       Blue = 0;
     else {
       Blue = Temperature - 10;
-      Blue = Math.round(138.5177312231 * Math.log(Blue) - 305.0447927307);
+      Blue = 138.5177312231 * Math.log(Blue) - 305.0447927307;
       if (Blue < 0)
         Blue = 0;
       if (Blue > 255)
@@ -519,30 +519,30 @@ huepi.Lightstate = function()
    * @param {float} Brightness Range [0..255]
    */
   this.SetHSB = function(Hue, Saturation, Brightness) { // Range 65535, 255, 255
-    this.hue = Hue;
-    this.sat = Saturation;
-    this.bri = Brightness;
+    this.hue = Math.round(Hue);
+    this.sat = Math.round(Saturation);
+    this.bri = Math.round(Brightness);
     return this;
   };
   /**
    * @param {number} Hue Range [0..65535]
    */
   this.SetHue = function(Hue) {
-    this.hue = Hue;
+    this.hue = Math.round(Hue);
     return this;
   };
   /**
    * @param {float} Saturation Range [0..255]
    */
   this.SetSaturation = function(Saturation) {
-    this.sat = Saturation;
+    this.sat = Math.round(Saturation);
     return this;
   };
   /**
    * @param {float} Brightness Range [0..255]
    */
   this.SetBrightness = function(Brightness) {
-    this.bri = Brightness;
+    this.bri = Math.round(Brightness);
     return this;
   };
   /**
@@ -555,7 +555,7 @@ huepi.Lightstate = function()
     while (Ang < 0)
       Ang = Ang + 360;
     Ang = Ang % 360;
-    return this.SetHSB(Math.round(Ang / 360 * 65535), Sat * 255, Bri * 255);
+    return this.SetHSB(Math.round(Ang / 360 * 65535), Math.round(Sat * 255), Math.round(Bri * 255));
   };
   /**
    * @param {number} Red Range [0..1]
@@ -567,10 +567,10 @@ huepi.Lightstate = function()
     return this.SetHueAngSatBri(HueAngSatBri.Ang, HueAngSatBri.Sat, HueAngSatBri.Bri);
   };
   /**
-   * @param {number} Ct Micro Reciprocal Degree of Colortemperature (Ct = 100000 / Colortemperature)
+   * @param {number} Ct Micro Reciprocal Degree of Colortemperature (Ct = 1000000 / Colortemperature)
    */
   this.SetCT = function(Ct) {
-    this.ct = Ct;
+    this.ct = Math.round(Ct);
     return this;
   };
   /**
@@ -804,7 +804,7 @@ huepi.prototype.LightSetHueAngSatBri = function(LightNr, Ang, Sat, Bri, Transiti
   while (Ang < 0)
     Ang = Ang + 360;
   Ang = Ang % 360;
-  return this.LightSetHSB(LightNr, Math.round(Ang / 360 * 65535), Math.round(Sat * 255), Math.round(Bri * 255), Transitiontime);
+  return this.LightSetHSB(LightNr, Ang / 360 * 65535, Sat * 255, Bri * 255, Transitiontime);
 };
 
 /**
@@ -819,7 +819,7 @@ huepi.prototype.LightSetRGB = function(LightNr, Red, Green, Blue, Transitiontime
   var Point = huepi.HelperRGBtoXY(Red, Green, Blue);
   var HueAngSatBri = huepi.HelperRGBtoHueAngSatBri(Red, Green, Blue);
   return $.when(
-  this.LightSetBrightness(Math.round(HueAngSatBri.Bri * 255)),
+  this.LightSetBrightness(HueAngSatBri.Bri * 255),
   this.LightSetXY(LightNr, Point.x, Point.y, Transitiontime)
   );
 };
@@ -850,7 +850,7 @@ huepi.prototype.LightSetCT = function(LightNr, CT, Transitiontime)
  */
 huepi.prototype.LightSetColortemperature = function(LightNr, Colortemperature, Transitiontime)
 {
-  return this.LightSetCT(LightNr, Math.round(1000000 / Colortemperature), Transitiontime);
+  return this.LightSetCT(LightNr, 1000000 / Colortemperature, Transitiontime);
 };
 
 /**
@@ -1135,10 +1135,10 @@ huepi.prototype.GroupSetBrightness = function(GroupNr, Brightness, Transitiontim
  */
 huepi.prototype.GroupSetHueAngSatBri = function(GroupNr, Ang, Sat, Bri, Transitiontime)
 {
-  if (Ang < 0)
+  while (Ang < 0)
     Ang = Ang + 360;
   Ang = Ang % 360;
-  return this.GroupSetHSB(GroupNr, Math.round(Ang / 360 * 65535), Sat * 255, Bri * 255, Transitiontime);
+  return this.GroupSetHSB(GroupNr, Ang / 360 * 65535, Sat * 255, Bri * 255, Transitiontime);
 };
 
 /**
@@ -1190,7 +1190,7 @@ huepi.prototype.GroupSetCT = function(GroupNr, CT, Transitiontime)
  */
 huepi.prototype.GroupSetColortemperature = function(GroupNr, Colortemperature, Transitiontime)
 {
-  return this.GroupSetCT(GroupNr, Math.round(1000000 / Colortemperature), Transitiontime);
+  return this.GroupSetCT(GroupNr, 1000000 / Colortemperature, Transitiontime);
 };
 
 /**
