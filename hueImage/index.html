@@ -9,6 +9,7 @@
 
   </head>
   <body>
+
     <script type="text/javascript" >
       function GetUrlValue(VarSearch) {
         var SearchString = window.location.search.substring(1);
@@ -26,20 +27,21 @@
         var HueContext = document.getElementById("HUECanvas").getContext("2d");
         var CTCanvas = document.getElementById("CTCanvas");
         var CTContext = document.getElementById("CTCanvas").getContext("2d");
+        var XYCanvas = document.getElementById("XYCanvas");
+        var XYContext = document.getElementById("XYCanvas").getContext("2d");
         var size = GetUrlValue('size');
-        if (size !== undefined) {
-          HueCanvas.width = size;
-          CTCanvas.width = size;
-        } else {
-          HueCanvas.width = 512;
-          CTCanvas.width = 512;
-        }
+        HueCanvas.width = 
+        CTCanvas.width = 
+        XYCanvas.width = size || 512;
         HueCanvas.height = HueCanvas.width;
         CTCanvas.height = Math.round(CTCanvas.width / 4);
+        XYCanvas.height = XYCanvas.width;
         HueContext.fillRect(0, 0, HueCanvas.width, HueCanvas.height); // Need to Fill Canvas otherwise its unable to be modified...
         CTContext.fillRect(0, 0, CTCanvas.width, CTCanvas.height); // Need to Fill Canvas otherwise its unable to be modified...
+        XYContext.fillRect(0, 0, XYCanvas.width, XYCanvas.height); // Need to Fill Canvas otherwise its unable to be modified...
         HueImagedata = HueContext.getImageData(0, 0, HueCanvas.width, HueCanvas.height);
         CTImagedata = HueContext.getImageData(0, 0, CTCanvas.width, CTCanvas.height);
+        XYImagedata = XYContext.getImageData(0, 0, XYCanvas.width, XYCanvas.height);
         var xhalf = HueCanvas.width / 2;
         var yhalf = HueCanvas.height / 2;
         for (var x = 0; x < HueCanvas.width; x++) { // Every Pixel on ScanLine
@@ -64,36 +66,52 @@
             HueImagedata.data[Index + 0] = Color.Red *255;
             HueImagedata.data[Index + 1] = Color.Green *255;
             HueImagedata.data[Index + 2] = Color.Blue *255;
-            // Color Temp
+            // Colortemperature is only x gradient, draw same CTColor until CTCanvas.height
             if (y < CTCanvas.height) {
               CTImagedata.data[Index + 0] = CTColor.Red *255;
               CTImagedata.data[Index + 1] = CTColor.Green *255;
               CTImagedata.data[Index + 2] = CTColor.Blue *255;
             }
-
+            var XYColor = huepi.HelperXYtoRGB(x / XYCanvas.width, 1 - (y / XYCanvas.height));
+            XYImagedata.data[Index + 0] = XYColor.Red *255;
+            XYImagedata.data[Index + 1] = XYColor.Green *255;
+            XYImagedata.data[Index + 2] = XYColor.Blue *255;
           }
+        }
+        // "Draw" Colortemperature line to XYImage using 2012 model CT range
+        for (var Colortemperature = 2000; Colortemperature < 6500; Colortemperature+=0.1) { // 2000 to 6500 for 2012 model
+          var CTColor = huepi.HelperColortemperaturetoRGB(Colortemperature);
+          var XY = huepi.HelperRGBtoXY(CTColor.Red, CTColor.Green, CTColor.Blue);
+          // transform XY to ImageCoordinates
+          XY.x = Math.round(XY.x * XYCanvas.width);
+          XY.y = Math.round(( 1 - XY.y) * XYCanvas.height);
+          var CTIndex = (XY.x + XY.y * HueCanvas.width) * 4; // Index of Pixel
+          XYImagedata.data[CTIndex + 0] =  0;
+          XYImagedata.data[CTIndex + 1] =  0;
+          XYImagedata.data[CTIndex + 2] =  0;
         }
         HueContext.putImageData(HueImagedata, 0, 0);
         document.getElementById('HueImage').src = HueCanvas.toDataURL();
         CTContext.putImageData(CTImagedata, 0, 0);
         document.getElementById('CTImage').src = CTCanvas.toDataURL();
+        XYContext.putImageData(XYImagedata, 0, 0);
+        document.getElementById('XYImage').src = XYCanvas.toDataURL();
       }
 
       window.onload = function() {
-        window.onresize();
-      };
-
-      window.onresize = function() {
         HueImageRedraw();
-      };
-
+      }
     </script>
+
     <div align="center">
       <canvas style="border:1px solid #884422;display:none;" id="HUECanvas" width=256 height=256 >It seems your device doesn"t support the required HTML5 Canvas</canvas>
       <img id="HueImage">
       <br>
       <canvas style="border:1px solid #884422;display:none;" id="CTCanvas" width=256 height=128 >It seems your device doesn"t support the required HTML5 Canvas</canvas>
       <img id="CTImage">
+      <br>
+      <canvas style="border:1px solid #884422;display:none;" id="XYCanvas" width=256 height=256 >It seems your device doesn"t support the required HTML5 Canvas</canvas>
+      <img id="XYImage">
     </div>
 
   </body>
