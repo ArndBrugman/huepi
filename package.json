@@ -1,6 +1,6 @@
 {
   "name": "huepi",
-  "version": "0.9.5",
+  "version": "0.10.0",
   "description": "hue (Philips Wireless Lighting) Api interface for JavaScript",
   "main": "huepi.js",
   "scripts": {
@@ -22,7 +22,7 @@
   "bugs": {
     "url": "https://github.com/ArndBrugman/huepi/issues"
   },
-   "dependencies": {
+  "dependencies": {
     "jquery": "2.x.x",
     "domino": "1.x.x",
     "xmlhttprequest": "1.x.x"
