@@ -90,7 +90,7 @@ if (typeof module !== 'undefined' &amp;&amp; module.exports)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-// 
+//
 // Portal Functions
 //
 //
@@ -187,7 +187,7 @@ huepi.prototype.BridgeDeleteUser = function(UsernameToDelete)
  * @returns {object} [Ang, Sat, Bri] - Ranges [0..360] [0..1] [0..1]
  */
 huepi.HelperRGBtoHueAngSatBri = function(Red, Green, Blue)
-{ // Range 0..1, return .Ang (360), .Sat, .Brig
+{
   var Ang, Sat, Bri;
   var Min = Math.min(Red, Green, Blue);
   var Max = Math.max(Red, Green, Blue);
@@ -272,12 +272,8 @@ huepi.HelperHueAngSatBritoRGB = function(Ang, Sat, Bri)
  * @returns {object} [x, y] - Ranges [0..1] [0..1]
  */
 huepi.HelperRGBtoXY = function(Red, Green, Blue)
-{ // Range 0..1, return .x, .y
-  // Adjust to Light XY CIE
-  // https://github.com/PhilipsHue/PhilipsHueSDK-iOS-OSX/commit/f41091cf671e13fe8c32fcced12604cd31cceaf3
-  // for details...
-  //
-  // Gamma Correct RGB
+{ // Source: https://github.com/PhilipsHue/PhilipsHueSDK-iOS-OSX/blob/master/ApplicationDesignNotes/RGB%20to%20xy%20Color%20conversion.md
+  // Apply gamma correction
   if (Red > 0.04045)
     Red = Math.pow((Red + 0.055) / (1.055), 2.4);
   else
@@ -290,18 +286,10 @@ huepi.HelperRGBtoXY = function(Red, Green, Blue)
     Blue = Math.pow((Blue + 0.055) / (1.055), 2.4);
   else
     Blue = Blue / 12.92;
-  // Translate to XYZ
+  // Wide gamut conversion D65
   var X = Red * 0.649926 + Green * 0.103455 + Blue * 0.197109;
   var Y = Red * 0.234327 + Green * 0.743075 + Blue * 0.022598;
   var Z = Red * 0.000000 + Green * 0.053077 + Blue * 1.035763;
-  //
-  // http://www.everyhue.com/vanilla/discussion/comment/635
-  //
-  // var X = 1.076450 * Red - 0.237662 * Green + 0.161212 * Blue;
-  // var Y = 0.410964 * Red + 0.554342 * Green + 0.034694 * Blue;
-  // var Z = -0.010954 * Red - 0.013389 * Green + 1.024343 * Blue;
-
-  //
   // But we don't want Capital X,Y,Z you want lowercase [x,y] (called the color point) as per:
   if ((X + Y + Z) === 0)
     return {x: 0, y: 0};
@@ -317,16 +305,19 @@ huepi.HelperRGBtoXY = function(Red, Green, Blue)
  * @returns {object} [x, y] - Ranges [0..1] [0..1]
  */
 huepi.HelperGamutXYforModel = function(Px, Py, Model)
-{ // return .x, .y
-  // Check if point is inside Triangle for correct model of light
-  if (Model === 'LCT001') { // For the hue bulb the corners of the triangle are:
-    var PRed = {x: 0.6750, y: 0.3220};
-    var PGreen = {x: 0.4091, y: 0.5180};
-    var PBlue = {x: 0.1670, y: 0.0400};
-  } else { // For LivingColors Bloom, Aura and Iris the triangle corners are:
-    var PRed = {x: 0.704, y: 0.296};
-    var PGreen = {x: 0.2151, y: 0.7106};
-    var PBlue = {x: 0.138, y: 0.08};
+{
+  if (Model.slice(0, 3) === 'LCT') { // For the hue bulb the corners of the triangle are:
+    var PRed = {x: 0.674, y: 0.322};
+    var PGreen = {x: 0.408, y: 0.517};
+    var PBlue = {x: 0.168, y: 0.041};
+  } else if ((Model.slice(0, 3) === 'LLC') || (Model.slice(0, 3) === 'LST')) { // For LivingColors Bloom, Aura and Iris the triangle corners are:
+    var PRed = {x: 0.703, y: 0.296};
+    var PGreen = {x: 0.214, y: 0.709};
+    var PBlue = {x: 0.139, y: 0.081};
+  } else { // Default all values
+    var PRed = {x: 1.0, y: 0.0};
+    var PGreen = {x: 0.0, y: 1.0};
+    var PBlue = {x: 0.0, y: 0.0};
   }
 
   var VBR = {x: PRed.x - PBlue.x, y: PRed.y - PBlue.y}; // Blue to Red
@@ -379,10 +370,82 @@ huepi.HelperGamutXYforModel = function(Px, Py, Model)
 };
 
 /**
- * @param {numer} Temperature ranges [1000..66000]
- * @returns {object} [Red, Green, Blue] ranges [0..255] [0..255] [0..255]
+ * @param {float} x
+ * @param {float} y
+ * @returns {object} [Red, Green, Blue] - Ranges [0..1] [0..1] [0..1]
  */
-huepi.HelperCTtoRGB = function(Temperature)
+huepi.HelperXYtoRGB = function(x, y)
+{ // Source: https://github.com/PhilipsHue/PhilipsHueSDK-iOS-OSX/blob/master/ApplicationDesignNotes/RGB%20to%20xy%20Color%20conversion.md
+  var z = 1.0 - x - y;
+  var Y = 1.0;
+  var X = (Y / y) * x;
+  var Z = (Y / y) * z;
+  // sRGB D65 conversion
+  var Red = X * 3.2406 - Y * 1.5372 - Z * 0.4986;
+  var Green = -X * 0.9689 + Y * 1.8758 + Z * 0.0415;
+  var Blue = X * 0.0557 - Y * 0.2040 + Z * 1.0570;
+  // Limit RGB on [0..1]
+  if (Red > Blue &amp;&amp; Red > Green &amp;&amp; Red > 1.0) { // Red is too big
+    Green = Green / Red;
+    Blue = Blue / Red;
+    Red = 1.0;
+  }
+  else if (Green > Blue &amp;&amp; Green > Red &amp;&amp; Green > 1.0) { // Green is too big
+    Red = Red / Green;
+    Blue = Blue / Green;
+    Green = 1.0;
+  }
+  else if (Blue > Red &amp;&amp; Blue > Green &amp;&amp; Blue > 1.0) { // Blue is too big
+    Red = Red / Blue;
+    Green = Green / Blue;
+    Blue = 1.0;
+  }
+  // Apply gamma correction
+  if (Red &lt;= 0.0031308) {
+    Red = Red * 12.92;
+  } else {
+    Red = 1.055 * Math.pow(Red, (1.0 / 2.4)) - 0.055;
+  }
+  if (Green &lt;= 0.0031308) {
+    Green = Green * 12.92;
+  } else {
+    Green = 1.055 * Math.pow(Green, (1.0 / 2.4)) - 0.055;
+  }
+  if (Blue &lt;= 0.0031308) {
+    Blue = Blue * 12.92;
+  } else {
+    Blue = 1.055 * Math.pow(Blue, (1.0 / 2.4)) - 0.055;
+  }
+  // Limit RGB on [0..1]
+  if (Red > Blue &amp;&amp; Red > Green) { // Red is biggest
+    if (Red > 1.0) {
+      Green = Green / Red;
+      Blue = Blue / Red;
+      Red = 1.0;
+    }
+  }
+  else if (Green > Blue &amp;&amp; Green > Red) { // Green is biggest
+    if (Green > 1.0) {
+      Red = Red / Green;
+      Blue = Blue / Green;
+      Green = 1.0;
+    }
+  }
+  else if (Blue > Red &amp;&amp; Blue > Green) { // Blue is biggest
+    if (Blue > 1.0) {
+      Red = Red / Blue;
+      Green = Green / Blue;
+      Blue = 1.0;
+    }
+  }
+  return {Red: Red, Green: Green, Blue: Blue};
+};
+
+/**
+ * @param {number} Temperature ranges [1000..66000]
+ * @returns {object} [Red, Green, Blue] ranges [0..1] [0..1] [0..1]
+ */
+huepi.HelperColortemperaturetoRGB = function(Temperature)
 { // http://www.tannerhelland.com/4435/convert-temperature-rgb-algorithm-code/
   var Red, Green, Blue;
 
@@ -391,7 +454,7 @@ huepi.HelperCTtoRGB = function(Temperature)
     Red = 255;
   else {
     Red = Temperature - 60;
-    Red = Math.round(329.698727466 * Math.pow(Red, -0.1332047592));
+    Red = 329.698727466 * Math.pow(Red, -0.1332047592);
     if (Red &lt; 0)
       Red = 0;
     if (Red > 255)
@@ -399,7 +462,7 @@ huepi.HelperCTtoRGB = function(Temperature)
   }
   if (Temperature &lt;= 66) {
     Green = Temperature;
-    Green = Math.round(99.4708025861 * Math.log(Green) - 161.1195681661);
+    Green = 99.4708025861 * Math.log(Green) - 161.1195681661;
     if (Green &lt; 0)
       Green = 0;
     if (Green > 255)
@@ -419,14 +482,14 @@ huepi.HelperCTtoRGB = function(Temperature)
       Blue = 0;
     else {
       Blue = Temperature - 10;
-      Blue = Math.round(138.5177312231 * Math.log(Blue) - 305.0447927307);
+      Blue = 138.5177312231 * Math.log(Blue) - 305.0447927307;
       if (Blue &lt; 0)
         Blue = 0;
       if (Blue > 255)
         Blue = 255;
     }
   }
-  return {Red: Red, Green: Green, Blue: Blue};
+  return {Red: Red/255, Green: Green/255, Blue: Blue/255};
 };
 
 /**
@@ -484,33 +547,33 @@ huepi.Lightstate = function()
    * @param {float} Brightness Range [0..255]
    */
   this.SetHSB = function(Hue, Saturation, Brightness) { // Range 65535, 255, 255
-    this.hue = Hue;
-    this.sat = Saturation;
-    this.bri = Brightness;
+    this.hue = Math.round(Hue);
+    this.sat = Math.round(Saturation);
+    this.bri = Math.round(Brightness);
     return this;
   };
   /**
    * @param {number} Hue Range [0..65535]
    */
   this.SetHue = function(Hue) {
-    this.hue = Hue;
+    this.hue = Math.round(Hue);
     return this;
   };
   /**
    * @param {float} Saturation Range [0..255]
    */
   this.SetSaturation = function(Saturation) {
-    this.sat = Saturation;
+    this.sat = Math.round(Saturation);
     return this;
   };
   /**
    * @param {float} Brightness Range [0..255]
    */
   this.SetBrightness = function(Brightness) {
-    this.bri = Brightness;
+    this.bri = Math.round(Brightness);
     return this;
   };
-  /** 
+  /**
    * @param {float} Ang Range [0..360]
    * @param {float} Sat Range [0..1]
    * @param {float} Bri Range [0..1]
@@ -520,26 +583,26 @@ huepi.Lightstate = function()
     while (Ang &lt; 0)
       Ang = Ang + 360;
     Ang = Ang % 360;
-    return this.SetHSB(Math.round(Ang / 360 * 65535), Sat * 255, Bri * 255);
+    return this.SetHSB(Math.round(Ang / 360 * 65535), Math.round(Sat * 255), Math.round(Bri * 255));
   };
   /**
-   * @param {number} Red Range [0..255]
-   * @param {number} Green Range [0..255]
-   * @param {number} Blue Range [0..255] 
+   * @param {number} Red Range [0..1]
+   * @param {number} Green Range [0..1]
+   * @param {number} Blue Range [0..1]
    */
-  this.SetRGB = function(Red, Green, Blue) {// In RGB [0..255]
-    var HueAngSatBri = huepi.HelperRGBtoHueAngSatBri(Red / 255, Green / 255, Blue / 255);
+  this.SetRGB = function(Red, Green, Blue) {
+    var HueAngSatBri = huepi.HelperRGBtoHueAngSatBri(Red, Green, Blue);
     return this.SetHueAngSatBri(HueAngSatBri.Ang, HueAngSatBri.Sat, HueAngSatBri.Bri);
   };
   /**
-   * @param {number} Ct Micro Reciprocal Degree of Colortemperature (Ct = 100000 / Colortemperature)
+   * @param {number} Ct Micro Reciprocal Degree of Colortemperature (Ct = 1000000 / Colortemperature)
    */
   this.SetCT = function(Ct) {
-    this.ct = Ct;
+    this.ct = Math.round(Ct);
     return this;
   };
   /**
-   * @param {number} Colortemperature Range [2000..65000] for the 2012 lights
+   * @param {number} Colortemperature Range [2000..6500] for the 2012 lights
    */
   this.SetColortemperature = function(Colortemperature) {
     this.ct = Math.round((1000000 / Colortemperature)); // Kelvin to micro reciprocal degree
@@ -547,7 +610,7 @@ huepi.Lightstate = function()
   };
   /**
    * @param {float} X
-   * @param {float} Y 
+   * @param {float} Y
    */
   this.SetXY = function(X, Y) {
     this.xy = [X, Y];
@@ -594,7 +657,7 @@ huepi.Lightstate = function()
       this.transitiontime = Transitiontime;
     return this;
   };
-  /** 
+  /**
    * @returns {string} Stringified version of the content of LightState ready to be sent to the Bridge.
    */
   this.Get = function() {
@@ -766,25 +829,25 @@ huepi.prototype.LightSetBrightness = function(LightNr, Brightness, Transitiontim
  */
 huepi.prototype.LightSetHueAngSatBri = function(LightNr, Ang, Sat, Bri, Transitiontime)
 { // In: Hue in Deg, Saturation, Brightness 0.0-1.0 Transform To Philips Hue Range...
-  if (Ang &lt; 0)
+  while (Ang &lt; 0)
     Ang = Ang + 360;
   Ang = Ang % 360;
-  return this.LightSetHSB(LightNr, Math.round(Ang / 360 * 65535), Sat * 255, Bri * 255, Transitiontime);
+  return this.LightSetHSB(LightNr, Ang / 360 * 65535, Sat * 255, Bri * 255, Transitiontime);
 };
 
 /**
  * @param {number} LightNr
- * @param Red Range [0..255]
- * @param Green Range [0..255]
- * @param Blue Range [0..255]
+ * @param Red Range [0..1]
+ * @param Green Range [0..1]
+ * @param Blue Range [0..1]
  * @param {number} Transitiontime optional
  */
-huepi.prototype.LightSetRGB = function(LightNr, Red, Green, Blue, Transitiontime) // 0-255;FF
+huepi.prototype.LightSetRGB = function(LightNr, Red, Green, Blue, Transitiontime)
 {
-  var Point = huepi.HelperRGBtoXY(Red / 255, Green / 255, Blue / 255);
-  var HueAngSatBri = huepi.HelperRGBtoHueAngSatBri(Red / 255, Green / 255, Blue / 255);
+  var Point = huepi.HelperRGBtoXY(Red, Green, Blue);
+  var HueAngSatBri = huepi.HelperRGBtoHueAngSatBri(Red, Green, Blue);
   return $.when(
-  this.LightSetBrightness(Math.round(HueAngSatBri.Bri * 255)),
+  this.LightSetBrightness(HueAngSatBri.Bri * 255),
   this.LightSetXY(LightNr, Point.x, Point.y, Transitiontime)
   );
 };
@@ -798,7 +861,7 @@ huepi.prototype.LightSetCT = function(LightNr, CT, Transitiontime)
 {
   var Model = this.Lights[LightNr].modelid;
   if (Model !== 'LCT001') { // CT->RGB->XY to ignore Brightness in RGB
-    var Color = huepi.HelperCTtoRGB(1000000 / CT);
+    var Color = huepi.HelperColortemperaturetoRGB(1000000 / CT);
     var Point = huepi.HelperRGBtoXY(Color.Red, Color.Green, Color.Blue);
     return this.LightSetXY(LightNr, Point.x, Point.y, Transitiontime);
   }
@@ -815,7 +878,7 @@ huepi.prototype.LightSetCT = function(LightNr, CT, Transitiontime)
  */
 huepi.prototype.LightSetColortemperature = function(LightNr, Colortemperature, Transitiontime)
 {
-  return this.LightSetCT(LightNr, Math.round(1000000 / Colortemperature), Transitiontime);
+  return this.LightSetCT(LightNr, 1000000 / Colortemperature, Transitiontime);
 };
 
 /**
@@ -918,7 +981,7 @@ huepi.prototype.GroupsGetData = function()
  * @param {string} Name New name of the light Range [1..32]
  * @param {multiple} Lights LightNr or Array of Lights to Group
  */
-huepi.prototype.GroupCreate = function(Name, Lights) 
+huepi.prototype.GroupCreate = function(Name, Lights)
 { // POST /api/username/groups
   return $.ajax({
     type: 'POST',
@@ -1100,22 +1163,22 @@ huepi.prototype.GroupSetBrightness = function(GroupNr, Brightness, Transitiontim
  */
 huepi.prototype.GroupSetHueAngSatBri = function(GroupNr, Ang, Sat, Bri, Transitiontime)
 {
-  if (Ang &lt; 0)
+  while (Ang &lt; 0)
     Ang = Ang + 360;
   Ang = Ang % 360;
-  return this.GroupSetHSB(GroupNr, Math.round(Ang / 360 * 65535), Sat * 255, Bri * 255, Transitiontime);
+  return this.GroupSetHSB(GroupNr, Ang / 360 * 65535, Sat * 255, Bri * 255, Transitiontime);
 };
 
 /**
  * @param {number} GroupNr
- * @param Red Range [0..255]
- * @param Green Range [0..255]
- * @param Blue Range [0..255]
+ * @param Red Range [0..1]
+ * @param Green Range [0..1]
+ * @param Blue Range [0..1]
  * @param {number} Transitiontime optional
  */
-huepi.prototype.GroupSetRGB = function(GroupNr, Red, Green, Blue, Transitiontime) // 0-255;FF
+huepi.prototype.GroupSetRGB = function(GroupNr, Red, Green, Blue, Transitiontime)
 {
-  var HueAngSatBri = huepi.HelperRGBtoHueAngSatBri(Red / 255, Green / 255, Blue / 255);
+  var HueAngSatBri = huepi.HelperRGBtoHueAngSatBri(Red, Green, Blue);
   return this.GroupSetHueAngSatBri(GroupNr, HueAngSatBri.Ang, HueAngSatBri.Sat, HueAngSatBri.Bri, Transitiontime);
 };
 
@@ -1155,7 +1218,7 @@ huepi.prototype.GroupSetCT = function(GroupNr, CT, Transitiontime)
  */
 huepi.prototype.GroupSetColortemperature = function(GroupNr, Colortemperature, Transitiontime)
 {
-  return this.GroupSetCT(GroupNr, Math.round(1000000 / Colortemperature), Transitiontime);
+  return this.GroupSetCT(GroupNr, 1000000 / Colortemperature, Transitiontime);
 };
 
 /**
@@ -1373,14 +1436,14 @@ huepi.prototype.RulesGetData = function()
 // 0.61
 // LightSetCT = CT->RGB->XY to ignore Brightness in RGB
 // changed " string to ' string
-// 
+//
 // 0.62
 // renamed
 // BridgeGet to BridgeGetData
 // GroupGet to GroupsGetData
 // LightGet to LightsGetData
 // UsernameWhitelisted to BridgeUsernameWhitelisted
-// 
+//
 // 0.9
 // Added detection of NodeJS
 // Added WORKING JQuery NodeJS if running on NodeJS
@@ -1388,8 +1451,11 @@ huepi.prototype.RulesGetData = function()
 //
 // 0.95
 // renamed HUEPI to huepi to be more complient with modules and actual hue product name
-// 
 //
+//
+// Renamed HelperCTtoRGB to HelperColortemperaturetoRG
+// All Red, Green &amp; Blue arguments ranges to [0..1]
+
 </code></pre>
         </article>
     </section>
@@ -1406,7 +1472,7 @@ huepi.prototype.RulesGetData = function()
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-beta1</a> on Sun Feb 15 2015 17:08:41 GMT+0100 (CET)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-beta1</a> on Tue Feb 24 2015 09:11:59 GMT+0100 (CET)
 </footer>
 
 <script> prettyPrint(); </script>
