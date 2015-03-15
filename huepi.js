@@ -182,6 +182,25 @@ huepi.HelperRGBtoHueAngSatBri = function(Red, Green, Blue)
 };
 
 /**
+ * Convert skewed Yellow/Green Hue to Correct HueAng
+ * @param {float} Hue - Range [0..65535]
+ * @returns {float} - Range [0..360]
+ *
+ */
+huepi.HelperHuetoHueAng = function(Hue)
+{ // Converted along the skewed yellow green
+  var Ang = 360 * Hue / 65535;
+  
+  if (Ang>0) {
+    if (Ang<90)
+      Ang = Ang - Ang * 0.17 * (Ang/90); // Longer Red, shorter Green
+    else if (Ang<180)
+      Ang = Ang - (180-Ang) *  0.17 * ((180-Ang)/90); // Longer Red, shorter Green
+  }
+  return Ang;
+}
+
+/**
  * @param {float} Ang - Range [0..360]
  * @param {float} Sat - Range [0..1]
  * @param {float} Bri - Range [0..1]
@@ -196,7 +215,7 @@ huepi.HelperHueAngSatBritoRGB = function(Ang, Sat, Bri)
     Blue = Bri;
   } else
   {
-    var Sector = Math.floor(Ang / 60);
+    var Sector = Math.floor(Ang / 60) % 6;
     var Fraction = (Ang / 60) - Sector;
     var p = Bri * (1 - Sat);
     var q = Bri * (1 - Sat * Fraction);
@@ -258,10 +277,10 @@ huepi.HelperRGBtoXY = function(Red, Green, Blue)
     Blue = Math.pow((Blue + 0.055) / (1.055), 2.4);
   else
     Blue = Blue / 12.92;
-  // Wide gamut conversion D65
-  var X = Red * 0.649926 + Green * 0.103455 + Blue * 0.197109;
-  var Y = Red * 0.234327 + Green * 0.743075 + Blue * 0.022598;
-  var Z = Red * 0.000000 + Green * 0.053077 + Blue * 1.035763;
+  // RGB to XYZ [M] for sRGB D65, http://www.brucelindbloom.com/index.html?Eqn_RGB_XYZ_Matrix.html
+  var X = Red * 0.4124564 + Green * 0.3575761 + Blue * 0.1804375;
+  var Y = Red * 0.2126729 + Green * 0.7151522 + Blue * 0.0721750;
+  var Z = Red * 0.0193339 + Green * 0.1191920 + Blue * 0.9503041;
   // But we don't want Capital X,Y,Z you want lowercase [x,y] (called the color point) as per:
   if ((X + Y + Z) === 0)
     return {x: 0, y: 0};
@@ -344,35 +363,48 @@ huepi.HelperGamutXYforModel = function(Px, Py, Model)
 /**
  * @param {float} x
  * @param {float} y
+ * @param {string} Model - Modelname of the Light
+ * @param {float} Brightness Optional
  * @returns {object} [Red, Green, Blue] - Ranges [0..1] [0..1] [0..1]
  */
-huepi.HelperXYtoRGB = function(x, y)
+huepi.HelperXYtoRGBforModel = function(x, y, Model, Brightness)
 { // Source: https://github.com/PhilipsHue/PhilipsHueSDK-iOS-OSX/blob/master/ApplicationDesignNotes/RGB%20to%20xy%20Color%20conversion.md
+  Model = Model || "LCT001"; // default hue Bulb 2012
+  Brightness = Brightness || 1.0; // Default full brightness
+  var GamutCorrected = huepi.HelperGamutXYforModel(x, y, Model);
+  x = GamutCorrected.x;
+  y = GamutCorrected.y;
   var z = 1.0 - x - y;
-  var Y = 1.0;
+  var Y = Brightness;
   var X = (Y / y) * x;
   var Z = (Y / y) * z;
-  // sRGB D65 conversion
-  var Red = X * 3.2406 - Y * 1.5372 - Z * 0.4986;
-  var Green = -X * 0.9689 + Y * 1.8758 + Z * 0.0415;
-  var Blue = X * 0.0557 - Y * 0.2040 + Z * 1.0570;
+  // XYZ to RGB [M]-1 for sRGB D65, http://www.brucelindbloom.com/index.html?Eqn_RGB_XYZ_Matrix.html
+  var Red   =  X * 3.2404542 - Y * 1.5371385 - Z * 0.4985314;
+  var Green = -X * 0.9692660 + Y * 1.8760108 + Z * 0.0415560;
+  var Blue  =  X * 0.0556434 - Y * 0.2040259 + Z * 1.0572252;
   // Limit RGB on [0..1]
   if (Red > Blue && Red > Green && Red > 1.0) { // Red is too big
     Green = Green / Red;
     Blue = Blue / Red;
     Red = 1.0;
   }
-  else if (Green > Blue && Green > Red && Green > 1.0) { // Green is too big
+  if (Red < 0)
+    Red = 0;
+  if (Green > Blue && Green > Red && Green > 1.0) { // Green is too big
     Red = Red / Green;
     Blue = Blue / Green;
     Green = 1.0;
   }
-  else if (Blue > Red && Blue > Green && Blue > 1.0) { // Blue is too big
+  if (Green < 0)
+    Green = 0;
+  if (Blue > Red && Blue > Green && Blue > 1.0) { // Blue is too big
     Red = Red / Blue;
     Green = Green / Blue;
     Blue = 1.0;
   }
-  // Apply gamma correction
+  if (Blue < 0)
+    Blue = 0;
+  // Apply reverse gamma correction
   if (Red <= 0.0031308) {
     Red = Red * 12.92;
   } else {
@@ -389,27 +421,27 @@ huepi.HelperXYtoRGB = function(x, y)
     Blue = 1.055 * Math.pow(Blue, (1.0 / 2.4)) - 0.055;
   }
   // Limit RGB on [0..1]
-  if (Red > Blue && Red > Green) { // Red is biggest
-    if (Red > 1.0) {
-      Green = Green / Red;
-      Blue = Blue / Red;
-      Red = 1.0;
-    }
+  if (Red > Blue && Red > Green && Red > 1.0) { // Red is too big
+    Green = Green / Red;
+    Blue = Blue / Red;
+    Red = 1.0;
   }
-  else if (Green > Blue && Green > Red) { // Green is biggest
-    if (Green > 1.0) {
-      Red = Red / Green;
-      Blue = Blue / Green;
-      Green = 1.0;
-    }
+  if (Red < 0)
+    Red = 0;
+  if (Green > Blue && Green > Red && Green > 1.0) { // Green is too big
+    Red = Red / Green;
+    Blue = Blue / Green;
+    Green = 1.0;
   }
-  else if (Blue > Red && Blue > Green) { // Blue is biggest
-    if (Blue > 1.0) {
-      Red = Red / Blue;
-      Green = Green / Blue;
-      Blue = 1.0;
-    }
+  if (Green < 0)
+    Green = 0;
+  if (Blue > Red && Blue > Green && Blue > 1.0) { // Blue is too big
+    Red = Red / Blue;
+    Green = Green / Blue;
+    Blue = 1.0;
   }
+  if (Blue < 0)
+    Blue = 0;
   return {Red: Red, Green: Green, Blue: Blue};
 };
 
@@ -1424,7 +1456,12 @@ huepi.prototype.RulesGetData = function()
 // 0.95
 // renamed HUEPI to huepi to be more complient with modules and actual hue product name
 //
-//
+// 0.9.6
 // Renamed HelperCTtoRGB to HelperColortemperaturetoRG
 // All Red, Green & Blue arguments ranges to [0..1]
+//
+// 0.0
+// Using Matrices from RGB to XYZ [M] for sRGB D65 from http://www.brucelindbloom.com/index.html?Eqn_RGB_XYZ_Matrix.html
+//
+
 
