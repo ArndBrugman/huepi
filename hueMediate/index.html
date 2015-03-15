@@ -244,7 +244,9 @@
           if (MyHue.Lights[6].state.colormode === 'hs') {
             RGB = huepi.HelperHueAngSatBritoRGB(MyHue.Lights[6].state.hue * 360 / 65535, MyHue.Lights[6].state.sat/255, MyHue.Lights[6].state.bri/255);
             HueAngSatBri = huepi.HelperRGBtoHueAngSatBri(RGB.Red, RGB.Green, RGB.Blue);
-            HueAngSatBri.Bri = MyHue.Lights[6].state.bri / 255;
+            //HueAngSatBri.Ang = MyHue.Lights[6].state.hue * 360 / 65535;
+            //HueAngSatBri.Sat = MyHue.Lights[6].state.sat / 255;
+            //HueAngSatBri.Bri = MyHue.Lights[6].state.bri / 255;
           } else if (MyHue.Lights[6].state.colormode === 'xy') {
             RGB = huepi.HelperXYtoRGB(MyHue.Lights[6].state.xy[0], MyHue.Lights[6].state.xy[1]);
             HueAngSatBri= huepi.HelperRGBtoHueAngSatBri(RGB.Red, RGB.Green, RGB.Blue);
@@ -257,6 +259,7 @@
           
           console.log(MyHue.Lights[6].state.colormode);
           console.log(MyHue.Lights[6].state.hue);
+          console.log(MyHue.Lights[6].state.hue * 360 / 65355);
           console.log(MyHue.Lights[6].state.xy);
           console.log(MyHue.Lights[6].state.ct);
 

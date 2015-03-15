@@ -1113,7 +1113,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line420">line 420</a>
+        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line452">line 452</a>
     </li></ul></dd>
     
 
@@ -1312,7 +1312,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line279">line 279</a>
+        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line298">line 298</a>
     </li></ul></dd>
     
 
@@ -1507,7 +1507,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line190">line 190</a>
+        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line209">line 209</a>
     </li></ul></dd>
     
 
@@ -1546,6 +1546,159 @@
     <dd>
         
 <span class="param-type">object</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+        
+            
+
+    
+
+    <h4 class="name" id=".HelperHuetoHueAng"><span class="type-signature">(static) </span>HelperHuetoHueAng<span class="signature">(Hue)</span><span class="type-signature"> &rarr; {float}</span></h4>
+
+    
+
+
+
+<div class="description">
+    Convert skewed Yellow/Green Hue to Correct HueAng
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>Hue</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">float</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Range [0..65535]</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line190">line 190</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    - Range [0..360]
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">float</span>
 
 
     </dd>
@@ -1897,7 +2050,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line246">line 246</a>
+        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line265">line 265</a>
     </li></ul></dd>
     
 
@@ -2046,7 +2199,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line471">line 471</a>
+        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line503">line 503</a>
     </li></ul></dd>
     
 
@@ -2099,7 +2252,7 @@
 
     
 
-    <h4 class="name" id=".HelperXYtoRGB"><span class="type-signature">(static) </span>HelperXYtoRGB<span class="signature">(x, y)</span><span class="type-signature"> &rarr; {object}</span></h4>
+    <h4 class="name" id=".HelperXYtoRGBforModel"><span class="type-signature">(static) </span>HelperXYtoRGBforModel<span class="signature">(x, y, Model, Brightness)</span><span class="type-signature"> &rarr; {object}</span></h4>
 
     
 
@@ -2181,6 +2334,52 @@
         </tr>
 
     
+
+        <tr>
+            
+                <td class="name"><code>Model</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Modelname of the Light</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>Brightness</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">float</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Optional</td>
+        </tr>
+
+    
     </tbody>
 </table>
 
@@ -2218,7 +2417,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line349">line 349</a>
+        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line370">line 370</a>
     </li></ul></dd>
     
 
@@ -2681,7 +2880,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line1242">line 1242</a>
+        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line1274">line 1274</a>
     </li></ul></dd>
     
 
@@ -2831,7 +3030,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line1254">line 1254</a>
+        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line1286">line 1286</a>
     </li></ul></dd>
     
 
@@ -2981,7 +3180,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line1230">line 1230</a>
+        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line1262">line 1262</a>
     </li></ul></dd>
     
 
@@ -3135,7 +3334,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line956">line 956</a>
+        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line988">line 988</a>
     </li></ul></dd>
     
 
@@ -3262,7 +3461,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line1018">line 1018</a>
+        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line1050">line 1050</a>
     </li></ul></dd>
     
 
@@ -3412,7 +3611,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line1266">line 1266</a>
+        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line1298">line 1298</a>
     </li></ul></dd>
     
 
@@ -3562,7 +3761,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line1278">line 1278</a>
+        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line1310">line 1310</a>
     </li></ul></dd>
     
 
@@ -3712,7 +3911,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line1059">line 1059</a>
+        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line1091">line 1091</a>
     </li></ul></dd>
     
 
@@ -3862,7 +4061,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line1047">line 1047</a>
+        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line1079">line 1079</a>
     </li></ul></dd>
     
 
@@ -4039,7 +4238,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line1004">line 1004</a>
+        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line1036">line 1036</a>
     </li></ul></dd>
     
 
@@ -4207,7 +4406,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line1121">line 1121</a>
+        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line1153">line 1153</a>
     </li></ul></dd>
     
 
@@ -4380,7 +4579,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line1191">line 1191</a>
+        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line1223">line 1223</a>
     </li></ul></dd>
     
 
@@ -4553,7 +4752,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line1162">line 1162</a>
+        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line1194">line 1194</a>
     </li></ul></dd>
     
 
@@ -4776,7 +4975,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line1075">line 1075</a>
+        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line1107">line 1107</a>
     </li></ul></dd>
     
 
@@ -4949,7 +5148,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line1095">line 1095</a>
+        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line1127">line 1127</a>
     </li></ul></dd>
     
 
@@ -5153,7 +5352,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line1136">line 1136</a>
+        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line1168">line 1168</a>
     </li></ul></dd>
     
 
@@ -5307,7 +5506,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line987">line 987</a>
+        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line1019">line 1019</a>
     </li></ul></dd>
     
 
@@ -5457,7 +5656,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line971">line 971</a>
+        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line1003">line 1003</a>
     </li></ul></dd>
     
 
@@ -5661,7 +5860,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line1151">line 1151</a>
+        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line1183">line 1183</a>
     </li></ul></dd>
     
 
@@ -5829,7 +6028,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line1108">line 1108</a>
+        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line1140">line 1140</a>
     </li></ul></dd>
     
 
@@ -5979,7 +6178,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line1032">line 1032</a>
+        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line1064">line 1064</a>
     </li></ul></dd>
     
 
@@ -6175,7 +6374,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line1202">line 1202</a>
+        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line1234">line 1234</a>
     </li></ul></dd>
     
 
@@ -6253,7 +6452,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line940">line 940</a>
+        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line972">line 972</a>
     </li></ul></dd>
     
 
@@ -6403,7 +6602,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line888">line 888</a>
+        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line920">line 920</a>
     </li></ul></dd>
     
 
@@ -6553,7 +6752,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line900">line 900</a>
+        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line932">line 932</a>
     </li></ul></dd>
     
 
@@ -6703,7 +6902,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line876">line 876</a>
+        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line908">line 908</a>
     </li></ul></dd>
     
 
@@ -6853,7 +7052,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line912">line 912</a>
+        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line944">line 944</a>
     </li></ul></dd>
     
 
@@ -7003,7 +7202,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line924">line 924</a>
+        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line956">line 956</a>
     </li></ul></dd>
     
 
@@ -7153,7 +7352,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line726">line 726</a>
+        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line758">line 758</a>
     </li></ul></dd>
     
 
@@ -7303,7 +7502,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line714">line 714</a>
+        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line746">line 746</a>
     </li></ul></dd>
     
 
@@ -7471,7 +7670,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line787">line 787</a>
+        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line819">line 819</a>
     </li></ul></dd>
     
 
@@ -7644,7 +7843,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line851">line 851</a>
+        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line883">line 883</a>
     </li></ul></dd>
     
 
@@ -7817,7 +8016,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line832">line 832</a>
+        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line864">line 864</a>
     </li></ul></dd>
     
 
@@ -8040,7 +8239,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line742">line 742</a>
+        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line774">line 774</a>
     </li></ul></dd>
     
 
@@ -8213,7 +8412,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line761">line 761</a>
+        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line793">line 793</a>
     </li></ul></dd>
     
 
@@ -8417,7 +8616,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line802">line 802</a>
+        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line834">line 834</a>
     </li></ul></dd>
     
 
@@ -8567,7 +8766,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line684">line 684</a>
+        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line716">line 716</a>
     </li></ul></dd>
     
 
@@ -8771,7 +8970,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line817">line 817</a>
+        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line849">line 849</a>
     </li></ul></dd>
     
 
@@ -8939,7 +9138,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line774">line 774</a>
+        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line806">line 806</a>
     </li></ul></dd>
     
 
@@ -9089,7 +9288,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line699">line 699</a>
+        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line731">line 731</a>
     </li></ul></dd>
     
 
@@ -9285,7 +9484,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line862">line 862</a>
+        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line894">line 894</a>
     </li></ul></dd>
     
 
@@ -9363,7 +9562,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line649">line 649</a>
+        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line681">line 681</a>
     </li></ul></dd>
     
 
@@ -9441,7 +9640,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line674">line 674</a>
+        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line706">line 706</a>
     </li></ul></dd>
     
 
@@ -9519,7 +9718,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line662">line 662</a>
+        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line694">line 694</a>
     </li></ul></dd>
     
 
@@ -9679,7 +9878,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line1351">line 1351</a>
+        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line1383">line 1383</a>
     </li></ul></dd>
     
 
@@ -9757,7 +9956,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line1313">line 1313</a>
+        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line1345">line 1345</a>
     </li></ul></dd>
     
 
@@ -9835,7 +10034,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line1294">line 1294</a>
+        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line1326">line 1326</a>
     </li></ul></dd>
     
 
@@ -9913,7 +10112,7 @@
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line1332">line 1332</a>
+        <a href="huepi.js.html">huepi.js</a>, <a href="huepi.js.html#line1364">line 1364</a>
     </li></ul></dd>
     
 
@@ -9961,7 +10160,11 @@
 <br class="clear">
 
 <footer>
+<<<<<<< HEAD
     Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-beta1</a> on Tue Feb 24 2015 09:16:06 GMT+0100 (CET)
+=======
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-beta1</a> on Sun Mar 15 2015 10:53:03 GMT+0100 (CET)
+>>>>>>> gh-pages
 </footer>
 
 <script> prettyPrint(); </script>
