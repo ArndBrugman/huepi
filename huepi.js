@@ -76,7 +76,7 @@ huepi.prototype.PortalDiscoverLocalBridges = function()
   var d1 = $.Deferred();
   var d2 = $.Deferred();
   //return $.get('https://www.meethue.com/api/nupnp', function(data) { <-- Doesn't follow redirects, $.ajax({type:'GET'}) does
-  var j1 = $.ajax({ type: 'GET', url: "https://www.meethue.com/api/nupnp", dataType:'jsonp', // still issues with Cross Domain!
+  var j1 = $.ajax({ type: 'GET', url: "https://www.meethue.com/api/nupnp", // still issues with Cross Domain!
   success: function(data) {
     if (data.length > 0)
       if (data[0].internalipaddress) {
@@ -85,6 +85,7 @@ huepi.prototype.PortalDiscoverLocalBridges = function()
       }
     }
   }).complete(d1.resolve);
+  // Backup scenario
   var j2 = $.ajax({ type: 'GET', url: "https://client-eastwood-dot-hue-prod-us.appspot.com/api/nupnp",
   success: function(data) {
     if (data.length > 0)
