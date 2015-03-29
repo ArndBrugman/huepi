@@ -71,14 +71,16 @@ if (typeof module !== 'undefined' && module.exports)
  * Retreives the list of hue-Bridges on the local network
  */
 huepi.prototype.PortalDiscoverLocalBridges = function()
-{
-  var That = this;
-  return $.get('https://www.meethue.com/api/nupnp', function(data) {
+{ // https://client-eastwood-dot-hue-prod-us.appspot.com/api/nupnp ?
+  var self = this;
+  //return $.get('https://www.meethue.com/api/nupnp', function(data) { <-- Doesn't follow redirects, $.ajax({type:'GET'}) does
+  return $.ajax({ type: 'GET', url: "https://www.meethue.com/api/nupnp", success: function(data) {
     if (data.length > 0)
       if (data[0].internalipaddress) {
-        That.LocalBridges = data;
-        That.BridgeIP = That.LocalBridges[0].internalipaddress; // Default to 1st Bridge internalip
+        self.LocalBridges = data;
+        self.BridgeIP = self.LocalBridges[0].internalipaddress; // Default to 1st Bridge internalip
       }
+    }
   });
 };
 
@@ -95,23 +97,23 @@ huepi.prototype.PortalDiscoverLocalBridges = function()
  */
 huepi.prototype.BridgeGetData = function()
 { // GET /api/username -> data.config.whitelist.username
-  var That = this;
+  var self = this;
   var url = 'http://' + this.BridgeIP + '/api/' + this.Username;
   return $.get(url, function(data) {
-    That.Lights = data.lights;
-    That.Groups = data.groups;
-    That.BridgeConfig = data.config;
-    That.Schedules = data.schedules;
-    That.Scenes = data.scenes;
-    That.Sensors = data.sensors;
-    That.Rules = data.rules;
-    if (That.BridgeConfig !== undefined) {
-      That.BridgeName = That.BridgeConfig.name;
+    self.Lights = data.lights;
+    self.Groups = data.groups;
+    self.BridgeConfig = data.config;
+    self.Schedules = data.schedules;
+    self.Scenes = data.scenes;
+    self.Sensors = data.sensors;
+    self.Rules = data.rules;
+    if (self.BridgeConfig !== undefined) {
+      self.BridgeName = self.BridgeConfig.name;
       // if able to read Config, Username must be Whitelisted
-      That.BridgeUsernameWhitelisted = true;
+      self.BridgeUsernameWhitelisted = true;
     } else {
-      That.BridgeName = undefined;
-      That.BridgeUsernameWhitelisted = false;
+      self.BridgeName = undefined;
+      self.BridgeUsernameWhitelisted = false;
     }
   });
 };
@@ -363,17 +365,12 @@ huepi.HelperGamutXYforModel = function(Px, Py, Model)
 /**
  * @param {float} x
  * @param {float} y
- * @param {string} Model - Modelname of the Light
  * @param {float} Brightness Optional
  * @returns {object} [Red, Green, Blue] - Ranges [0..1] [0..1] [0..1]
  */
-huepi.HelperXYtoRGBforModel = function(x, y, Model, Brightness)
+huepi.HelperXYtoRGB = function(x, y, Brightness)
 { // Source: https://github.com/PhilipsHue/PhilipsHueSDK-iOS-OSX/blob/master/ApplicationDesignNotes/RGB%20to%20xy%20Color%20conversion.md
-  Model = Model || "LCT001"; // default hue Bulb 2012
   Brightness = Brightness || 1.0; // Default full brightness
-  var GamutCorrected = huepi.HelperGamutXYforModel(x, y, Model);
-  x = GamutCorrected.x;
-  y = GamutCorrected.y;
   var z = 1.0 - x - y;
   var Y = Brightness;
   var X = (Y / y) * x;
@@ -443,6 +440,20 @@ huepi.HelperXYtoRGBforModel = function(x, y, Model, Brightness)
   if (Blue < 0)
     Blue = 0;
   return {Red: Red, Green: Green, Blue: Blue};
+};
+
+/**
+ * @param {float} x
+ * @param {float} y
+ * @param {string} Model - Modelname of the Light
+ * @param {float} Brightness Optional
+ * @returns {object} [Red, Green, Blue] - Ranges [0..1] [0..1] [0..1]
+ */
+huepi.HelperXYtoRGBforModel = function(x, y, Model, Brightness)
+{
+  Model = Model || "LCT001"; // default hue Bulb 2012
+  var GamutCorrected = huepi.HelperGamutXYforModel(x, y, Model);
+  return huepi.HelperXYtoRGB(GamutCorrected.x, GamutCorrected.y, Brightness);
 };
 
 /**
@@ -680,11 +691,11 @@ huepi.Lightstate = function()
  */
 huepi.prototype.LightsGetData = function()
 { // GET /api/username/lights
-  var That = this;
+  var self = this;
   var url = 'http://' + this.BridgeIP + '/api/' + this.Username + '/lights';
   return $.get(url, function(data) {
     if (data) {
-      That.Lights = data;
+      self.Lights = data;
     }
   });
 };
@@ -971,11 +982,11 @@ huepi.prototype.LightEffectNone = function(LightNr, Transitiontime)
  */
 huepi.prototype.GroupsGetData = function()
 { // GET /api/username/lights
-  var That = this;
+  var self = this;
   var url = 'http://' + this.BridgeIP + '/api/' + this.Username + '/groups';
   return $.get(url, function(data) {
     if (data) {
-      That.Groups = data;
+      self.Groups = data;
     }
   });
 };
@@ -1325,11 +1336,11 @@ huepi.prototype.GroupEffectNone = function(GroupNr, Transitiontime)
  */
 huepi.prototype.SchedulesGetData = function()
 { // GET /api/username/schedules
-  var That = this;
+  var self = this;
   var url = 'http://' + this.BridgeIP + '/api/' + this.Username + '/schedules';
   return $.get(url, function(data) {
     if (data) {
-      That.Schedules = data;
+      self.Schedules = data;
     }
   });
 };
@@ -1344,11 +1355,11 @@ huepi.prototype.SchedulesGetData = function()
  */
 huepi.prototype.ScenesGetData = function()
 { // GET /api/username/scenes
-  var That = this;
+  var self = this;
   var url = 'http://' + this.BridgeIP + '/api/' + this.Username + '/scenes';
   return $.get(url, function(data) {
     if (data) {
-      That.Scenes = data;
+      self.Scenes = data;
     }
   });
 };
@@ -1363,11 +1374,11 @@ huepi.prototype.ScenesGetData = function()
  */
 huepi.prototype.SensorsGetData = function()
 { // GET /api/username/sensors
-  var That = this;
+  var self = this;
   var url = 'http://' + this.BridgeIP + '/api/' + this.Username + '/sensors';
   return $.get(url, function(data) {
     if (data) {
-      That.Sensors = data;
+      self.Sensors = data;
     }
   });
 };
@@ -1382,11 +1393,11 @@ huepi.prototype.SensorsGetData = function()
  */
 huepi.prototype.RulesGetData = function()
 { // GET /api/username/rules
-  var That = this;
+  var self = this;
   var url = 'http://' + this.BridgeIP + '/api/' + this.Username + '/rules';
   return $.get(url, function(data) {
     if (data) {
-      That.Rules = data;
+      self.Rules = data;
     }
   });
 };
@@ -1460,8 +1471,9 @@ huepi.prototype.RulesGetData = function()
 // Renamed HelperCTtoRGB to HelperColortemperaturetoRG
 // All Red, Green & Blue arguments ranges to [0..1]
 //
-// 0.0
+// 0.9.7
 // Using Matrices from RGB to XYZ [M] for sRGB D65 from http://www.brucelindbloom.com/index.html?Eqn_RGB_XYZ_Matrix.html
+// renamed This. to self.
+// added HelperXYtoRGBforModel
+// PortalDiscoverLocalBridges now follows redirects
 //
-
-

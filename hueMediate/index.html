@@ -238,21 +238,25 @@
             }
             LightNr++;
           }
-          // Convert 6 to RGB, HSB and set on 7
+          // Convert 6 to RGB, XY and set on 7
           var RGB;
           var HueAngSatBri;
+          var xy;
           if (MyHue.Lights[6].state.colormode === 'hs') {
             RGB = huepi.HelperHueAngSatBritoRGB(MyHue.Lights[6].state.hue * 360 / 65535, MyHue.Lights[6].state.sat/255, MyHue.Lights[6].state.bri/255);
+            xy = huepi.HelperRGBtoXY(RGB.Red, RGB.Green, RGB.Blue);
             HueAngSatBri = huepi.HelperRGBtoHueAngSatBri(RGB.Red, RGB.Green, RGB.Blue);
-            //HueAngSatBri.Ang = MyHue.Lights[6].state.hue * 360 / 65535;
-            //HueAngSatBri.Sat = MyHue.Lights[6].state.sat / 255;
-            //HueAngSatBri.Bri = MyHue.Lights[6].state.bri / 255;
+            HueAngSatBri.Bri = MyHue.Lights[6].state.bri / 255;
           } else if (MyHue.Lights[6].state.colormode === 'xy') {
-            RGB = huepi.HelperXYtoRGB(MyHue.Lights[6].state.xy[0], MyHue.Lights[6].state.xy[1]);
+            //xy.x=MyHue.Lights[6].state.xy[0];
+            //xy.y=MyHue.Lights[6].state.xy[1];
+            RGB = huepi.HelperXYtoRGBforModel(MyHue.Lights[6].state.xy[0], MyHue.Lights[6].state.xy[1], MyHue.Lights[6].modelid, MyHue.Lights[6].state.bri/255);
+            xy = huepi.HelperRGBtoXY(RGB.Red, RGB.Green, RGB.Blue);
             HueAngSatBri= huepi.HelperRGBtoHueAngSatBri(RGB.Red, RGB.Green, RGB.Blue);
             HueAngSatBri.Bri = MyHue.Lights[6].state.bri / 255;
           } else if (MyHue.Lights[6].state.colormode === 'ct') {
             RGB = huepi.HelperColortemperaturetoRGB(Math.round(1000000 / MyHue.Lights[6].state.ct));
+            xy = huepi.HelperRGBtoXY(RGB.Red, RGB.Green, RGB.Blue);
             HueAngSatBri = huepi.HelperRGBtoHueAngSatBri(RGB.Red, RGB.Green, RGB.Blue);
             HueAngSatBri.Bri = MyHue.Lights[6].state.bri / 255;
           }
@@ -264,9 +268,11 @@
           console.log(MyHue.Lights[6].state.ct);
 
           console.log(RGB);
+          console.log(xy);
           console.log(HueAngSatBri);
 
-          MyHue.LightSetHueAngSatBri(7, HueAngSatBri.Ang, HueAngSatBri.Sat, HueAngSatBri.Bri);
+          MyHue.LightSetXY(7, xy.x, xy.y);
+          MyHue.LightSetBrightness(7, MyHue.Lights[6].state.bri)
           //
         }, function BridgetHeartbeatGetFailed() {
           $('#HUEStatus').text('StatusHeartbeat BridgeGet Failed');
@@ -289,7 +295,8 @@
       <div class='container' id='HueButtons'>
         <div class='content'>
           <div class='items' align='center'>
-            <a href='#' data-role='button' data-icon='' data-mini='true' id='feetupbutton' onclick='JavaScript:MyHue.GroupSetHSB(0, 7000, 207, 207)'>Feet Up</a>
+            <a href='#' data-role='button' data-icon='' data-inline='true' data-mini='true' id='feetupbutton' onclick='JavaScript:MyHue.GroupSetHSB(0, 7000, 207, 207);'>Feet Up</a>
+            <a href='#' data-role='button' data-icon='' data-inline='true' data-mini='true' id='feetupbutton' onclick='JavaScript:MyHue.GroupSetColortemperature(0, 2500);MyHue.GroupSetBrightness(0, 144)'>Gold</a>
             <div min-width='128'>
               <input style='display:none' data-mini='false' type='range' name='brightnessslider' id='brightnessslider' min='0' max='255' value='140' />
             </div>
