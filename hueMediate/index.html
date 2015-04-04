@@ -84,6 +84,8 @@
       var MyHue = new huepi();
       MyHue.Username = '085efe879ee3ed83c04efc28a0da03d3';
       var HeartbeatInterval;
+      var HueImage = new Image();
+      HueImage.src = 'images/HUE.png';
 
       if (window.isCordovaApp) {
         document.addEventListener("deviceready", onStartup, false);
@@ -92,32 +94,28 @@
       } else
         $(document).ready(onStartup);
 
-      function onStartup() {
-        var HueImage = new Image();
-        HueImage.src = 'images/HUE.png';
+      HueImage.onload = function() {
+        window.onresize();
+      };
 
-        function HueImageRedraw() {
-          var HueCanvas = document.getElementById('HUECanvas');
-          var HueContext = document.getElementById('HUECanvas').getContext('2d');
-          HueContext.drawImage(HueImage, 0, 0, HueCanvas.width, HueCanvas.height);
+      window.onresize = function() {
+        Redraw();
+      }
+      
+      function Redraw() {
+        var HueCanvas = document.getElementById('HUECanvas');
+        var HueContext = document.getElementById('HUECanvas').getContext('2d');
+        // Canvas size should be set by script not css, otherwise getting HueImagePixel doesn't match canvas sizes
+        if ($(window).width() > $(window).height()) {
+          HUECanvas.width = 0.45 * $(window).width(); // Landscape
+        } else {
+          HUECanvas.width = 0.45 * $(window).height(); // Portrait
         }
+        HueCanvas.height = HueCanvas.width;
+        HueContext.drawImage(HueImage, 0, 0, HueCanvas.width, HueCanvas.height); // ReDraw
+      };
 
-        HueImage.onload = function() {
-          window.onresize();
-        };
-
-        window.onresize = function() {
-          var HueCanvas = document.getElementById('HUECanvas');
-          // Canvas size should be set by script not css, otherwise getting HueImagePixel doesn't match canvas sizes
-          if ($(window).width() > $(window).height()) {
-            HUECanvas.width = 0.45 * $(window).width(); // Landscape
-          } else {
-            HUECanvas.width = 0.45 * $(window).height(); // Portrait
-          }
-          HueCanvas.height = HueCanvas.width;
-          HueImageRedraw();
-        };
-
+      function onStartup() {
         $("#HUECanvas").click(function(event) {
           var x = event.pageX - event.currentTarget.offsetLeft;
           var y = event.pageY - event.currentTarget.offsetTop;
@@ -140,7 +138,35 @@
         LightSwitchOffEvent.initEvent("LightSwitchOff", true, true);
         document.addEventListener("LightSwitchOff", onLightSwitchOff, false);
 
+        onResume();
+      }
+
+      function onResume() {
+        window.onresize();
         ConnectMyHue();
+        HeartbeatInterval = setInterval(StatusHeartbeat, 2500);
+        StatusHeartbeat(); // Execute Immediate Too!
+      }
+
+      function onPause() {
+        window.clearInterval(HeartbeatInterval);
+        $('#HUEInfoBar').show(500);
+      }
+
+      function StatusHeartbeat() {
+        MyHue.BridgeGetData().then(function UpdateUI() {
+          $('#HUEBridgeName').text('Bridge Name: ' +MyHue.BridgeName);
+          $('#HUEStatus').text('Connected');
+          $('#HUEInfoBar').slideUp(1500);
+          
+          $('#brightnessslider').val(MyHue.Lights[2].state.bri); // Get brightness of 2nd light for now...
+          $('#brightnessslider').slider('refresh');
+          DemoBehaviour();
+        }, function BridgetHeartbeatGetFailed() {
+          $('#HUEStatus').text('StatusHeartbeat BridgeGet Failed');
+          onPause();
+          onResume();
+        });
       }
 
       // Check Cached Bridge IP
@@ -149,67 +175,46 @@
       //     if Not->Try to Create User
       function ConnectMyHue() {
         if (!localStorage.MyHueBridgeIP) { // No Cached BridgeIP?
-          $('#HUEBridgeIP').text('Bridge IP: Trying to Discover HUE Bridge via HUE Portal');
+          $('#HUEStatus').text('Trying to Discover HUE Bridge via HUE Portal');
           MyHue.PortalDiscoverLocalBridges().then(function GetBridgeConfig() {
+            $('#HUEBridgeIP').text('Bridge IP: ' + MyHue.BridgeIP);
             MyHue.BridgeGetData().then(function EnsureWhitelisting() {
-              $('#HUEBridgeIP').text('Bridge IP: ' + MyHue.BridgeIP);
               if (!MyHue.BridgeUsernameWhitelisted) {
                 $('#HUEStatus').text('Please press connect button on the Hue Bridge');
                 MyHue.BridgeCreateUser().then(function ReReadBridgeConfiguration() {
-                  return ConnectMyHue();
+                  return;
                 }, function UnableToCreateUseronBridge() {
                   $('#HUEStatus').text('Unable to Create User on Bridge');
+                  return ConnectMyHue();
                 });
               } else {
-                StartHeartbeat();
+                localStorage.MyHueBridgeIP = MyHue.BridgeIP; // Cache BridgeIP
               }
             }, function UnableToRetreiveBridgeConfiguration() {
               $('#HUEStatus').text('Unable to Retreive Bridge Configuration');
-              return ConnectMyHue();
+              return;
             });
           }, function UnableToDiscoverLocalBridgesViaPortal() {
             $('#HUEStatus').text('Unable to find Local Bridge via Portal');
-            return ConnectMyHue();
+            return;
           });
         } else {
           MyHue.BridgeIP = localStorage.MyHueBridgeIP;
           $('#HUEBridgeIP').text('Cached Bridge IP: ' + MyHue.BridgeIP);
+          $('#HUEStatus').text('Using Cached Bridge IP');
           MyHue.BridgeGetData().then(function CheckWhitelisting() {
             if (MyHue.BridgeUsernameWhitelisted) {
-              return StartHeartbeat();
+              return;
             } else {
               delete localStorage.MyHueBridgeIP; // not Whitelisted anymore
-              return ConnectMyHue();
+              $('#HUEStatus').text('Not found anymore');
+              return;
             }
           }, function ErrorGettingCachedBridgeData() {
             delete localStorage.MyHueBridgeIP; // not found anymore
-            return ConnectMyHue();
+            return;
           });
         }
-      }
-
-      function StartHeartbeat() {
-        localStorage.MyHueBridgeIP = MyHue.BridgeIP; // Store Cache BridgeIP
-        $('#HUEBridgeName').text('Bridge Name: ' + MyHue.BridgeName);
-        $('#HUEStatus').text('Found Bridge and Whitelisted');
-        $('#HUEInfoBar').slideUp(2500);
-        //MyHue.GroupOn(0);
-        //MyHue.GroupEffectNone(0);
-        HeartbeatInterval = setInterval(StatusHeartbeat, 2500);
-        StatusHeartbeat(); // Execute Immediate Too!
-      }
-
-      function onPause() {
-        window.clearInterval(HeartbeatInterval);
-        $('#HUEStatus').text('Paused');
-        $('#HUEInfoBar').show(1500);
-      }
-
-      function onResume() {
-        $('#HUEStatus').text('Resuming');
-        $('#HUEInfoBar').slideUp(2500);
-        HeartbeatInterval = setInterval(StatusHeartbeat, 2500);
-        StatusHeartbeat(); // Execute Immediate Too!
       }
 
       function onLightSwitchOn(Event) {
@@ -217,69 +222,61 @@
         MyHue.GroupSetCT(0, 467);
         MyHue.GroupSetBrightness(0, 144);
       }
+
       function onLightSwitchOff(Event) {
         MyHue.GroupOff(0);
       }
 
-      function StatusHeartbeat() {
+      function DemoBehaviour() {
         var PrevHueLights = MyHue.Lights; // Store Previous State of Lights
-        MyHue.BridgeGetData().then(function UpdateUI() {
-          $('#brightnessslider').val(MyHue.Lights[1].state.bri); // Get brightness of 1st light for now...
-          $('#brightnessslider').slider('refresh');
-          // Triggers on Reachable which actually means Powered On/Off in my case ;-)
-          LightNr = 1;
-          while (MyHue.Lights[LightNr]) {
-            if ((MyHue.Lights[LightNr].state.reachable) !== (PrevHueLights[LightNr].state.reachable)) {
-              LightSwitchOnEvent.LightNr = LightNr;
-              if (MyHue.Lights[LightNr].state.reachable)
-                document.dispatchEvent(LightSwitchOnEvent);
-              else
-                document.dispatchEvent(LightSwitchOffEvent);
-            }
-            LightNr++;
+        // Triggers on Reachable which actually means Powered On/Off in my case ;-)
+        LightNr = 1;
+        while (MyHue.Lights[LightNr]) {
+          if ((MyHue.Lights[LightNr].state.reachable) !== (PrevHueLights[LightNr].state.reachable)) {
+            LightSwitchOnEvent.LightNr = LightNr;
+            if (MyHue.Lights[LightNr].state.reachable)
+              document.dispatchEvent(LightSwitchOnEvent);
+            else
+              document.dispatchEvent(LightSwitchOffEvent);
           }
-          // Convert 6 to RGB, XY and set on 7
-          var RGB;
-          var HueAngSatBri;
-          var xy;
-          if (MyHue.Lights[6].state.colormode === 'hs') {
-            RGB = huepi.HelperHueAngSatBritoRGB(MyHue.Lights[6].state.hue * 360 / 65535, MyHue.Lights[6].state.sat/255, MyHue.Lights[6].state.bri/255);
-            xy = huepi.HelperRGBtoXY(RGB.Red, RGB.Green, RGB.Blue);
-            HueAngSatBri = huepi.HelperRGBtoHueAngSatBri(RGB.Red, RGB.Green, RGB.Blue);
-            HueAngSatBri.Bri = MyHue.Lights[6].state.bri / 255;
-          } else if (MyHue.Lights[6].state.colormode === 'xy') {
-            //xy.x=MyHue.Lights[6].state.xy[0];
-            //xy.y=MyHue.Lights[6].state.xy[1];
-            RGB = huepi.HelperXYtoRGBforModel(MyHue.Lights[6].state.xy[0], MyHue.Lights[6].state.xy[1], MyHue.Lights[6].modelid, MyHue.Lights[6].state.bri/255);
-            xy = huepi.HelperRGBtoXY(RGB.Red, RGB.Green, RGB.Blue);
-            HueAngSatBri= huepi.HelperRGBtoHueAngSatBri(RGB.Red, RGB.Green, RGB.Blue);
-            HueAngSatBri.Bri = MyHue.Lights[6].state.bri / 255;
-          } else if (MyHue.Lights[6].state.colormode === 'ct') {
-            RGB = huepi.HelperColortemperaturetoRGB(Math.round(1000000 / MyHue.Lights[6].state.ct));
-            xy = huepi.HelperRGBtoXY(RGB.Red, RGB.Green, RGB.Blue);
-            HueAngSatBri = huepi.HelperRGBtoHueAngSatBri(RGB.Red, RGB.Green, RGB.Blue);
-            HueAngSatBri.Bri = MyHue.Lights[6].state.bri / 255;
-          }
-          
-          console.log(MyHue.Lights[6].state.colormode);
-          console.log(MyHue.Lights[6].state.hue);
-          console.log(MyHue.Lights[6].state.hue * 360 / 65355);
-          console.log(MyHue.Lights[6].state.xy);
-          console.log(MyHue.Lights[6].state.ct);
+          LightNr++;
+        }
+        // Convert 6 to RGB, XY and set on 7
+        var RGB;
+        var HueAngSatBri;
+        var xy;
+        if (MyHue.Lights[6].state.colormode === 'hs') {
+          RGB = huepi.HelperHueAngSatBritoRGB(huepi.HelperHuetoHueAng(MyHue.Lights[6].state.hue), MyHue.Lights[6].state.sat/255, MyHue.Lights[6].state.bri/255);
+          xy = huepi.HelperRGBtoXY(RGB.Red, RGB.Green, RGB.Blue);
+          HueAngSatBri = huepi.HelperRGBtoHueAngSatBri(RGB.Red, RGB.Green, RGB.Blue);
+          HueAngSatBri.Bri = MyHue.Lights[6].state.bri / 255;
+        } else if (MyHue.Lights[6].state.colormode === 'xy') {
+          //xy.x=MyHue.Lights[6].state.xy[0];
+          //xy.y=MyHue.Lights[6].state.xy[1];
+          RGB = huepi.HelperXYtoRGBforModel(MyHue.Lights[6].state.xy[0], MyHue.Lights[6].state.xy[1], MyHue.Lights[6].modelid, MyHue.Lights[6].state.bri/255);
+          xy = huepi.HelperRGBtoXY(RGB.Red, RGB.Green, RGB.Blue);
+          HueAngSatBri= huepi.HelperRGBtoHueAngSatBri(RGB.Red, RGB.Green, RGB.Blue);
+          HueAngSatBri.Bri = MyHue.Lights[6].state.bri / 255;
+        } else if (MyHue.Lights[6].state.colormode === 'ct') {
+          RGB = huepi.HelperColortemperaturetoRGB(Math.round(1000000 / MyHue.Lights[6].state.ct));
+          xy = huepi.HelperRGBtoXY(RGB.Red, RGB.Green, RGB.Blue);
+          HueAngSatBri = huepi.HelperRGBtoHueAngSatBri(RGB.Red, RGB.Green, RGB.Blue);
+          HueAngSatBri.Bri = MyHue.Lights[6].state.bri / 255;
+        }
+        
+        console.log(MyHue.Lights[6].state.colormode);
+        console.log(MyHue.Lights[6].state.hue);
+        console.log(MyHue.Lights[6].state.hue * 360 / 65355);
+        console.log(MyHue.Lights[6].state.sat);
+        console.log(MyHue.Lights[6].state.xy);
+        console.log(MyHue.Lights[6].state.ct);
 
-          console.log(RGB);
-          console.log(xy);
-          console.log(HueAngSatBri);
+        console.log(RGB);
+        console.log(xy);
+        console.log(HueAngSatBri);
 
-          MyHue.LightSetXY(7, xy.x, xy.y);
-          MyHue.LightSetBrightness(7, MyHue.Lights[6].state.bri)
-          //
-        }, function BridgetHeartbeatGetFailed() {
-          $('#HUEStatus').text('StatusHeartbeat BridgeGet Failed');
-          $('#HUEInfoBar').show(1500);
-          ConnectMyHue();
-        });
-
+        MyHue.LightSetXY(7, xy.x, xy.y);
+        MyHue.LightSetBrightness(7, MyHue.Lights[6].state.bri);
       }
     </script>
     <div class='page'>
