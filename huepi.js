@@ -159,7 +159,7 @@ huepi.prototype.BridgeDeleteUser = function(UsernameToDelete)
     dataType: 'json',
     contentType: 'application/json',
     url: 'http://' + this.BridgeIP + '/api/' + this.Username + '/config/whitelist/' + UsernameToDelete,
-    data: '{"devicetype": "WebInterface", "username": "' + this.Username + '"}'
+    //data: '{"devicetype": "WebInterface", "username": "' + this.Username + '"}'
   });
 };
 
