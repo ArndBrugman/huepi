@@ -32,6 +32,7 @@ huepi = function(NewUsername, NewBridgeIP) {
 
   /** @member {array} - Array of all Lights of the Current(active) Bridge */
   this.Lights = [];
+  this.LightIds = [];
   /** @member {array} - Array of all Groups of the Current(active) Bridge */
   this.Groups = [];
 
@@ -128,6 +129,9 @@ huepi.prototype.BridgeGetData = function()
   var url = 'http://' + this.BridgeIP + '/api/' + this.Username;
   return $.get(url, function(data) {
     self.Lights = data.lights;
+    self.LightIds = [];
+    for (key in self.Lights)
+      self.LightIds.push(key);
     self.Groups = data.groups;
     self.BridgeConfig = data.config;
     self.Schedules = data.schedules;
@@ -177,10 +181,21 @@ huepi.prototype.BridgeDeleteUser = function(UsernameToDelete)
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  Helper Functions (static)
+//  Helper Functions
 //
 //
 
+/**
+ * @param {number} LightNr - LightNr
+ * @returns {string} LightId
+ */
+huepi.prototype.GetLightId = function(LightNr)
+{
+  if (typeof LightNr  === "number") 
+    if (LightNr < this.LightIds.length)
+      return this.LightIds[LightNr-1];
+  return LightNr;
+}
 /**
  * @param {float} Red - Range [0..1]
  * @param {float} Green - Range [0..1]
@@ -757,7 +772,7 @@ huepi.prototype.LightSetName = function(LightNr, Name)
     type: 'PUT',
     dataType: 'json',
     contentType: 'application/json',
-    url: 'http://' + this.BridgeIP + '/api/' + this.Username + '/light/' + LightNr,
+    url: 'http://' + this.BridgeIP + '/api/' + this.Username + '/light/' + this.GetLightId(LightNr),
     data: '{"name" : "' + Name + '"}'
   });
 };
@@ -772,7 +787,7 @@ huepi.prototype.LightSetState = function(LightNr, State)
     type: 'PUT',
     dataType: 'json',
     contentType: 'application/json',
-    url: 'http://' + this.BridgeIP + '/api/' + this.Username + '/lights/' + LightNr + '/state',
+    url: 'http://' + this.BridgeIP + '/api/' + this.Username + '/lights/' + this.GetLightId(LightNr) + '/state',
     data: State.Get()
   });
 };
@@ -786,7 +801,7 @@ huepi.prototype.LightOn = function(LightNr, Transitiontime)
   var State = new huepi.Lightstate();
   State.On();
   State.SetTransitiontime(Transitiontime);
-  return this.LightSetState(LightNr, State);
+  return this.LightSetState(this.GetLightId(LightNr), State);
 };
 
 /**
@@ -798,7 +813,7 @@ huepi.prototype.LightOff = function(LightNr, Transitiontime)
   var State = new huepi.Lightstate();
   State.Off();
   State.SetTransitiontime(Transitiontime);
-  return this.LightSetState(LightNr, State);
+  return this.LightSetState(this.GetLightId(LightNr), State);
 };
 
 /**
@@ -818,8 +833,8 @@ huepi.prototype.LightSetHSB = function(LightNr, Hue, Saturation, Brightness, Tra
   var Color = huepi.HelperHueAngSatBritoRGB(HueAng, Sat, Bri);
   var Point = huepi.HelperRGBtoXY(Color.Red, Color.Green, Color.Blue);
   return $.when(
-  this.LightSetBrightness(LightNr, Brightness, Transitiontime),
-  this.LightSetXY(LightNr, Point.x, Point.y, Transitiontime)
+  this.LightSetBrightness(this.GetLightId(LightNr), Brightness, Transitiontime),
+  this.LightSetXY(this.GetLightId(LightNr), Point.x, Point.y, Transitiontime)
   );
 };
 
@@ -833,7 +848,7 @@ huepi.prototype.LightSetHue = function(LightNr, Hue, Transitiontime)
   var State = new huepi.Lightstate();
   State.SetHue(Hue);
   State.SetTransitiontime(Transitiontime);
-  return this.LightSetState(LightNr, State);
+  return this.LightSetState(this.GetLightId(LightNr), State);
 };
 
 /**
@@ -846,7 +861,7 @@ huepi.prototype.LightSetSaturation = function(LightNr, Saturation, Transitiontim
   var State = new huepi.Lightstate();
   State.SetSaturation(Saturation);
   State.SetTransitiontime(Transitiontime);
-  return this.LightSetState(LightNr, State);
+  return this.LightSetState(this.GetLightId(LightNr), State);
 };
 
 /**
@@ -859,7 +874,7 @@ huepi.prototype.LightSetBrightness = function(LightNr, Brightness, Transitiontim
   var State = new huepi.Lightstate();
   State.SetBrightness(Brightness);
   State.SetTransitiontime(Transitiontime);
-  return this.LightSetState(LightNr, State);
+  return this.LightSetState(this.GetLightId(LightNr), State);
 };
 
 /**
@@ -874,7 +889,7 @@ huepi.prototype.LightSetHueAngSatBri = function(LightNr, Ang, Sat, Bri, Transiti
   while (Ang < 0)
     Ang = Ang + 360;
   Ang = Ang % 360;
-  return this.LightSetHSB(LightNr, Ang / 360 * 65535, Sat * 255, Bri * 255, Transitiontime);
+  return this.LightSetHSB(this.GetLightId(LightNr), Ang / 360 * 65535, Sat * 255, Bri * 255, Transitiontime);
 };
 
 /**
@@ -889,8 +904,8 @@ huepi.prototype.LightSetRGB = function(LightNr, Red, Green, Blue, Transitiontime
   var Point = huepi.HelperRGBtoXY(Red, Green, Blue);
   var HueAngSatBri = huepi.HelperRGBtoHueAngSatBri(Red, Green, Blue);
   return $.when(
-  this.LightSetBrightness(HueAngSatBri.Bri * 255),
-  this.LightSetXY(LightNr, Point.x, Point.y, Transitiontime)
+  this.LightSetBrightness(this.GetLightId(LightNr), HueAngSatBri.Bri * 255),
+  this.LightSetXY(this.GetLightId(LightNr), Point.x, Point.y, Transitiontime)
   );
 };
 
@@ -905,12 +920,12 @@ huepi.prototype.LightSetCT = function(LightNr, CT, Transitiontime)
   if (Model !== 'LCT001') { // CT->RGB->XY to ignore Brightness in RGB
     var Color = huepi.HelperColortemperaturetoRGB(1000000 / CT);
     var Point = huepi.HelperRGBtoXY(Color.Red, Color.Green, Color.Blue);
-    return this.LightSetXY(LightNr, Point.x, Point.y, Transitiontime);
+    return this.LightSetXY(this.GetLightId(LightNr), Point.x, Point.y, Transitiontime);
   }
   var State = new huepi.Lightstate();
   State.SetCT(CT);
   State.SetTransitiontime(Transitiontime);
-  return this.LightSetState(LightNr, State);
+  return this.LightSetState(this.GetLightId(LightNr), State);
 };
 
 /**
@@ -920,7 +935,7 @@ huepi.prototype.LightSetCT = function(LightNr, CT, Transitiontime)
  */
 huepi.prototype.LightSetColortemperature = function(LightNr, Colortemperature, Transitiontime)
 {
-  return this.LightSetCT(LightNr, 1000000 / Colortemperature, Transitiontime);
+  return this.LightSetCT(this.GetLightId(LightNr), 1000000 / Colortemperature, Transitiontime);
 };
 
 /**
@@ -936,7 +951,7 @@ huepi.prototype.LightSetXY = function(LightNr, X, Y, Transitiontime)
   var State = new huepi.Lightstate();
   State.SetXY(Gamuted.x, Gamuted.y);
   State.SetTransitiontime(Transitiontime);
-  return this.LightSetState(LightNr, State);
+  return this.LightSetState(this.GetLightId(LightNr), State);
 };
 
 /**
@@ -948,7 +963,7 @@ huepi.prototype.LightAlertSelect = function(LightNr, Transitiontime)
   var State = new huepi.Lightstate();
   State.AlertSelect();
   State.SetTransitiontime(Transitiontime);
-  return this.LightSetState(LightNr, State);
+  return this.LightSetState(this.GetLightId(LightNr), State);
 };
 
 /**
@@ -960,7 +975,7 @@ huepi.prototype.LightAlertLSelect = function(LightNr, Transitiontime)
   var State = new huepi.Lightstate();
   State.AlertLSelect();
   State.SetTransitiontime(Transitiontime);
-  return this.LightSetState(LightNr, State);
+  return this.LightSetState(this.GetLightId(LightNr), State);
 };
 
 /**
@@ -972,7 +987,7 @@ huepi.prototype.LightAlertNone = function(LightNr, Transitiontime)
   var State = new huepi.Lightstate();
   State.AlertNone();
   State.SetTransitiontime(Transitiontime);
-  return this.LightSetState(LightNr, State);
+  return this.LightSetState(this.GetLightId(LightNr), State);
 };
 
 /**
@@ -984,7 +999,7 @@ huepi.prototype.LightEffectColorloop = function(LightNr, Transitiontime)
   var State = new huepi.Lightstate();
   State.EffectColorloop();
   State.SetTransitiontime(Transitiontime);
-  return this.LightSetState(LightNr, State);
+  return this.LightSetState(this.GetLightId(LightNr), State);
 };
 
 /**
@@ -996,7 +1011,7 @@ huepi.prototype.LightEffectNone = function(LightNr, Transitiontime)
   var State = new huepi.Lightstate();
   State.EffectNone();
   State.SetTransitiontime(Transitiontime);
-  return this.LightSetState(LightNr, State);
+  return this.LightSetState(this.GetLightId(LightNr), State);
 };
 
 ////////////////////////////////////////////////////////////////////////////////
