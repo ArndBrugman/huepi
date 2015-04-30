@@ -11,16 +11,18 @@
  * huepi Object, Entry point for all interaction with Lights etc via the Bridge.
  *
  * @class
+ * @param {string} NewUsername Optional
+ * @param {string} NewBridgeIP Optional
  */
-huepi = function() {
+huepi = function(NewUsername, NewBridgeIP) {
   /** @member {string} - Overidable Username for Whitelisting, must be 10-40 digits long */
-  this.Username = '1234567890';
+  this.Username = NewUsername || '1234567890';
 
   /** @member {array} - Array of all Bridges on the local network */
   this.LocalBridges = [];
 
   /** @member {string} - IP address of the Current(active) Bridge */
-  this.BridgeIP = '';
+  this.BridgeIP = NewBridgeIP || '';
   /** @member {array} - Configuration of the Current(active) Bridge*/
   this.BridgeConfig = [];
   /** @member {string} - Name of the Current(active) Bridge */
@@ -71,11 +73,20 @@ if (typeof module !== 'undefined' && module.exports)
  * Retreives the list of hue-Bridges on the local network
  */
 huepi.prototype.PortalDiscoverLocalBridges = function()
-{ // https://client-eastwood-dot-hue-prod-us.appspot.com/api/nupnp ?
+{ 
   var self = this;
+  //*/
+  return $.ajax({ type: 'GET', url: "https://www.meethue.com/api/nupnp", success: function(data) {
+    if (data.length > 0)
+      if (data[0].internalipaddress) {
+        self.LocalBridges = data;
+        self.BridgeIP = self.LocalBridges[0].internalipaddress; // Default to 1st Bridge internalip
+      }
+    }
+  });
+  /*/
   var d1 = $.Deferred();
   var d2 = $.Deferred();
-  //return $.get('https://www.meethue.com/api/nupnp', function(data) { <-- Doesn't follow redirects, $.ajax({type:'GET'}) does
   var j1 = $.ajax({ type: 'GET', url: "https://www.meethue.com/api/nupnp", // still issues with Cross Domain!
   success: function(data) {
     if (data.length > 0)
@@ -96,6 +107,7 @@ huepi.prototype.PortalDiscoverLocalBridges = function()
     }
   }).complete(d2.resolve);
   return $.when(d1, d2); // either or succes.
+  //*/
 };
 
 
