@@ -192,7 +192,7 @@ huepi.prototype.BridgeDeleteUser = function(UsernameToDelete)
 huepi.prototype.GetLightId = function(LightNr)
 {
   if (typeof LightNr  === "number") 
-    if (LightNr < this.LightIds.length)
+    if (LightNr <= this.LightIds.length)
       return this.LightIds[LightNr-1];
   return LightNr;
 }
