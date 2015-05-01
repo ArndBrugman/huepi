@@ -11,16 +11,18 @@
  * huepi Object, Entry point for all interaction with Lights etc via the Bridge.
  *
  * @class
+ * @param {string} NewUsername Optional
+ * @param {string} NewBridgeIP Optional
  */
-huepi = function() {
+huepi = function(NewUsername, NewBridgeIP) {
   /** @member {string} - Overidable Username for Whitelisting, must be 10-40 digits long */
-  this.Username = '1234567890';
+  this.Username = NewUsername || '1234567890';
 
   /** @member {array} - Array of all Bridges on the local network */
   this.LocalBridges = [];
 
   /** @member {string} - IP address of the Current(active) Bridge */
-  this.BridgeIP = '';
+  this.BridgeIP = NewBridgeIP || '';
   /** @member {array} - Configuration of the Current(active) Bridge*/
   this.BridgeConfig = [];
   /** @member {string} - Name of the Current(active) Bridge */
@@ -30,6 +32,7 @@ huepi = function() {
 
   /** @member {array} - Array of all Lights of the Current(active) Bridge */
   this.Lights = [];
+  this.LightIds = [];
   /** @member {array} - Array of all Groups of the Current(active) Bridge */
   this.Groups = [];
 
@@ -71,11 +74,20 @@ if (typeof module !== 'undefined' && module.exports)
  * Retreives the list of hue-Bridges on the local network
  */
 huepi.prototype.PortalDiscoverLocalBridges = function()
-{ // https://client-eastwood-dot-hue-prod-us.appspot.com/api/nupnp ?
+{ 
   var self = this;
+  //*/
+  return $.ajax({ type: 'GET', url: "https://www.meethue.com/api/nupnp", success: function(data) {
+    if (data.length > 0)
+      if (data[0].internalipaddress) {
+        self.LocalBridges = data;
+        self.BridgeIP = self.LocalBridges[0].internalipaddress; // Default to 1st Bridge internalip
+      }
+    }
+  });
+  /*/
   var d1 = $.Deferred();
   var d2 = $.Deferred();
-  //return $.get('https://www.meethue.com/api/nupnp', function(data) { <-- Doesn't follow redirects, $.ajax({type:'GET'}) does
   var j1 = $.ajax({ type: 'GET', url: "https://www.meethue.com/api/nupnp", // still issues with Cross Domain!
   success: function(data) {
     if (data.length > 0)
@@ -96,6 +108,7 @@ huepi.prototype.PortalDiscoverLocalBridges = function()
     }
   }).complete(d2.resolve);
   return $.when(d1, d2); // either or succes.
+  //*/
 };
 
 
@@ -116,6 +129,9 @@ huepi.prototype.BridgeGetData = function()
   var url = 'http://' + this.BridgeIP + '/api/' + this.Username;
   return $.get(url, function(data) {
     self.Lights = data.lights;
+    self.LightIds = [];
+    for (key in self.Lights)
+      self.LightIds.push(key);
     self.Groups = data.groups;
     self.BridgeConfig = data.config;
     self.Schedules = data.schedules;
@@ -159,16 +175,27 @@ huepi.prototype.BridgeDeleteUser = function(UsernameToDelete)
     dataType: 'json',
     contentType: 'application/json',
     url: 'http://' + this.BridgeIP + '/api/' + this.Username + '/config/whitelist/' + UsernameToDelete,
-    data: '{"devicetype": "WebInterface", "username": "' + this.Username + '"}'
+    //data: '{"devicetype": "WebInterface", "username": "' + this.Username + '"}'
   });
 };
 
 ////////////////////////////////////////////////////////////////////////////////
 //
-//  Helper Functions (static)
+//  Helper Functions
 //
 //
 
+/**
+ * @param {number} LightNr - LightNr
+ * @returns {string} LightId
+ */
+huepi.prototype.GetLightId = function(LightNr)
+{
+  if (typeof LightNr  === "number") 
+    if (LightNr <= this.LightIds.length)
+      return this.LightIds[LightNr-1];
+  return LightNr;
+}
 /**
  * @param {float} Red - Range [0..1]
  * @param {float} Green - Range [0..1]
@@ -745,7 +772,7 @@ huepi.prototype.LightSetName = function(LightNr, Name)
     type: 'PUT',
     dataType: 'json',
     contentType: 'application/json',
-    url: 'http://' + this.BridgeIP + '/api/' + this.Username + '/light/' + LightNr,
+    url: 'http://' + this.BridgeIP + '/api/' + this.Username + '/light/' + this.GetLightId(LightNr),
     data: '{"name" : "' + Name + '"}'
   });
 };
@@ -760,7 +787,7 @@ huepi.prototype.LightSetState = function(LightNr, State)
     type: 'PUT',
     dataType: 'json',
     contentType: 'application/json',
-    url: 'http://' + this.BridgeIP + '/api/' + this.Username + '/lights/' + LightNr + '/state',
+    url: 'http://' + this.BridgeIP + '/api/' + this.Username + '/lights/' + this.GetLightId(LightNr) + '/state',
     data: State.Get()
   });
 };
@@ -877,7 +904,7 @@ huepi.prototype.LightSetRGB = function(LightNr, Red, Green, Blue, Transitiontime
   var Point = huepi.HelperRGBtoXY(Red, Green, Blue);
   var HueAngSatBri = huepi.HelperRGBtoHueAngSatBri(Red, Green, Blue);
   return $.when(
-  this.LightSetBrightness(HueAngSatBri.Bri * 255),
+  this.LightSetBrightness(LightNr, HueAngSatBri.Bri * 255),
   this.LightSetXY(LightNr, Point.x, Point.y, Transitiontime)
   );
 };

@@ -34,7 +34,7 @@
         CTCanvas.width = 
         XYCanvas.width = size || 512;
         HueCanvas.height = HueCanvas.width;
-        CTCanvas.height = Math.round(CTCanvas.width / 4);
+        CTCanvas.height = Math.round(CTCanvas.width / 2);
         XYCanvas.height = XYCanvas.width;
         HueContext.fillRect(0, 0, HueCanvas.width, HueCanvas.height); // Need to Fill Canvas otherwise its unable to be modified...
         CTContext.fillRect(0, 0, CTCanvas.width, CTCanvas.height); // Need to Fill Canvas otherwise its unable to be modified...
@@ -68,9 +68,10 @@
             HueImagedata.data[Index + 2] = Color.Blue *255;
             // Colortemperature is only x gradient, draw same CTColor until CTCanvas.height
             if (y < CTCanvas.height) {
-              CTImagedata.data[Index + 0] = CTColor.Red *255;
-              CTImagedata.data[Index + 1] = CTColor.Green *255;
-              CTImagedata.data[Index + 2] = CTColor.Blue *255;
+              CTImagedata.data[Index + 0] = CTColor.Red *255 * (CTCanvas.height - y)/CTCanvas.height;
+              CTImagedata.data[Index + 1] = CTColor.Green *255 * (CTCanvas.height - y)/CTCanvas.height;
+              CTImagedata.data[Index + 2] = CTColor.Blue *255 * (CTCanvas.height - y)/CTCanvas.height;
+              //CTImagedata.data[Index + 3] = 255* (CTCanvas.height - y)/CTCanvas.height;
             }
             var XYColor = huepi.HelperXYtoRGB(x / XYCanvas.width, 1 - (y / XYCanvas.height));
             XYImagedata.data[Index + 0] = XYColor.Red *255;
