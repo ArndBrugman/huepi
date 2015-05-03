@@ -130,7 +130,7 @@ huepi.prototype.BridgeGetData = function()
   return $.get(url, function(data) {
     self.Lights = data.lights;
     self.LightIds = [];
-    for (key in self.Lights)
+    for (var key in self.Lights)
       self.LightIds.push(key);
     self.Groups = data.groups;
     self.BridgeConfig = data.config;
@@ -195,7 +195,7 @@ huepi.prototype.GetLightId = function(LightNr)
     if (LightNr <= this.LightIds.length)
       return this.LightIds[LightNr-1];
   return LightNr;
-}
+};
 /**
  * @param {float} Red - Range [0..1]
  * @param {float} Green - Range [0..1]
@@ -242,7 +242,7 @@ huepi.HelperHuetoHueAng = function(Hue)
       Ang = Ang - (180-Ang) *  0.17 * ((180-Ang)/90); // Longer Red, shorter Green
   }
   return Ang;
-}
+};
 
 /**
  * @param {float} Ang - Range [0..360]
@@ -341,18 +341,21 @@ huepi.HelperRGBtoXY = function(Red, Green, Blue)
  */
 huepi.HelperGamutXYforModel = function(Px, Py, Model)
 {
+  var PRed, PGreen, PBlue;
+  var NormDot;
+
   if (Model.slice(0, 3) === 'LCT') { // For the hue bulb the corners of the triangle are:
-    var PRed = {x: 0.674, y: 0.322};
-    var PGreen = {x: 0.408, y: 0.517};
-    var PBlue = {x: 0.168, y: 0.041};
+    PRed = {x: 0.674, y: 0.322};
+    PGreen = {x: 0.408, y: 0.517};
+    PBlue = {x: 0.168, y: 0.041};
   } else if ((Model.slice(0, 3) === 'LLC') || (Model.slice(0, 3) === 'LST')) { // For LivingColors Bloom, Aura and Iris the triangle corners are:
-    var PRed = {x: 0.703, y: 0.296};
-    var PGreen = {x: 0.214, y: 0.709};
-    var PBlue = {x: 0.139, y: 0.081};
+    PRed = {x: 0.703, y: 0.296};
+    PGreen = {x: 0.214, y: 0.709};
+    PBlue = {x: 0.139, y: 0.081};
   } else { // Default all values
-    var PRed = {x: 1.0, y: 0.0};
-    var PGreen = {x: 0.0, y: 1.0};
-    var PBlue = {x: 0.0, y: 0.0};
+    PRed = {x: 1.0, y: 0.0};
+    PGreen = {x: 0.0, y: 1.0};
+    PBlue = {x: 0.0, y: 0.0};
   }
 
   var VBR = {x: PRed.x - PBlue.x, y: PRed.y - PBlue.y}; // Blue to Red
@@ -376,7 +379,7 @@ huepi.HelperGamutXYforModel = function(Px, Py, Model)
 
   //  Outside Triangle, Find Closesed point on Edge or Pick Vertice...
   else if (GBR * PBR <= 0) { // Outside Blue to Red
-    var NormDot = (VBP.x * VBR.x + VBP.y * VBR.y) / (VBR.x * VBR.x + VBR.y * VBR.y);
+    NormDot = (VBP.x * VBR.x + VBP.y * VBR.y) / (VBR.x * VBR.x + VBR.y * VBR.y);
     if ((NormDot >= 0.0) && (NormDot <= 1.0)) // Within Edge
       return {x: PBlue.x + NormDot * VBR.x, y: PBlue.y + NormDot * VBR.y};
     else if (NormDot < 0.0) // Outside Edge, Pick Vertice
@@ -385,7 +388,7 @@ huepi.HelperGamutXYforModel = function(Px, Py, Model)
       return {x: PRed.x, y: PRed.y}; // End
   }
   else if (BRG * PRG <= 0) { // Outside Red to Green
-    var NormDot = (VRP.x * VRG.x + VRP.y * VRG.y) / (VRG.x * VRG.x + VRG.y * VRG.y);
+    NormDot = (VRP.x * VRG.x + VRP.y * VRG.y) / (VRG.x * VRG.x + VRG.y * VRG.y);
     if ((NormDot >= 0.0) && (NormDot <= 1.0)) // Within Edge
       return {x: PRed.x + NormDot * VRG.x, y: PRed.y + NormDot * VRG.y};
     else if (NormDot < 0.0) // Outside Edge, Pick Vertice
@@ -394,7 +397,7 @@ huepi.HelperGamutXYforModel = function(Px, Py, Model)
       return {x: PGreen.x, y: PGreen.y}; // End
   }
   else if (RGB * PGB <= 0) { // Outside Green to Blue
-    var NormDot = (VGP.x * VGB.x + VGP.y * VGB.y) / (VGB.x * VGB.x + VGB.y * VGB.y);
+    NormDot = (VGP.x * VGB.x + VGP.y * VGB.y) / (VGB.x * VGB.x + VGB.y * VGB.y);
     if ((NormDot >= 0.0) && (NormDot <= 1.0)) // Within Edge
       return {x: PGreen.x + NormDot * VGB.x, y: PGreen.y + NormDot * VGB.y};
     else if (NormDot < 0.0) // Outside Edge, Pick Vertice
@@ -1253,11 +1256,11 @@ huepi.prototype.GroupSetCT = function(GroupNr, CT, Transitiontime)
     while (this.Lights[LightNr + 1]) // Build Group
       Lights[LightNr] = ++LightNr;
   } else
-    var Lights = this.Groups[GroupNr].lights;
+    Lights = this.Groups[GroupNr].lights;
 
   if (Lights.length !== 0) {
     var deferreds = [];
-    for (var LightNr = 0; LightNr < Lights.length; LightNr++) // For Each Light
+    for (LightNr = 0; LightNr < Lights.length; LightNr++) // For Each Light
       deferreds.push(this.LightSetCT(Lights[LightNr], CT, Transitiontime));
     return $.when.apply($, deferreds); // return Deferred when with array of deferreds
   }
@@ -1293,11 +1296,11 @@ huepi.prototype.GroupSetXY = function(GroupNr, X, Y, Transitiontime)
     while (this.Lights[LightNr + 1]) // Build Group
       Lights[LightNr] = ++LightNr;
   } else
-    var Lights = this.Groups[GroupNr].lights;
+    Lights = this.Groups[GroupNr].lights;
 
   if (Lights.length !== 0) {
     var deferreds = [];
-    for (var LightNr = 0; LightNr < Lights.length; LightNr++) // For Each Light
+    for (LightNr = 0; LightNr < Lights.length; LightNr++) // For Each Light
       deferreds.push(this.LightSetXY(Lights[LightNr], X, Y, Transitiontime));
     return $.when.apply($, deferreds); // return Deferred when with array of deferreds
   }
