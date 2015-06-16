@@ -35,7 +35,8 @@ huepi = function(NewUsername, NewBridgeIP) {
   this.LightIds = [];
   /** @member {array} - Array of all Groups of the Current(active) Bridge */
   this.Groups = [];
-
+  this.GroupIds = [];
+  
   // To Do: Add Schedules, Scenes, Sensors & Rules manupulation functions
   /** @member {array} - Array of all Schedules of the Current(active) Bridge, NOTE: There are no Setter functions yet */
   this.Schedules = [];
@@ -130,9 +131,12 @@ huepi.prototype.BridgeGetData = function()
   return $.get(url, function(data) {
     self.Lights = data.lights;
     self.LightIds = [];
-    for (key in self.Lights)
+    for (var key in self.Lights)
       self.LightIds.push(key);
     self.Groups = data.groups;
+    self.GroupIds = [];
+    for (key in self.Groups)
+      self.GroupIds.push(key);
     self.BridgeConfig = data.config;
     self.Schedules = data.schedules;
     self.Scenes = data.scenes;
@@ -186,17 +190,6 @@ huepi.prototype.BridgeDeleteUser = function(UsernameToDelete)
 //
 
 /**
- * @param {number} LightNr - LightNr
- * @returns {string} LightId
- */
-huepi.prototype.GetLightId = function(LightNr)
-{
-  if (typeof LightNr  === "number") 
-    if (LightNr <= this.LightIds.length)
-      return this.LightIds[LightNr-1];
-  return LightNr;
-}
-/**
  * @param {float} Red - Range [0..1]
  * @param {float} Green - Range [0..1]
  * @param {float} Blue - Range [0..1]
@@ -242,7 +235,7 @@ huepi.HelperHuetoHueAng = function(Hue)
       Ang = Ang - (180-Ang) *  0.17 * ((180-Ang)/90); // Longer Red, shorter Green
   }
   return Ang;
-}
+};
 
 /**
  * @param {float} Ang - Range [0..360]
@@ -341,18 +334,21 @@ huepi.HelperRGBtoXY = function(Red, Green, Blue)
  */
 huepi.HelperGamutXYforModel = function(Px, Py, Model)
 {
+  var PRed, PGreen, PBlue;
+  var NormDot;
+
   if (Model.slice(0, 3) === 'LCT') { // For the hue bulb the corners of the triangle are:
-    var PRed = {x: 0.674, y: 0.322};
-    var PGreen = {x: 0.408, y: 0.517};
-    var PBlue = {x: 0.168, y: 0.041};
+    PRed = {x: 0.674, y: 0.322};
+    PGreen = {x: 0.408, y: 0.517};
+    PBlue = {x: 0.168, y: 0.041};
   } else if ((Model.slice(0, 3) === 'LLC') || (Model.slice(0, 3) === 'LST')) { // For LivingColors Bloom, Aura and Iris the triangle corners are:
-    var PRed = {x: 0.703, y: 0.296};
-    var PGreen = {x: 0.214, y: 0.709};
-    var PBlue = {x: 0.139, y: 0.081};
+    PRed = {x: 0.703, y: 0.296};
+    PGreen = {x: 0.214, y: 0.709};
+    PBlue = {x: 0.139, y: 0.081};
   } else { // Default all values
-    var PRed = {x: 1.0, y: 0.0};
-    var PGreen = {x: 0.0, y: 1.0};
-    var PBlue = {x: 0.0, y: 0.0};
+    PRed = {x: 1.0, y: 0.0};
+    PGreen = {x: 0.0, y: 1.0};
+    PBlue = {x: 0.0, y: 0.0};
   }
 
   var VBR = {x: PRed.x - PBlue.x, y: PRed.y - PBlue.y}; // Blue to Red
@@ -376,7 +372,7 @@ huepi.HelperGamutXYforModel = function(Px, Py, Model)
 
   //  Outside Triangle, Find Closesed point on Edge or Pick Vertice...
   else if (GBR * PBR <= 0) { // Outside Blue to Red
-    var NormDot = (VBP.x * VBR.x + VBP.y * VBR.y) / (VBR.x * VBR.x + VBR.y * VBR.y);
+    NormDot = (VBP.x * VBR.x + VBP.y * VBR.y) / (VBR.x * VBR.x + VBR.y * VBR.y);
     if ((NormDot >= 0.0) && (NormDot <= 1.0)) // Within Edge
       return {x: PBlue.x + NormDot * VBR.x, y: PBlue.y + NormDot * VBR.y};
     else if (NormDot < 0.0) // Outside Edge, Pick Vertice
@@ -385,7 +381,7 @@ huepi.HelperGamutXYforModel = function(Px, Py, Model)
       return {x: PRed.x, y: PRed.y}; // End
   }
   else if (BRG * PRG <= 0) { // Outside Red to Green
-    var NormDot = (VRP.x * VRG.x + VRP.y * VRG.y) / (VRG.x * VRG.x + VRG.y * VRG.y);
+    NormDot = (VRP.x * VRG.x + VRP.y * VRG.y) / (VRG.x * VRG.x + VRG.y * VRG.y);
     if ((NormDot >= 0.0) && (NormDot <= 1.0)) // Within Edge
       return {x: PRed.x + NormDot * VRG.x, y: PRed.y + NormDot * VRG.y};
     else if (NormDot < 0.0) // Outside Edge, Pick Vertice
@@ -394,7 +390,7 @@ huepi.HelperGamutXYforModel = function(Px, Py, Model)
       return {x: PGreen.x, y: PGreen.y}; // End
   }
   else if (RGB * PGB <= 0) { // Outside Green to Blue
-    var NormDot = (VGP.x * VGB.x + VGP.y * VGB.y) / (VGB.x * VGB.x + VGB.y * VGB.y);
+    NormDot = (VGP.x * VGB.x + VGP.y * VGB.y) / (VGB.x * VGB.x + VGB.y * VGB.y);
     if ((NormDot >= 0.0) && (NormDot <= 1.0)) // Within Edge
       return {x: PGreen.x + NormDot * VGB.x, y: PGreen.y + NormDot * VGB.y};
     else if (NormDot < 0.0) // Outside Edge, Pick Vertice
@@ -487,11 +483,11 @@ huepi.HelperXYtoRGB = function(x, y, Brightness)
 /**
  * @param {float} x
  * @param {float} y
- * @param {string} Model - Modelname of the Light
  * @param {float} Brightness Optional
+ * @param {string} Model - Modelname of the Light
  * @returns {object} [Red, Green, Blue] - Ranges [0..1] [0..1] [0..1]
  */
-huepi.HelperXYtoRGBforModel = function(x, y, Model, Brightness)
+huepi.HelperXYtoRGBforModel = function(x, y, Brightness, Model)
 {
   Model = Model || "LCT001"; // default hue Bulb 2012
   var GamutCorrected = huepi.HelperGamutXYforModel(x, y, Model);
@@ -729,6 +725,30 @@ huepi.Lightstate = function()
 //
 //
 
+
+/**
+ * @param {number} LightNr - LightNr
+ * @returns {string} LightId
+ */
+huepi.prototype.LightGetId = function(LightNr)
+{
+  if (typeof LightNr  === "number") 
+    if (LightNr <= this.LightIds.length)
+      return this.LightIds[LightNr-1];
+  return LightNr;
+};
+
+/**
+ * @param {string} LightId - LightId
+ * @returns {number} LightNr
+ */
+huepi.prototype.LightGetNr = function(LightId)
+{
+  if (typeof LightId  === "string") 
+   return this.LightIds.indexOf(LightId) + 1;
+  return LightId;
+};
+
 /**
  */
 huepi.prototype.LightsGetData = function()
@@ -738,6 +758,9 @@ huepi.prototype.LightsGetData = function()
   return $.get(url, function(data) {
     if (data) {
       self.Lights = data;
+      self.LightIds = [];
+      for (var key in self.Lights)
+        self.LightIds.push(key);
     }
   });
 };
@@ -772,7 +795,7 @@ huepi.prototype.LightSetName = function(LightNr, Name)
     type: 'PUT',
     dataType: 'json',
     contentType: 'application/json',
-    url: 'http://' + this.BridgeIP + '/api/' + this.Username + '/light/' + this.GetLightId(LightNr),
+    url: 'http://' + this.BridgeIP + '/api/' + this.Username + '/light/' + this.LightGetId(LightNr),
     data: '{"name" : "' + Name + '"}'
   });
 };
@@ -787,7 +810,7 @@ huepi.prototype.LightSetState = function(LightNr, State)
     type: 'PUT',
     dataType: 'json',
     contentType: 'application/json',
-    url: 'http://' + this.BridgeIP + '/api/' + this.Username + '/lights/' + this.GetLightId(LightNr) + '/state',
+    url: 'http://' + this.BridgeIP + '/api/' + this.Username + '/lights/' + this.LightGetId(LightNr) + '/state',
     data: State.Get()
   });
 };
@@ -916,7 +939,7 @@ huepi.prototype.LightSetRGB = function(LightNr, Red, Green, Blue, Transitiontime
  */
 huepi.prototype.LightSetCT = function(LightNr, CT, Transitiontime)
 {
-  var Model = this.Lights[LightNr].modelid;
+  var Model = this.Lights[this.LightGetId(LightNr)].modelid;
   if (Model !== 'LCT001') { // CT->RGB->XY to ignore Brightness in RGB
     var Color = huepi.HelperColortemperaturetoRGB(1000000 / CT);
     var Point = huepi.HelperRGBtoXY(Color.Red, Color.Green, Color.Blue);
@@ -946,7 +969,7 @@ huepi.prototype.LightSetColortemperature = function(LightNr, Colortemperature, T
  */
 huepi.prototype.LightSetXY = function(LightNr, X, Y, Transitiontime)
 {
-  var Model = this.Lights[LightNr].modelid;
+  var Model = this.Lights[this.LightGetId(LightNr)].modelid;
   var Gamuted = huepi.HelperGamutXYforModel(X, Y, Model);
   var State = new huepi.Lightstate();
   State.SetXY(Gamuted.x, Gamuted.y);
@@ -1021,6 +1044,32 @@ huepi.prototype.LightEffectNone = function(LightNr, Transitiontime)
 //
 
 /**
+ * @param {number} GroupNr - GroupNr
+ * @returns {string} GroupId
+ */
+huepi.prototype.GroupGetId = function(GroupNr)
+{
+  if (typeof GroupNr  === "number")
+    if (GroupNr === 0)
+      return "0";
+    else if (GroupNr > 0)
+      if (GroupNr <= this.GroupIds.length)
+        return this.GroupIds[GroupNr-1];
+  return GroupNr;
+};
+
+/**
+ * @param {string} GroupId - GroupId
+ * @returns {number} GroupNr
+ */
+huepi.prototype.GroupGetNr = function(GroupId)
+{
+  if (typeof GroupId  === "string") 
+   return this.GroupIds.indexOf(GroupId) + 1;
+  return GroupId;
+};
+
+/**
  */
 huepi.prototype.GroupsGetData = function()
 { // GET /api/username/lights
@@ -1029,6 +1078,9 @@ huepi.prototype.GroupsGetData = function()
   return $.get(url, function(data) {
     if (data) {
       self.Groups = data;
+      self.GroupIds = [];
+      for (var key in self.Groups)
+        self.GroupIds.push(key);
     }
   });
 };
@@ -1059,7 +1111,7 @@ huepi.prototype.GroupSetName = function(GroupNr, Name)
     type: 'PUT',
     dataType: 'json',
     contentType: 'application/json',
-    url: 'http://' + this.BridgeIP + '/api/' + this.Username + '/groups/' + GroupNr,
+    url: 'http://' + this.BridgeIP + '/api/' + this.Username + '/groups/' + this.GroupGetId(GroupNr),
     data: '{"name":"' + Name + '"}'
   });
 };
@@ -1075,7 +1127,7 @@ huepi.prototype.GroupSetLights = function(GroupNr, Lights)
     type: 'PUT',
     dataType: 'json',
     contentType: 'application/json',
-    url: 'http://' + this.BridgeIP + '/api/' + this.Username + '/groups/' + GroupNr,
+    url: 'http://' + this.BridgeIP + '/api/' + this.Username + '/groups/' + this.GroupGetId(GroupNr),
     data: '{"lights":' + huepi.HelperToStringArray(Lights) + '}'
   });
 };
@@ -1092,7 +1144,7 @@ huepi.prototype.GroupSetAttributes = function(GroupNr, Name, Lights)
     type: 'PUT',
     dataType: 'json',
     contentType: 'application/json',
-    url: 'http://' + this.BridgeIP + '/api/' + this.Username + '/groups/' + GroupNr,
+    url: 'http://' + this.BridgeIP + '/api/' + this.Username + '/groups/' + this.GroupGetId(GroupNr),
     data: '{"name":"' + Name + '", "lights":' + huepi.HelperToStringArray(Lights) + '}'
   });
 };
@@ -1106,7 +1158,7 @@ huepi.prototype.GroupDelete = function(GroupNr)
     type: 'DELETE',
     dataType: 'json',
     contentType: 'application/json',
-    url: 'http://' + this.BridgeIP + '/api/' + this.Username + '/groups/' + GroupNr
+    url: 'http://' + this.BridgeIP + '/api/' + this.Username + '/groups/' + this.GroupGetId(GroupNr)
   });
 };
 
@@ -1120,7 +1172,7 @@ huepi.prototype.GroupSetState = function(GroupNr, State)
     type: 'PUT',
     dataType: 'json',
     contentType: 'application/json',
-    url: 'http://' + this.BridgeIP + '/api/' + this.Username + '/groups/' + GroupNr + '/action',
+    url: 'http://' + this.BridgeIP + '/api/' + this.Username + '/groups/' + this.GroupGetId(GroupNr) + '/action',
     data: State.Get()
   });
 };
@@ -1247,17 +1299,16 @@ huepi.prototype.GroupSetRGB = function(GroupNr, Red, Green, Blue, Transitiontime
 huepi.prototype.GroupSetCT = function(GroupNr, CT, Transitiontime)
 {
   var Lights = [];
-  var LightNr = 0;
-
-  if (GroupNr === 0) { // All Lights
-    while (this.Lights[LightNr + 1]) // Build Group
-      Lights[LightNr] = ++LightNr;
-  } else
-    var Lights = this.Groups[GroupNr].lights;
+  
+  GroupNr = this.GroupGetId(GroupNr);
+  if (GroupNr === "0") // All Lights
+    Lights = this.LightIds;
+  else
+    Lights = this.Groups[GroupNr].lights;
 
   if (Lights.length !== 0) {
     var deferreds = [];
-    for (var LightNr = 0; LightNr < Lights.length; LightNr++) // For Each Light
+    for (var LightNr=0; LightNr<Lights.length; LightNr++)
       deferreds.push(this.LightSetCT(Lights[LightNr], CT, Transitiontime));
     return $.when.apply($, deferreds); // return Deferred when with array of deferreds
   }
@@ -1287,17 +1338,16 @@ huepi.prototype.GroupSetColortemperature = function(GroupNr, Colortemperature, T
 huepi.prototype.GroupSetXY = function(GroupNr, X, Y, Transitiontime)
 {
   var Lights = [];
-  var LightNr = 0;
-
-  if (GroupNr === 0) { // All Lights
-    while (this.Lights[LightNr + 1]) // Build Group
-      Lights[LightNr] = ++LightNr;
-  } else
-    var Lights = this.Groups[GroupNr].lights;
+  
+  GroupNr = this.GroupGetId(GroupNr);
+  if (GroupNr === "0") // All Lights
+    Lights = this.LightIds;
+  else
+    Lights = this.Groups[GroupNr].lights;
 
   if (Lights.length !== 0) {
     var deferreds = [];
-    for (var LightNr = 0; LightNr < Lights.length; LightNr++) // For Each Light
+    for (var LightNr=0; LightNr<Lights.length; LightNr++)
       deferreds.push(this.LightSetXY(Lights[LightNr], X, Y, Transitiontime));
     return $.when.apply($, deferreds); // return Deferred when with array of deferreds
   }
@@ -1518,4 +1568,13 @@ huepi.prototype.RulesGetData = function()
 // renamed This. to self.
 // added HelperXYtoRGBforModel
 // PortalDiscoverLocalBridges now follows redirects
+//
+// 0.9.8
+// Added LightIds & GroupIds
+// Default is still index, which is transformed into Ids when talking to lights
+//   use Ids (string) in stead of Index (number) to access a specific Id
+//   this way its transparent and works for both Ids & Indices
+// reordered parameters to HelperXYtoRGBforModel = function(x, y, Brightness, Model)
+//
+//
 //
