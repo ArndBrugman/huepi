@@ -314,10 +314,10 @@ huepi.HelperRGBtoXY = function(Red, Green, Blue)
     Blue = Math.pow((Blue + 0.055) / (1.055), 2.4);
   else
     Blue = Blue / 12.92;
-  // RGB to XYZ [M] for sRGB D65, http://www.brucelindbloom.com/index.html?Eqn_RGB_XYZ_Matrix.html
-  var X = Red * 0.4124564 + Green * 0.3575761 + Blue * 0.1804375;
-  var Y = Red * 0.2126729 + Green * 0.7151522 + Blue * 0.0721750;
-  var Z = Red * 0.0193339 + Green * 0.1191920 + Blue * 0.9503041;
+  // RGB to XYZ [M] for Wide RGB D65, http://www.developers.meethue.com/documentation/color-conversions-rgb-xy
+  var X = Red * 0.664511 + Green * 0.154324 + Blue * 0.162028;
+  var Y = Red * 0.283881 + Green * 0.668433 + Blue * 0.047685;
+  var Z = Red * 0.000088 + Green * 0.072310 + Blue * 0.986039;
   // But we don't want Capital X,Y,Z you want lowercase [x,y] (called the color point) as per:
   if ((X + Y + Z) === 0)
     return {x: 0, y: 0};
@@ -413,10 +413,10 @@ huepi.HelperXYtoRGB = function(x, y, Brightness)
   var Y = Brightness;
   var X = (Y / y) * x;
   var Z = (Y / y) * z;
-  // XYZ to RGB [M]-1 for sRGB D65, http://www.brucelindbloom.com/index.html?Eqn_RGB_XYZ_Matrix.html
-  var Red   =  X * 3.2404542 - Y * 1.5371385 - Z * 0.4985314;
-  var Green = -X * 0.9692660 + Y * 1.8760108 + Z * 0.0415560;
-  var Blue  =  X * 0.0556434 - Y * 0.2040259 + Z * 1.0572252;
+  // XYZ to RGB [M]-1 for Wide RGB D65, http://www.developers.meethue.com/documentation/color-conversions-rgb-xy
+  var Red   =  X * 1.656492 - Y * 0.354851 - Z * 0.255038;
+  var Green = -X * 0.707196 + Y * 1.655397 + Z * 0.036152;
+  var Blue  =  X * 0.051713 - Y * 0.121364 + Z * 1.011530;
   // Limit RGB on [0..1]
   if (Red > Blue && Red > Green && Red > 1.0) { // Red is too big
     Green = Green / Red;
@@ -1577,4 +1577,7 @@ huepi.prototype.RulesGetData = function()
 // reordered parameters to HelperXYtoRGBforModel = function(x, y, Brightness, Model)
 //
 //
+// using updated Philips hue Wide RGB D65, http://www.developers.meethue.com/documentation/color-conversions-rgb-xy
 //
+//
+
