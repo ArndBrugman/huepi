@@ -795,7 +795,7 @@ huepi.prototype.LightSetName = function(LightNr, Name)
     type: 'PUT',
     dataType: 'json',
     contentType: 'application/json',
-    url: 'http://' + this.BridgeIP + '/api/' + this.Username + '/light/' + this.LightGetId(LightNr),
+    url: 'http://' + this.BridgeIP + '/api/' + this.Username + '/lights/' + this.LightGetId(LightNr),
     data: '{"name" : "' + Name + '"}'
   });
 };
@@ -1576,8 +1576,10 @@ huepi.prototype.RulesGetData = function()
 //   this way its transparent and works for both Ids & Indices
 // reordered parameters to HelperXYtoRGBforModel = function(x, y, Brightness, Model)
 //
-//
 // using updated Philips hue Wide RGB D65, http://www.developers.meethue.com/documentation/color-conversions-rgb-xy
+//
+// 
+// FIX huepi.prototype.LightSetName 
 //
 //
 
