@@ -82,7 +82,7 @@
   <body>
     <script type='text/javascript' >
       var MyHue = new huepi();
-      MyHue.Username = '085efe879ee3ed83c04efc28a0da03d3';
+      // OBSOLETE! May not be set externally, comes from bridge when whitelisting! MyHue.Username = '085efe879ee3ed83c04efc28a0da03d3';
       var HeartbeatInterval;
       var HueImage = new Image();
       HueImage.src = 'images/HUE.png';
@@ -143,9 +143,9 @@
 
       function onResume() {
         window.onresize();
-        ConnectMyHue();
+        ConnectToHueBridge();
         HeartbeatInterval = setInterval(StatusHeartbeat, 2500);
-        StatusHeartbeat(); // Execute Immediate Too!
+        //StatusHeartbeat(); // Execute Immediate Too!
       }
 
       function onPause() {
@@ -162,10 +162,12 @@
           $('#brightnessslider').val(MyHue.Lights[2].state.bri); // Get brightness of 2nd light for now...
           $('#brightnessslider').slider('refresh');
           DemoBehaviour();
-        }, function BridgetHeartbeatGetFailed() {
+      }, function BridgeGetDataFailed() {
           $('#HUEStatus').text('StatusHeartbeat BridgeGet Failed');
-          onPause();
-          onResume();
+          setTimeout(function() {
+            onPause();
+            onResume();
+          }, 100);
         });
       }
 
@@ -173,24 +175,28 @@
       //   Discover Bridge via Portal
       //   Check if UserName is Whitelisted (via HEUPI.BridgeGetData)
       //     if Not->Try to Create User
-      function ConnectMyHue() {
+      function ConnectToHueBridge() {
         if (!localStorage.MyHueBridgeIP) { // No Cached BridgeIP?
           $('#HUEStatus').text('Trying to Discover HUE Bridge via HUE Portal');
-          MyHue.PortalDiscoverLocalBridges().then(function GetBridgeConfig() {
+          MyHue.PortalDiscoverLocalBridges().then(function BridgesDiscovered() {
             $('#HUEBridgeIP').text('Bridge IP: ' + MyHue.BridgeIP);
-            MyHue.BridgeGetData().then(function EnsureWhitelisting() {
-              if (!MyHue.BridgeUsernameWhitelisted) {
-                $('#HUEStatus').text('Please press connect button on the Hue Bridge');
-                MyHue.BridgeCreateUser().then(function ReReadBridgeConfiguration() {
+            MyHue.BridgeGetConfig().then(function BridgeConfigReceived() {
+              $('#HUEBridgeName').text('Bridge Name: ' +MyHue.BridgeName);
+              MyHue.BridgeGetData().then(function BridgeDataReceived() {
+                localStorage.MyHueBridgeIP = MyHue.BridgeIP; // Cache BridgeIP
+                $('#HUEStatus').text('Connected');
+              }, function UnableToRetreiveBridgeData() {
+                $('#HUEStatus').text('Please press connect button on the hue Bridge');
+                MyHue.BridgeCreateUser().then(function BridegeUserCreated() {
+                  localStorage.MyHueBridgeIP = MyHue.BridgeIP; // Cache BridgeIP
+                  $('#HUEStatus').text('Connected');
                   return;
                 }, function UnableToCreateUseronBridge() {
-                  $('#HUEStatus').text('Unable to Create User on Bridge');
-                  return ConnectMyHue();
+                  $('#HUEStatus').text('.Please press connect button on the hue Bridge.');
+                  return;
                 });
-              } else {
-                localStorage.MyHueBridgeIP = MyHue.BridgeIP; // Cache BridgeIP
-              }
-            }, function UnableToRetreiveBridgeConfiguration() {
+              });
+            }, function UnableToRetreiveBridgeConfig() {
               $('#HUEStatus').text('Unable to Retreive Bridge Configuration');
               return;
             });
@@ -199,20 +205,21 @@
             return;
           });
         } else {
+          $('#HUEStatus').text('Using Cached Bridge IP');
           MyHue.BridgeIP = localStorage.MyHueBridgeIP;
           $('#HUEBridgeIP').text('Cached Bridge IP: ' + MyHue.BridgeIP);
-          $('#HUEStatus').text('Using Cached Bridge IP');
-          MyHue.BridgeGetData().then(function CheckWhitelisting() {
-            if (MyHue.BridgeUsernameWhitelisted) {
-              return;
-            } else {
+          MyHue.BridgeGetConfig().then(function CachedBridgeConfigReceived() {
+            $('#HUEBridgeName').text('Bridge Name: ' +MyHue.BridgeName);
+            MyHue.BridgeGetData().then(function CachedBridgeDataReceived() {
+              $('#HUEStatus').text('Connected');
+            }, function UnableToRetreiveCachedBridgeData() {
               delete localStorage.MyHueBridgeIP; // not Whitelisted anymore
-              $('#HUEStatus').text('Not found anymore');
+              $('#HUEStatus').text('Unable to Retreive Cached Bridge Data');
               return;
-            }
-          }, function ErrorGettingCachedBridgeData() {
+            });
+          }, function UnableToRetreiveCachedBridgeConfig() {
             delete localStorage.MyHueBridgeIP; // not found anymore
-            return;
+            $('#HUEStatus').text('Unable to Retreive Cached Bridge Configuration');
           });
         }
       }
