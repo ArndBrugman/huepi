@@ -2,5 +2,5 @@
 upnp.html
 /Docs/fonts
 npm-debug.log
-
+node_modules
 hueNode/huepiBridgeCache.json
