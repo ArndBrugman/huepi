@@ -9,33 +9,34 @@ ConnectMyHue();
 function ConnectMyHue() {
   console.log('Discovering hue Bridge via hue Portal');
   MyHue.PortalDiscoverLocalBridges().then(function BridgesDiscovered() {
-    console.log('hue Bridge IP: ' + MyHue.BridgeIP);
+    console.log('Bridge IP: ' + MyHue.BridgeIP);
     MyHue.BridgeGetConfig().then(function BridgeConfigReceived() {
-      console.log('hue Bridge Name: ' + MyHue.BridgeName);
+      console.log('Bridge ID: ' + MyHue.BridgeID);
+      console.log('Bridge Name: ' + MyHue.BridgeName);
       MyHue.BridgeGetData().then(function BridgeDataReceived() {
+        console.log('Bridge Username: ' + MyHue.Username);
         StartHeartbeat();
       }, function UnableToRetreiveBridgeData() {
-        console.log('Please press connect button on the hue Bridge');
+        console.log('Please press connect button on the Bridge');
         MyHue.BridgeCreateUser().then(function BridegeUserCreated() {
-          console.log('Connected');
+          console.log('Bridge Username Created: ' + MyHue.Username);
           StartHeartbeat();
         }, function UnableToCreateUseronBridge() {
-          console.log('.Please press connect button on the hue Bridge.');
-          setTimeout(ConnectMyHue(), 1000);
+          console.log('.Please press connect button on the Bridge.');
+          setTimeout(ConnectMyHue, 1000);
         });
       });
     }, function UnableToRetreiveBridgeConfiguration() {
-      console.log('Unable to Retreive hue Bridge Configuration');
-      setTimeout(ConnectMyHue(), 1000);
+      console.log('Unable to Retreive Bridge Configuration');
+      setTimeout(ConnectMyHue, 1000);
     });
   }, function UnableToDiscoverLocalBridgesViaPortal() {
-    console.log('Unable to find Local hue Bridge via hue Portal');
-    setTimeout(ConnectMyHue(), 1000);
+    console.log('Unable to find Local Bridge via hue Portal');
+    setTimeout(ConnectMyHue, 3000);
   });
 }
 
 function StartHeartbeat() {
-  console.log('Found hue Bridge and Whitelisted');
   //MyHue.GroupOn(0);
   //MyHue.GroupEffectNone(0);
   MyHue.GroupAlertSelect(0);
@@ -66,14 +67,14 @@ function StatusHeartbeat() {
 }
 
 function onLightSwitchOn(LightNr) {
-  console.log('LightSwitch ' +LightNr+ ' On  -' +MyHue.Lights[LightNr].name);
+  console.log('LightSwitch ' +LightNr+ ' On  - ' +MyHue.Lights[LightNr].name);
   MyHue.GroupOn(0);
   MyHue.GroupSetCT(0, 467);
   MyHue.GroupSetBrightness(0, 144);
 }
 
 function onLightSwitchOff(LightNr) {
-  console.log('LightSwitch ' +LightNr+ ' Off -' +MyHue.Lights[LightNr].name);
+  console.log('LightSwitch ' +LightNr+ ' Off - ' +MyHue.Lights[LightNr].name);
   MyHue.GroupOff(0);
 }
 
