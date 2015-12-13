@@ -80,20 +80,22 @@ if (typeof module !== 'undefined' && module.exports)
 //
 
 /**
- * Loads the BridgeCache
+ * Loads the BridgeCache, typically on startup
  */
 huepi.prototype._BridgeCacheLoad = function()
 {
-  if (typeof navigator !== 'undefined' && typeof window !== 'undefined') { // running in Browser
-    try {
-      this.BridgeCache = {};
-      var huepiBridgeCache = localStorage.huepiBridgeCache || '{}';
-      this.BridgeCache = JSON.parse(huepiBridgeCache); // Load
+  this.BridgeCache = { };
+  try {
+    if (typeof navigator !== 'undefined' && typeof window !== 'undefined') { // running in Browser
+        var huepiBridgeCache = localStorage.huepiBridgeCache || '{}';
+        this.BridgeCache = JSON.parse(huepiBridgeCache); // Load
+    } else if (typeof module !== 'undefined' && module.exports) { // running in NodeJS
+      var fs = require('fs');
+      var buffer = fs.readFileSync('huepiBridgeCache.json');
+      this.BridgeCache = JSON.parse(buffer.toString());    
     }
-    catch (error) { }
-  }
-  if (typeof module !== 'undefined' && module.exports) { // running in NodeJS
-    //SaveToFile
+  } catch (error) {
+    console.log('Unable to huepi._BridgeCacheLoad() ' + error);
   }
 }
 
@@ -114,18 +116,22 @@ huepi.prototype._BridgeCacheRemoveCurrent = function()
 }
 
 /**
- * Saves the BridgeCache
+ * Saves the BridgeCache, typically on Whitelist new Device or Device no longer whitelisted
+ *   as is the case with with @BridgeCacheAutosave
+ * NOTE: Saving this cache might be considered a security issue
+ * To counter this security issue, arrange your own load/save ode with proper encryption
  */
 huepi.prototype._BridgeCacheSave = function()
 {
-  if (typeof navigator !== 'undefined' && typeof window !== 'undefined') { // running in Browser
-    try {
+  try {
+    if (typeof navigator !== 'undefined' && typeof window !== 'undefined') { // running in Browser
       localStorage.huepiBridgeCache = JSON.stringify(this.BridgeCache); // Save
+    } else if (typeof module !== 'undefined' && module.exports) { // running in NodeJS
+      var fs = require('fs');
+      fs.writeFileSync('huepiBridgeCache.json',JSON.stringify(this.BridgeCache));
     }
-    catch (error) { }
-  }
-  if (typeof module !== 'undefined' && module.exports) { // running in NodeJS
-    //LoadFromFile
+  } catch (error) {     
+    console.log('Unable to huepi._BridgeCacheSave() ' + error);
   }
 }
 
