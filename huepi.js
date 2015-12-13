@@ -92,8 +92,9 @@ huepi.prototype._BridgeCacheLoad = function()
     } else if (typeof module !== 'undefined' && module.exports) { // running in NodeJS
       var fs = require('fs');
       var buffer = fs.readFileSync('huepiBridgeCache.json');
-      this.BridgeCache = JSON.parse(buffer.toString());    
+      this.BridgeCache = JSON.parse(buffer.toString());
     }
+    //console.log('huepi._BridgeCacheLoad()-ed : \n '+ JSON.stringify(this.BridgeCache));
   } catch (error) {
     console.log('Unable to huepi._BridgeCacheLoad() ' + error);
   }
@@ -130,6 +131,7 @@ huepi.prototype._BridgeCacheSave = function()
       var fs = require('fs');
       fs.writeFileSync('huepiBridgeCache.json',JSON.stringify(this.BridgeCache));
     }
+    //console.log('huepi._BridgeCacheSave()-ed  : \n '+ JSON.stringify(this.BridgeCache));
   } catch (error) {     
     console.log('Unable to huepi._BridgeCacheSave() ' + error);
   }
