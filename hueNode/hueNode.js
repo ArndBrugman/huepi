@@ -6,32 +6,36 @@ var HeartbeatInterval;
 
 ConnectMyHue();
 
+function consoleTlog(string) {
+  console.log(new Date() + ': ' + string);
+}
+
 function ConnectMyHue() {
-  console.log('Discovering hue Bridge via hue Portal');
+  consoleTlog('Discovering hue Bridge via hue Portal');
   MyHue.PortalDiscoverLocalBridges().then(function BridgesDiscovered() {
-    console.log('Bridge IP: ' + MyHue.BridgeIP);
+    consoleTlog('Bridge IP: ' + MyHue.BridgeIP);
     MyHue.BridgeGetConfig().then(function BridgeConfigReceived() {
-      console.log('Bridge ID: ' + MyHue.BridgeID);
-      console.log('Bridge Name: ' + MyHue.BridgeName);
+      consoleTlog('Bridge ID: ' + MyHue.BridgeID);
+      consoleTlog('Bridge Name: ' + MyHue.BridgeName);
       MyHue.BridgeGetData().then(function BridgeDataReceived() {
-        console.log('Bridge Username: ' + MyHue.Username);
+        consoleTlog('Bridge Username: ' + MyHue.Username);
         StartHeartbeat();
       }, function UnableToRetreiveBridgeData() {
-        console.log('Please press connect button on the Bridge');
+        consoleTlog('Please press connect button on the Bridge');
         MyHue.BridgeCreateUser().then(function BridegeUserCreated() {
-          console.log('Bridge Username Created: ' + MyHue.Username);
+          consoleTlog('Bridge Username Created: ' + MyHue.Username);
           StartHeartbeat();
         }, function UnableToCreateUseronBridge() {
-          console.log('.Please press connect button on the Bridge.');
+          consoleTlog('.Please press connect button on the Bridge.');
           setTimeout(ConnectMyHue, 1000);
         });
       });
     }, function UnableToRetreiveBridgeConfiguration() {
-      console.log('Unable to Retreive Bridge Configuration');
+      consoleTlog('Unable to Retreive Bridge Configuration');
       setTimeout(ConnectMyHue, 1000);
     });
   }, function UnableToDiscoverLocalBridgesViaPortal() {
-    console.log('Unable to find Local Bridge via hue Portal');
+    consoleTlog('Unable to find Local Bridge via hue Portal');
     setTimeout(ConnectMyHue, 3000);
   });
 }
@@ -49,32 +53,32 @@ function StatusHeartbeat() {
   MyHue.LightsGetData().then(function CheckLightSwitches() {
     // Triggers on Reachable which actually means Powered On/Off in my case ;-)
     LightNr = 1;
-    while (MyHue.Lights[LightNr]) {
-      if ((MyHue.Lights[LightNr].state.reachable) !== (PrevHueLights[LightNr].state.reachable)) {
-        if (MyHue.Lights[LightNr].state.reachable) {
-          onLightSwitchOn(LightNr);
+    while (MyHue.Lights[MyHue.LightGetId(LightNr)] !== undefined) {
+      if ((MyHue.Lights[MyHue.LightGetId(LightNr)].state.reachable) !== (PrevHueLights[MyHue.LightGetId(LightNr)].state.reachable)) {
+        if (MyHue.Lights[MyHue.LightGetId(LightNr)].state.reachable) {
+          onLightSwitchOn(MyHue.LightGetId(LightNr));
         } else {
-          onLightSwitchOff(LightNr);
+          onLightSwitchOff(MyHue.LightGetId(LightNr));
         }
       }
       LightNr++;
     }
   }, function BridgetHeartbeatGetFailed() {
-    console.log('StatusHeartbeat BridgeGet Failed');
+    consoleTlog('StatusHeartbeat BridgeGet Failed');
     clearInterval(HeartbeatInterval);
     ConnectMyHue();
   });
 }
 
 function onLightSwitchOn(LightNr) {
-  console.log('LightSwitch ' +LightNr+ ' On  - ' +MyHue.Lights[LightNr].name);
-  MyHue.GroupOn(0);
-  MyHue.GroupSetCT(0, 467);
-  MyHue.GroupSetBrightness(0, 144);
+  consoleTlog('LightSwitch ' +LightNr+ ' On  - ' +MyHue.Lights[MyHue.LightGetId(LightNr)].name);
+  MyHue.GroupOn(2);
+  MyHue.GroupSetCT(2, 467);
+  MyHue.GroupSetBrightness(2, 144);
 }
 
 function onLightSwitchOff(LightNr) {
-  console.log('LightSwitch ' +LightNr+ ' Off - ' +MyHue.Lights[LightNr].name);
-  MyHue.GroupOff(0);
+  consoleTlog('LightSwitch ' +LightNr+ ' Off - ' +MyHue.Lights[MyHue.LightGetId(LightNr)].name);
+  MyHue.GroupOff(2);
 }
 
