@@ -98,14 +98,14 @@ huepi.prototype._BridgeCacheLoad = function()
   } catch (error) {
     console.log('Unable to huepi._BridgeCacheLoad() ' + error);
   }
-}
+};
 
 huepi.prototype._BridgeCacheAddCurrent = function()
 {
   this.BridgeCache[this.BridgeID] = this.Username;
   if (this.BridgeCacheAutosave)
     this._BridgeCacheSave();
-}
+};
 
 huepi.prototype._BridgeCacheRemoveCurrent = function()
 {
@@ -114,13 +114,13 @@ huepi.prototype._BridgeCacheRemoveCurrent = function()
     if (this.BridgeCacheAutosave)
       this._BridgeCacheSave();
   }
-}
+};
 
 /**
  * Saves the BridgeCache, typically on Whitelist new Device or Device no longer whitelisted
- *   as is the case with with @BridgeCacheAutosave
+ *   as is the case with with @BridgeCacheAutosave on @_BridgeCacheAddCurrent and @_BridgeCacheRemoveCurrent
  * NOTE: Saving this cache might be considered a security issue
- * To counter this security issue, arrange your own load/save ode with proper encryption
+ * To counter this security issue, arrange your own load/save code with proper encryption
  */
 huepi.prototype._BridgeCacheSave = function()
 {
@@ -135,7 +135,7 @@ huepi.prototype._BridgeCacheSave = function()
   } catch (error) {     
     console.log('Unable to huepi._BridgeCacheSave() ' + error);
   }
-}
+};
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -156,7 +156,9 @@ huepi.prototype.PortalDiscoverLocalBridges = function()
       if (data[0].internalipaddress) { // Default to 1st Bridge
         self.LocalBridges = data;
         self.BridgeIP = self.LocalBridges[0].internalipaddress;
-        self.BridgeID = self.LocalBridges[0].id.toLowerCase();
+        if (self.BridgeConfig.bridgeid) // SteveyO/Hue-Emulator doesn't supply bridgeid as of yet.
+          self.BridgeID = self.LocalBridges[0].id.toLowerCase();
+        else self.BridgeID = '';
         self.Username = self.BridgeCache[self.BridgeID];
         if (self.Username === undefined)
           self.Username = '';
@@ -164,7 +166,7 @@ huepi.prototype.PortalDiscoverLocalBridges = function()
       } else deferred.reject();
     } else deferred.reject();
   }, error: function(xhr,status,error) { // $.ajax failed 
-    deferred.reject() 
+    deferred.reject();
   } });
   return deferred.promise();
 };
@@ -181,18 +183,21 @@ huepi.prototype.PortalDiscoverLocalBridges = function()
  * available members (as of "apiversion": "1.11.0"):
  *   name, apiversion, swversion, mac, bridgeid, replacesbridgeid, factorynew, modelid
  */
-huepi.prototype.BridgeGetConfig = function()
+ huepi.prototype.BridgeGetConfig = function()
 { // GET /api/config -> data.config.whitelist.username
   var self = this;
   var deferred = $.Deferred();
 
   $.ajax({ type: 'GET', url: 'http://' + this.BridgeIP + '/api/config/', success: function(data) {
+///$.get('http://' + this.BridgeIP + '/api/gethuepi/config/', function(data) {
     if (data.bridgeid) {
       self.BridgeConfig = data;
-      self.BridgeID = self.BridgeConfig.bridgeid.toLowerCase();
+      if (self.BridgeConfig.bridgeid) // SteveyO/Hue-Emulator doesn't supply bridgeid as of yet.
+        self.BridgeID = self.BridgeConfig.bridgeid.toLowerCase();
+      else self.BridgeID = '';
       self.BridgeName = self.BridgeConfig.name;
       self.Username = self.BridgeCache[self.BridgeID];
-      if (self.Username == undefined)
+      if (self.Username === undefined)
         self.Username = '';
       deferred.resolve();
     } else { // this BridgeIP is not a hue Bridge
@@ -202,11 +207,13 @@ huepi.prototype.BridgeGetConfig = function()
       self.Username = '';
       deferred.reject();
     }
+///}).fail(function() {
   }, error: function(xhr,status,error) { // $.ajax failed 
-    deferred.reject() 
+    deferred.reject();
+///})
   } }); 
   return deferred.promise();
-}
+};
 
 /**
  * Update function to retreive Bridge data and store it in this object.
@@ -223,7 +230,9 @@ huepi.prototype.BridgeGetData = function()
   else $.ajax({ type: 'GET', url: 'http://' + this.BridgeIP + '/api/' + this.Username, success: function(data) {
     if (data.config !== undefined) { // if able to read Config, Username must be Whitelisted
       self.BridgeConfig = data.config;
-      self.BridgeID = self.BridgeConfig.bridgeid.toLowerCase();
+      if (self.BridgeConfig.bridgeid) // SteveyO/Hue-Emulator doesn't supply bridgeid as of yet.
+        self.BridgeID = self.BridgeConfig.bridgeid.toLowerCase();
+      else self.BridgeID = '';
       self.BridgeName = self.BridgeConfig.name;
       self.Lights = data.lights;
       self.LightIds = [];
@@ -613,7 +622,7 @@ huepi.HelperColortemperaturetoRGB = function(Temperature)
 
   Temperature = Temperature / 100;
   if (Temperature <= 66)
-    Red = 255;
+    Red = /*255*/ 165+90*((Temperature)/(66));
   else {
     Red = Temperature - 60;
     Red = 329.698727466 * Math.pow(Red, -0.1332047592);
