@@ -1,5 +1,8 @@
 # huepi ChangeLog
 
+## 1.0.1
+* replaced dependency to jsdom 8.x.x for Node.js
+
 ## 1.0.0
 * replaced dependency from domino 1.x.x to jsdom 3.x.x for Node.js
 Due to jQuery using window.setTimeout and setTimeout needed a window to provide these functions. jsdom does, domino doesn’t.
