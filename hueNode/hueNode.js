@@ -1,7 +1,6 @@
 var huepi = require('../huepi');
 
 var MyHue = new huepi();
-// OBSOLETE! May not be set externally, comes from bridge when whitelisting! MyHue.Username = '085efe879ee3ed83c04efc28a0da03d3';
 var HeartbeatInterval;
 
 ConnectMyHue();
