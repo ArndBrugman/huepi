@@ -14,6 +14,9 @@
  * @param {string} UseBridgeIP Optional
  */
 huepi = function(UseBridgeIP) {
+  /** @member {string} - version of the huepi interface */
+  this.version = '1.0.1';
+
   /** @member {array} - Array of all Bridges on the local network */
   this.LocalBridges = [];
 
