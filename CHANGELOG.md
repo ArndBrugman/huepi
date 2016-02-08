@@ -1,5 +1,9 @@
 # huepi ChangeLog
 
+## 1.0.2
+* replaced dependency back to domino 1.x.x from jsdom 8.x.x for Node.js
+ because it takes less dependencies and as such is more reliable over platforms for now
+
 ## 1.0.1
 * replaced dependency to jsdom 8.x.x for Node.js
 
