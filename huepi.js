@@ -29,7 +29,7 @@ huepi = function(UseBridgeIP) {
   
   /** @member {object} - Cache Hasmap of huepi BridgeID and Whitelisted Username */
   this.BridgeCache = {};
-  /** @member {boolean} - Cache Hasmap of huepi BridgeID and Whitelisted Username */
+  /** @member {boolean} - Autosave Cache Hasmap of huepi BridgeID and Whitelisted Username */
   this.BridgeCacheAutosave = true;
   this._BridgeCacheLoad(); // Load BridgeCache on creation by Default
 
@@ -66,9 +66,15 @@ huepi = function(UseBridgeIP) {
 //
 if (typeof module !== 'undefined' && module.exports)
 {
-  var jsdom = require('jsdom').jsdom;
-  var document = jsdom('<html></html>', {});
-  var window = document.defaultView;
+  var domino = require('domino');
+  var window = domino.createWindow('<html>huepi</html>');
+  if (typeof window.setTimeout === 'undefined') { // temporary fix for JQuery until these are available in domino window
+    window.setTimeout = setTimeout;
+    window.clearTimeout = clearTimeout;
+    window.setInterval = setInterval;
+    window.clearInterval = clearInterval;
+  }
+  var document = window.document;
   var $ = require('jquery')(window);
   var XMLHttpRequest = require('xmlhttprequest').XMLHttpRequest;
   $.support.cors = true; // cross domain, Cross-origin resource sharing

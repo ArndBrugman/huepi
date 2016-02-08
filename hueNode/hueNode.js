@@ -40,7 +40,7 @@ function ConnectMyHue() {
 }
 
 function StartHeartbeat() {
-  MyHue.GroupAlertSelect(0);
+  MyHue.GroupAlertSelect(1);
   HeartbeatInterval = setInterval(StatusHeartbeat, 2500);
 }
 
@@ -68,13 +68,13 @@ function StatusHeartbeat() {
 
 function onLightSwitchOn(LightNr) {
   consoleTlog('LightSwitch ' +LightNr+ ' On  - ' +MyHue.Lights[MyHue.LightGetId(LightNr)].name);
-  MyHue.GroupOn(0);
-  MyHue.GroupSetCT(0, 467);
-  MyHue.GroupSetBrightness(0, 144);
+  MyHue.GroupOn(1);
+  MyHue.GroupSetCT(1, 467);
+  MyHue.GroupSetBrightness(1, 144);
 }
 
 function onLightSwitchOff(LightNr) {
   consoleTlog('LightSwitch ' +LightNr+ ' Off - ' +MyHue.Lights[MyHue.LightGetId(LightNr)].name);
-  MyHue.GroupOff(0);
+  MyHue.GroupOff(1);
 }
 
