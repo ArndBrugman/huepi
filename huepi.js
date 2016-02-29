@@ -68,12 +68,17 @@ if (typeof module !== 'undefined' && module.exports)
 {
   var domino = require('domino');
   var window = domino.createWindow('<html>huepi</html>');
+
   if (typeof window.setTimeout === 'undefined') { // temporary fix for JQuery until these are available in domino window
     window.setTimeout = setTimeout;
     window.clearTimeout = clearTimeout;
     window.setInterval = setInterval;
     window.clearInterval = clearInterval;
+  } else {
+    console.log('huepi: Running in NodeJS, npm module domino window provides setTimeout. ');
+    console.log('huepi: Time to remove temporary fix for JQuery as these are available in domino window ');
   }
+
   var document = window.document;
   var $ = require('jquery')(window);
   var XMLHttpRequest = require('xmlhttprequest').XMLHttpRequest;
