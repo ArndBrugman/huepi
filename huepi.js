@@ -15,7 +15,7 @@
  */
 huepi = function(UseBridgeIP) {
   /** @member {string} - version of the huepi interface */
-  this.version = '1.0.1';
+  this.version = '1.0.3';
 
   /** @member {array} - Array of all Bridges on the local network */
   this.LocalBridges = [];
@@ -62,30 +62,34 @@ huepi = function(UseBridgeIP) {
 ////////////////////////////////////////////////////////////////////////////////
 //
 // Detect Running in NodeJS; module exisists and module.exports exists
+//  and type of global.process = object process
 //
 //
 if (typeof module !== 'undefined' && module.exports)
 {
-  var domino = require('domino');
-  var window = domino.createWindow('<html>huepi</html>');
+  if (typeof global !== 'undefined' && typeof global.process !== 'undefined' &&
+    Object.prototype.toString.call(global.process) === '[object process]') {
+    var domino = require('domino');
+    var window = domino.createWindow('<html>huepi</html>');
 
-  if (typeof window.setTimeout === 'undefined') { // temporary fix for JQuery until these are available in domino window
-    window.setTimeout = setTimeout;
-    window.clearTimeout = clearTimeout;
-    window.setInterval = setInterval;
-    window.clearInterval = clearInterval;
-  } else {
-    console.log('huepi: Running in NodeJS, npm module domino window provides setTimeout. ');
-    console.log('huepi: Time to remove temporary fix for JQuery as these are available in domino window ');
+    if (typeof window.setTimeout === 'undefined') { // temporary fix for JQuery until these are available in domino window
+      window.setTimeout = setTimeout;
+      window.clearTimeout = clearTimeout;
+      window.setInterval = setInterval;
+      window.clearInterval = clearInterval;
+    } else {
+      console.log('huepi: Running in NodeJS, npm module domino window provides setTimeout. ');
+      console.log('huepi: Time to remove temporary fix for JQuery as these are available in domino window ');
+    }
+
+    var document = window.document;
+    var $ = require('jquery')(window);
+    var XMLHttpRequest = require('xmlhttprequest').XMLHttpRequest;
+    $.support.cors = true; // cross domain, Cross-origin resource sharing
+    $.ajaxSettings.xhr = function() {
+      return new XMLHttpRequest();
+    };
   }
-
-  var document = window.document;
-  var $ = require('jquery')(window);
-  var XMLHttpRequest = require('xmlhttprequest').XMLHttpRequest;
-  $.support.cors = true; // cross domain, Cross-origin resource sharing
-  $.ajaxSettings.xhr = function() {
-    return new XMLHttpRequest();
-  };
   exports = module.exports = huepi;
 }
 
