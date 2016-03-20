@@ -15,7 +15,7 @@
  */
 huepi = function(UseBridgeIP) {
   /** @member {string} - version of the huepi interface */
-  this.version = '1.0.3';
+  this.version = '1.0.4';
 
   /** @member {array} - Array of all Bridges on the local network */
   this.LocalBridges = [];
@@ -157,6 +157,79 @@ huepi.prototype._BridgeCacheSave = function()
   }
 };
 
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// Network Functions
+//
+//
+
+/**
+ * Creates the list of hue-Bridges on the local network
+ */
+ huepi.prototype.NetworkDiscoverLocalBridges = function()
+{
+  var self = this;
+  var LocalIPs = [];
+  var OverallDeferred = $.Deferred();
+  
+  function DiscoverLocalIPs() {
+    var IPDeferred = $.Deferred();
+
+    var RTCPeerConnection = window.RTCPeerConnection || window.webkitRTCPeerConnection || window.mozRTCPeerConnection;
+    var PeerConnection = new RTCPeerConnection({iceServers: [] });
+    PeerConnection.createDataChannel('');
+
+    PeerConnection.onicecandidate = function(e) {
+      if (!e.candidate) {
+        PeerConnection.close();
+        return IPDeferred.resolve();
+      }
+      var LocalIP = /^candidate:.+ (\S+) \d+ typ/.exec(e.candidate.candidate)[1];
+      if (LocalIPs.indexOf(LocalIP) == -1) LocalIPs.push(LocalIP);
+    }
+    PeerConnection.createOffer(function(sdp) {
+      PeerConnection.setLocalDescription(sdp);
+    }, function onerror() {});
+    return IPDeferred.promise();
+  }
+
+  function DiscoverLocalBridges() {
+    var BridgeDeferred = $.Deferred();
+
+    for (var IPs=0; IPs<LocalIPs.length; IPs++) {
+      var Parallel = 8;
+      var InitialIP = LocalIPs[IPs].slice(0, LocalIPs[IPs].lastIndexOf('.')+1);
+      for (P=1; P<=Parallel; P++)
+        CheckIP(P);
+      function CheckIP(Nr) {
+        self.BridgeGetConfig(InitialIP+Nr).then(function(){
+          self.LocalBridges.push({'internalipaddress': InitialIP+Nr, 'id': '_unknown_'});
+        }).always(function(){
+          OverallDeferred.notify(Math.floor(100*Nr/255));
+          if (Nr<255)
+            CheckIP(Nr+Parallel);
+          else BridgeDeferred.resolve();
+        })
+      }
+    }
+
+    return BridgeDeferred.promise();
+  }
+
+  self.LocalBridges = [];
+  DiscoverLocalIPs().then(function() {
+    DiscoverLocalBridges().then(function() {
+      if (self.LocalBridges.length > 0) { // Default to 1st Bridge
+        self.BridgeIP = self.LocalBridges[0].internalipaddress;
+        OverallDeferred.resolve();
+      } else OverallDeferred.reject();
+    });
+  });
+
+  return OverallDeferred.promise();
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 //
 // Portal Functions
@@ -164,13 +237,14 @@ huepi.prototype._BridgeCacheSave = function()
 //
 
 /**
- * Retreives the list of hue-Bridges on the local network
+ * Retreives the list of hue-Bridges on the local network from the hue Portal
  */
 huepi.prototype.PortalDiscoverLocalBridges = function()
 { 
   var self = this;
   var deferred = $.Deferred();
 
+  self.LocalBridges = [];
   $.ajax({ type: 'GET', url: "https://www.meethue.com/api/nupnp", success: function(data) {
     if (data.length > 0) {
       if (data[0].internalipaddress) { // Default to 1st Bridge
@@ -203,12 +277,13 @@ huepi.prototype.PortalDiscoverLocalBridges = function()
  * available members (as of "apiversion": "1.11.0"):
  *   name, apiversion, swversion, mac, bridgeid, replacesbridgeid, factorynew, modelid
  */
- huepi.prototype.BridgeGetConfig = function()
+ huepi.prototype.BridgeGetConfig = function(BridgeIP)
 { // GET /api/config -> data.config.whitelist.username
   var self = this;
   var deferred = $.Deferred();
 
-  $.ajax({ type: 'GET', url: 'http://' + this.BridgeIP + '/api/config/', success: function(data) {
+  BridgeIP = BridgeIP || this.BridgeIP;
+  $.ajax({ type: 'GET', timeout: 1000, url: 'http://' + BridgeIP + '/api/+31402787500/config', success: function(data) {
 ///$.get('http://' + this.BridgeIP + '/api/gethuepi/config/', function(data) {
     if (data.bridgeid) {
       self.BridgeConfig = data;
@@ -221,10 +296,6 @@ huepi.prototype.PortalDiscoverLocalBridges = function()
         self.Username = '';
       deferred.resolve();
     } else { // this BridgeIP is not a hue Bridge
-      self.BridgeConfig = {};
-      self.BridgeID = '';
-      self.BridgeName = '';
-      self.Username = '';
       deferred.reject();
     }
 ///}).fail(function() {
