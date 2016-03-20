@@ -283,7 +283,7 @@ huepi.prototype.PortalDiscoverLocalBridges = function()
   var deferred = $.Deferred();
 
   BridgeIP = BridgeIP || this.BridgeIP;
-  $.ajax({ type: 'GET', timeout: 1000, url: 'http://' + BridgeIP + '/api/+31402787500/config', success: function(data) {
+  $.ajax({ type: 'GET', timeout: 2500, url: 'http://' + BridgeIP + '/api/+31402787500/config', success: function(data) {
 ///$.get('http://' + this.BridgeIP + '/api/gethuepi/config/', function(data) {
     if (data.bridgeid) {
       self.BridgeConfig = data;
