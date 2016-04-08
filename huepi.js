@@ -15,10 +15,13 @@
  */
 huepi = function(UseBridgeIP) {
   /** @member {string} - version of the huepi interface */
-  this.version = '1.0.4';
+  this.version = '1.0.5';
 
   /** @member {array} - Array of all Bridges on the local network */
   this.LocalBridges = [];
+
+  /** @member {bool} - get: local network scan in progress / set:proceed with scan */
+  this.BridgeScan = false;
 
   /** @member {string} - IP address of the Current(active) Bridge */
   this.BridgeIP = UseBridgeIP || '';
@@ -172,6 +175,7 @@ huepi.prototype._BridgeCacheSave = function()
   var self = this;
   var LocalIPs = [];
   var OverallDeferred = $.Deferred();
+  self.BridgeScan = true;
   
   self.LocalBridges = [];
   DiscoverLocalIPs().then(function() {
@@ -206,22 +210,26 @@ huepi.prototype._BridgeCacheSave = function()
 
   function DiscoverLocalBridges() {
     var BridgeDeferred = $.Deferred();
+    var Parallel = 16;
 
     function CheckIP(Nr) {
       self.BridgeGetConfig(InitialIP+Nr).then(function(data){
         self.LocalBridges.push({'internalipaddress': InitialIP+Nr, 'id': self.BridgeConfig.bridgeid.toLowerCase()});
       }).always(function(){
         OverallDeferred.notify(Math.floor(100*Nr/255));
-        if (Nr<255)
+        if (self.BridgeScan === false) Nr = 999; // quit scan on (self.BridgeScan = false)
+        if ((Nr+Parallel)<256)
           CheckIP(Nr+Parallel);
-        else BridgeDeferred.resolve();
+        else {
+          self.BridgeScan = false;
+          BridgeDeferred.resolve();
+        }
       });
     }
 
     for (var IPs=0; IPs<LocalIPs.length; IPs++) {
-      var Parallel = 8;
       var InitialIP = LocalIPs[IPs].slice(0, LocalIPs[IPs].lastIndexOf('.')+1);
-      for (P=1; P<=Parallel; P++)
+      for (P=0; P<=Parallel; P++)
         CheckIP(P);
     }
 
@@ -286,7 +294,8 @@ huepi.prototype.PortalDiscoverLocalBridges = function()
   var deferred = $.Deferred();
 
   BridgeIP = BridgeIP || self.BridgeIP;
-  $.ajax({ type: 'GET', timeout: 2500, url: 'http://' + BridgeIP + '/api/+31402787500/config', success: function(data) {
+  //$.ajax({ type: 'GET', timeout: 2500, url: 'http://' + BridgeIP + '/api/+31402787500/config', success: function(data) {
+  $.ajax({ type: 'GET', timeout: 2500, url: 'http://' + BridgeIP + '/api/config', success: function(data) {
     if (data.bridgeid) {
       if (BridgeIP == self.BridgeIP) {
         self.BridgeConfig = data;
@@ -547,14 +556,16 @@ huepi.HelperRGBtoXY = function(Red, Green, Blue)
  */
 huepi.HelperGamutXYforModel = function(Px, Py, Model)
 {
+  Model = Model || "LCT001"; // default hue Bulb 2012
+  var ModelType = Model.slice(0,3);
   var PRed, PGreen, PBlue;
   var NormDot;
 
-  if (Model.slice(0, 3) === 'LCT') { // For the hue bulb the corners of the triangle are:
+  if (ModelType === 'LCT') { // For the hue bulb the corners of the triangle are:
     PRed = {x: 0.674, y: 0.322};
     PGreen = {x: 0.408, y: 0.517};
     PBlue = {x: 0.168, y: 0.041};
-  } else if ((Model.slice(0, 3) === 'LLC') || (Model.slice(0, 3) === 'LST')) { // For LivingColors Bloom, Aura and Iris the triangle corners are:
+  } else if ((ModelType === 'LLC') || (ModelType === 'LST')) { // For LivingColors Bloom, Aura and Iris the triangle corners are:
     PRed = {x: 0.703, y: 0.296};
     PGreen = {x: 0.214, y: 0.709};
     PBlue = {x: 0.139, y: 0.081};
@@ -702,7 +713,6 @@ huepi.HelperXYtoRGB = function(x, y, Brightness)
  */
 huepi.HelperXYtoRGBforModel = function(x, y, Brightness, Model)
 {
-  Model = Model || "LCT001"; // default hue Bulb 2012
   var GamutCorrected = huepi.HelperGamutXYforModel(x, y, Model);
   return huepi.HelperXYtoRGB(GamutCorrected.x, GamutCorrected.y, Brightness);
 };
@@ -1153,15 +1163,18 @@ huepi.prototype.LightSetRGB = function(LightNr, Red, Green, Blue, Transitiontime
 huepi.prototype.LightSetCT = function(LightNr, CT, Transitiontime)
 {
   var Model = this.Lights[this.LightGetId(LightNr)].modelid;
-  if (Model !== 'LCT001') { // CT->RGB->XY to ignore Brightness in RGB
-    var Color = huepi.HelperColortemperaturetoRGB(1000000 / CT);
-    var Point = huepi.HelperRGBtoXY(Color.Red, Color.Green, Color.Blue);
-    return this.LightSetXY(LightNr, Point.x, Point.y, Transitiontime);
+  var ModelType = Model.slice(0,3);
+
+  if ((ModelType === 'LCT') || (ModelType === 'LLC') || (ModelType === 'LST')) { // hue Color Lights
+    var State = new huepi.Lightstate();
+    State.SetCT(CT);
+    State.SetTransitiontime(Transitiontime);
+    return this.LightSetState(LightNr, State);
   }
-  var State = new huepi.Lightstate();
-  State.SetCT(CT);
-  State.SetTransitiontime(Transitiontime);
-  return this.LightSetState(LightNr, State);
+  // non hue Color Lights: CT->RGB->XY to ignore Brightness in RGB
+  var Color = huepi.HelperColortemperaturetoRGB(1000000 / CT);
+  var Point = huepi.HelperRGBtoXY(Color.Red, Color.Green, Color.Blue);
+  return this.LightSetXY(LightNr, Point.x, Point.y, Transitiontime);
 };
 
 /**

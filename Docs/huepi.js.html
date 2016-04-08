@@ -146,14 +146,22 @@ huepi.prototype._BridgeCacheLoad = function()
   } catch (error) {
     console.log('Unable to huepi._BridgeCacheLoad() ' + error);
   }
+<<<<<<< HEAD
+}
+=======
 };
+>>>>>>> gh-pages
 
 huepi.prototype._BridgeCacheAddCurrent = function()
 {
   this.BridgeCache[this.BridgeID] = this.Username;
   if (this.BridgeCacheAutosave)
     this._BridgeCacheSave();
+<<<<<<< HEAD
+}
+=======
 };
+>>>>>>> gh-pages
 
 huepi.prototype._BridgeCacheRemoveCurrent = function()
 {
@@ -162,6 +170,15 @@ huepi.prototype._BridgeCacheRemoveCurrent = function()
     if (this.BridgeCacheAutosave)
       this._BridgeCacheSave();
   }
+<<<<<<< HEAD
+}
+
+/**
+ * Saves the BridgeCache, typically on Whitelist new Device or Device no longer whitelisted
+ *   as is the case with with @BridgeCacheAutosave
+ * NOTE: Saving this cache might be considered a security issue
+ * To counter this security issue, arrange your own load/save ode with proper encryption
+=======
 };
 
 /**
@@ -169,6 +186,7 @@ huepi.prototype._BridgeCacheRemoveCurrent = function()
  *   as is the case with with @BridgeCacheAutosave on @_BridgeCacheAddCurrent and @_BridgeCacheRemoveCurrent
  * NOTE: Saving this cache might be considered a security issue
  * To counter this security issue, arrange your own load/save code with proper encryption
+>>>>>>> gh-pages
  */
 huepi.prototype._BridgeCacheSave = function()
 {
@@ -183,7 +201,11 @@ huepi.prototype._BridgeCacheSave = function()
   } catch (error) {     
     console.log('Unable to huepi._BridgeCacheSave() ' + error);
   }
+<<<<<<< HEAD
+}
+=======
 };
+>>>>>>> gh-pages
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -279,17 +301,33 @@ huepi.prototype.PortalDiscoverLocalBridges = function()
       if (data[0].internalipaddress) { // Default to 1st Bridge
         self.LocalBridges = data;
         self.BridgeIP = self.LocalBridges[0].internalipaddress;
+<<<<<<< HEAD
+<<<<<<< HEAD
+        self.BridgeID = self.LocalBridges[0].id.toLowerCase();
+=======
+        if (self.BridgeConfig.bridgeid) // SteveyO/Hue-Emulator doesn't supply bridgeid as of yet.
+=======
         if (self.BridgeConfig.bridgeid) // NOTE:SteveyO/Hue-Emulator doesn't supply bridgeid as of yet.
+>>>>>>> gh-pages
           self.BridgeID = self.LocalBridges[0].id.toLowerCase();
         else self.BridgeID = '';
+>>>>>>> gh-pages
         self.Username = self.BridgeCache[self.BridgeID];
         if (self.Username === undefined)
           self.Username = '';
         deferred.resolve();
       } else deferred.reject();
     } else deferred.reject();
+<<<<<<< HEAD
+  }, error: function(xhr,status,error) { // $.ajax failed 
+<<<<<<< HEAD
+    deferred.reject() 
+=======
+=======
   }, error: function(xhr,status,error) {
+>>>>>>> gh-pages
     deferred.reject();
+>>>>>>> gh-pages
   } });
   return deferred.promise();
 };
@@ -308,11 +346,42 @@ huepi.prototype.PortalDiscoverLocalBridges = function()
  *
  * @param {string} BridgeIP - Optional BridgeIP name to GetConfig from, otherwise uses huepi.BridgeIP (this/self).
  */
+<<<<<<< HEAD
+<<<<<<< HEAD
+huepi.prototype.BridgeGetConfig = function()
+=======
+ huepi.prototype.BridgeGetConfig = function()
+>>>>>>> gh-pages
+=======
  huepi.prototype.BridgeGetConfig = function(BridgeIP)
+>>>>>>> gh-pages
 { // GET /api/config -> data.config.whitelist.username
   var self = this;
   var deferred = $.Deferred();
 
+<<<<<<< HEAD
+  $.ajax({ type: 'GET', url: 'http://' + this.BridgeIP + '/api/config/', success: function(data) {
+<<<<<<< HEAD
+    if (data.bridgeid) {
+      self.BridgeConfig = data;
+      self.BridgeID = self.BridgeConfig.bridgeid.toLowerCase();
+      self.BridgeName = self.BridgeConfig.name;
+      self.Username = self.BridgeCache[self.BridgeID];
+      if (self.Username == undefined)
+=======
+///$.get('http://' + this.BridgeIP + '/api/gethuepi/config/', function(data) {
+    if (data.bridgeid) {
+      self.BridgeConfig = data;
+      if (self.BridgeConfig.bridgeid) // SteveyO/Hue-Emulator doesn't supply bridgeid as of yet.
+        self.BridgeID = self.BridgeConfig.bridgeid.toLowerCase();
+      else self.BridgeID = '';
+      self.BridgeName = self.BridgeConfig.name;
+      self.Username = self.BridgeCache[self.BridgeID];
+      if (self.Username === undefined)
+>>>>>>> gh-pages
+        self.Username = '';
+      deferred.resolve();
+=======
   BridgeIP = BridgeIP || self.BridgeIP;
   $.ajax({ type: 'GET', timeout: 2500, url: 'http://' + BridgeIP + '/api/+31402787500/config', success: function(data) {
     if (data.bridgeid) {
@@ -327,14 +396,27 @@ huepi.prototype.PortalDiscoverLocalBridges = function()
           self.Username = '';
       }
       deferred.resolve(data);
+>>>>>>> gh-pages
     } else { // this BridgeIP is not a hue Bridge
       deferred.reject();
     }
+<<<<<<< HEAD
+<<<<<<< HEAD
+  }, error: function(xhr,status,error) { // $.ajax failed 
+    deferred.reject() 
+  } }); 
+  return deferred.promise();
+}
+=======
+///}).fail(function() {
+=======
+>>>>>>> gh-pages
   }, error: function(xhr,status,error) { // $.ajax failed 
     deferred.reject();
   } }); 
   return deferred.promise();
 };
+>>>>>>> gh-pages
 
 /**
  * Update function to retreive Bridge data and store it in this object.
@@ -351,9 +433,13 @@ huepi.prototype.BridgeGetData = function()
   else $.ajax({ type: 'GET', url: 'http://' + this.BridgeIP + '/api/' + this.Username, success: function(data) {
     if (data.config !== undefined) { // if able to read Config, Username must be Whitelisted
       self.BridgeConfig = data.config;
+<<<<<<< HEAD
+      self.BridgeID = self.BridgeConfig.bridgeid.toLowerCase();
+=======
       if (self.BridgeConfig.bridgeid) // SteveyO/Hue-Emulator doesn't supply bridgeid as of yet.
         self.BridgeID = self.BridgeConfig.bridgeid.toLowerCase();
       else self.BridgeID = '';
+>>>>>>> gh-pages
       self.BridgeName = self.BridgeConfig.name;
       self.Lights = data.lights;
       self.LightIds = [];
@@ -1735,6 +1821,116 @@ huepi.prototype.RulesGetData = function()
   });
 };
 
+<<<<<<< HEAD
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// Change log
+//
+// 0.1
+// Initial Public Release
+//
+// 0.2
+// Renamed class Light.State -> Lightstate
+// Renamed function Bridge.GetConfig -> Bridge.Get
+// Renamed functions Config.* -> Bridge.*
+// Added Gamut Color Correction in Lightstate.SetHSB RGB+HSB Settings Will be Color Corrected to HUE Lamp -> xy
+//
+// 0.21
+// Rewrote Gamut Color Correction in Lightstate.SetHSB
+//
+// 0.3
+// HUEPI is now an Object
+// Renamed deeper namespaces to top namespace so HUEPI becomes one Object
+//   e.g. Group.SetOn() -> GroupSetOn()
+//
+// 0.4
+// Added Helper functions (refactured from 0.3)
+// HueAngSatBri HSB RGB for lights and groups are set via SetXY and SetBrightness
+// GroupSetXY splits group into Light and calls LightSetXY per Light
+// LightSetXY looks up lamp Model and applies Gamut Correction for Model
+// Note: Using Lightstate objects are not Gamut Corrected
+//
+// 0.5
+// Implemented Promisses by returning JQuery Promisses (Deffereds)
+// Declared local variables where applicable, cleaning up global namespace polution
+// Added LightsSearchForNew and LightsGetNew and LightSetName
+// Added GroupCreate GroupSetName GroupSetLights GroupSetAttributes GroupDelete
+//   These need more testing ;-)
+//
+// 0.6
+// Changed HUEPI object notation from literal to protoype notation
+//  to make a bigger difference between static helper methods and object interface
+// Group- and Light-SetColortemperature are set via SetCT now
+// Added huepi.HelperCTtoRGB to Allow ColorLights to be set with CT as RGB
+// GroupSetCT splits group into Light and calls LightSetCT per Light
+// LightSetCT looks up lamp Model and sets either CT or RGB based on Model
+// Note: Using Lightstate objects are not CT to RGB converted
+// PortalBridges[] is renamed to LocalBridges[]
+//
+// 0.61
+// LightSetCT = CT->RGB->XY to ignore Brightness in RGB
+// changed " string to ' string
+//
+// 0.62
+// renamed
+// BridgeGet to BridgeGetData
+// GroupGet to GroupsGetData
+// LightGet to LightsGetData
+// UsernameWhitelisted to BridgeUsernameWhitelisted
+//
+// 0.9
+// Added detection of NodeJS
+// Added WORKING JQuery NodeJS if running on NodeJS
+// Added Module Exports for NodeJS on NodeJS
+//
+// 0.95
+// renamed HUEPI to huepi to be more complient with modules and actual hue product name
+//
+// 0.9.6
+// Renamed HelperCTtoRGB to HelperColortemperaturetoRG
+// All Red, Green &amp; Blue arguments ranges to [0..1]
+//
+// 0.9.7
+// Using Matrices from RGB to XYZ [M] for sRGB D65 from http://www.brucelindbloom.com/index.html?Eqn_RGB_XYZ_Matrix.html
+// renamed This. to self.
+// added HelperXYtoRGBforModel
+// PortalDiscoverLocalBridges now follows redirects
+//
+// 0.9.8
+// Added LightIds &amp; GroupIds
+// Default is still index, which is transformed into Ids when talking to lights
+//   use Ids (string) in stead of Index (number) to access a specific Id
+//   this way its transparent and works for both Ids &amp; Indices
+// reordered parameters to HelperXYtoRGBforModel = function(x, y, Brightness, Model)
+//
+// using updated Philips hue Wide RGB D65, http://www.developers.meethue.com/documentation/color-conversions-rgb-xy
+//
+// 
+// FIX huepi.prototype.LightSetName 
+//
+//
+// 0.9.9
+// Changed Whitlisting on Bridge as required by Philips as of 1-2-2016
+// REMOVED this.BridgeUsernameWhitelisted as this is now implicit on BridgeGetData succes
+// Added BridgeGetConfig to retreive BridgeID, Name etc without whitlisting
+// Added BridgeCache to store and retreive Usernames by BridgeID
+//  Including BridgeCache Save &amp; Load Functions
+<<<<<<< HEAD
+//
+//
+//
+//
+=======
+//
+//
+//
+//
+>>>>>>> gh-pages
+
+
+=======
+>>>>>>> gh-pages
 </code></pre>
         </article>
     </section>
@@ -1751,7 +1947,19 @@ huepi.prototype.RulesGetData = function()
 <br class="clear">
 
 <footer>
+<<<<<<< HEAD
+<<<<<<< HEAD
+<<<<<<< HEAD
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Sun Dec 13 2015 13:08:52 GMT+0100 (CET)
+=======
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.2</a> on Sun Dec 13 2015 13:06:44 GMT+0100 (CET)
+>>>>>>> gh-pages
+=======
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Sun Jan 31 2016 12:10:26 GMT+0100 (CET)
+>>>>>>> gh-pages
+=======
     Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Mon Mar 21 2016 15:06:19 GMT+0100 (CET)
+>>>>>>> gh-pages
 </footer>
 
 <script> prettyPrint(); </script>
