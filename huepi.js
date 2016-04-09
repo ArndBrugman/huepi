@@ -21,7 +21,7 @@ huepi = function(UseBridgeIP) {
   this.LocalBridges = [];
 
   /** @member {bool} - get: local network scan in progress / set:proceed with scan */
-  this.BridgeScan = false;
+  this.ScanningNetwork = false;
 
   /** @member {string} - IP address of the Current(active) Bridge */
   this.BridgeIP = UseBridgeIP || '';
@@ -110,8 +110,8 @@ huepi.prototype._BridgeCacheLoad = function()
   this.BridgeCache = { };
   try {
     if (typeof navigator !== 'undefined' && typeof window !== 'undefined') { // running in Browser
-        var huepiBridgeCache = localStorage.huepiBridgeCache || '{}';
-        this.BridgeCache = JSON.parse(huepiBridgeCache); // Load
+      var huepiBridgeCache = localStorage.huepiBridgeCache || '{}';
+      this.BridgeCache = JSON.parse(huepiBridgeCache); // Load
     } else if (typeof module !== 'undefined' && module.exports) { // running in NodeJS
       var fs = require('fs');
       var buffer = fs.readFileSync('huepiBridgeCache.json');
@@ -125,6 +125,7 @@ huepi.prototype._BridgeCacheLoad = function()
 
 huepi.prototype._BridgeCacheAddCurrent = function()
 {
+  console.log('_BridgeCacheAddCurrent ' + this.BridgeID +' '+ this.Username);
   this.BridgeCache[this.BridgeID] = this.Username;
   if (this.BridgeCacheAutosave)
     this._BridgeCacheSave();
@@ -133,6 +134,7 @@ huepi.prototype._BridgeCacheAddCurrent = function()
 huepi.prototype._BridgeCacheRemoveCurrent = function()
 {
   if (this.BridgeCache[this.BridgeID] == this.Username) {
+    console.log('_BridgeCacheRemoveCurrent ' + this.BridgeID +' '+ this.Username);
     delete this.BridgeCache[this.BridgeID];
     if (this.BridgeCacheAutosave)
       this._BridgeCacheSave();
@@ -175,7 +177,7 @@ huepi.prototype._BridgeCacheSave = function()
   var self = this;
   var LocalIPs = [];
   var OverallDeferred = $.Deferred();
-  self.BridgeScan = true;
+  self.ScanningNetwork = true;
   
   self.LocalBridges = [];
   DiscoverLocalIPs().then(function() {
@@ -214,14 +216,15 @@ huepi.prototype._BridgeCacheSave = function()
 
     function CheckIP(Nr) {
       self.BridgeGetConfig(InitialIP+Nr).then(function(data){
-        self.LocalBridges.push({'internalipaddress': InitialIP+Nr, 'id': self.BridgeConfig.bridgeid.toLowerCase()});
+        self.LocalBridges.push({'internalipaddress': InitialIP+Nr, 'id': data.bridgeid.toLowerCase()});
       }).always(function(){
         OverallDeferred.notify(Math.floor(100*Nr/255));
-        if (self.BridgeScan === false) Nr = 999; // quit scan on (self.BridgeScan = false)
+        if (self.ScanningNetwork === false) 
+          Nr = 256; // quit scan on (self.ScanningNetwork = false)
         if ((Nr+Parallel)<256)
           CheckIP(Nr+Parallel);
         else {
-          self.BridgeScan = false;
+          self.ScanningNetwork = false;
           BridgeDeferred.resolve();
         }
       });
@@ -256,15 +259,17 @@ huepi.prototype.PortalDiscoverLocalBridges = function()
   self.LocalBridges = [];
   $.ajax({ type: 'GET', url: "https://www.meethue.com/api/nupnp", success: function(data) {
     if (data.length > 0) {
-      if (data[0].internalipaddress) { // Default to 1st Bridge
+      if (data[0].internalipaddress) { // Bridge(s) Discovered
         self.LocalBridges = data;
-        self.BridgeIP = self.LocalBridges[0].internalipaddress;
-        if (self.BridgeConfig.bridgeid) // NOTE:SteveyO/Hue-Emulator doesn't supply bridgeid as of yet.
-          self.BridgeID = self.LocalBridges[0].id.toLowerCase();
-        else self.BridgeID = '';
-        self.Username = self.BridgeCache[self.BridgeID];
-        if (self.Username === undefined)
-          self.Username = '';
+        if (self.BridgeIP === "") { // Default to 1st Bridge
+          self.BridgeIP = self.LocalBridges[0].internalipaddress;
+          if (self.BridgeConfig.bridgeid) // NOTE:SteveyO/Hue-Emulator doesn't supply bridgeid as of yet.
+            self.BridgeID = self.LocalBridges[0].id.toLowerCase();
+          else self.BridgeID = '';
+          self.Username = self.BridgeCache[self.BridgeID];
+          if (self.Username === undefined)
+            self.Username = '';
+        }
         deferred.resolve();
       } else deferred.reject();
     } else deferred.reject();
