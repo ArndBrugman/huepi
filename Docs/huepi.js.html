@@ -43,10 +43,13 @@
  */
 huepi = function(UseBridgeIP) {
   /** @member {string} - version of the huepi interface */
-  this.version = '1.0.4';
+  this.version = '1.0.5';
 
   /** @member {array} - Array of all Bridges on the local network */
   this.LocalBridges = [];
+
+  /** @member {bool} - get: local network scan in progress / set:proceed with scan */
+  this.ScanningNetwork = false;
 
   /** @member {string} - IP address of the Current(active) Bridge */
   this.BridgeIP = UseBridgeIP || '';
@@ -135,8 +138,8 @@ huepi.prototype._BridgeCacheLoad = function()
   this.BridgeCache = { };
   try {
     if (typeof navigator !== 'undefined' &amp;&amp; typeof window !== 'undefined') { // running in Browser
-        var huepiBridgeCache = localStorage.huepiBridgeCache || '{}';
-        this.BridgeCache = JSON.parse(huepiBridgeCache); // Load
+      var huepiBridgeCache = localStorage.huepiBridgeCache || '{}';
+      this.BridgeCache = JSON.parse(huepiBridgeCache); // Load
     } else if (typeof module !== 'undefined' &amp;&amp; module.exports) { // running in NodeJS
       var fs = require('fs');
       var buffer = fs.readFileSync('huepiBridgeCache.json');
@@ -146,39 +149,24 @@ huepi.prototype._BridgeCacheLoad = function()
   } catch (error) {
     console.log('Unable to huepi._BridgeCacheLoad() ' + error);
   }
-<<<<<<< HEAD
-}
-=======
 };
->>>>>>> gh-pages
 
 huepi.prototype._BridgeCacheAddCurrent = function()
 {
+  console.log('_BridgeCacheAddCurrent ' + this.BridgeID +' '+ this.Username);
   this.BridgeCache[this.BridgeID] = this.Username;
   if (this.BridgeCacheAutosave)
     this._BridgeCacheSave();
-<<<<<<< HEAD
-}
-=======
 };
->>>>>>> gh-pages
 
 huepi.prototype._BridgeCacheRemoveCurrent = function()
 {
   if (this.BridgeCache[this.BridgeID] == this.Username) {
+    console.log('_BridgeCacheRemoveCurrent ' + this.BridgeID +' '+ this.Username);
     delete this.BridgeCache[this.BridgeID];
     if (this.BridgeCacheAutosave)
       this._BridgeCacheSave();
   }
-<<<<<<< HEAD
-}
-
-/**
- * Saves the BridgeCache, typically on Whitelist new Device or Device no longer whitelisted
- *   as is the case with with @BridgeCacheAutosave
- * NOTE: Saving this cache might be considered a security issue
- * To counter this security issue, arrange your own load/save ode with proper encryption
-=======
 };
 
 /**
@@ -186,7 +174,6 @@ huepi.prototype._BridgeCacheRemoveCurrent = function()
  *   as is the case with with @BridgeCacheAutosave on @_BridgeCacheAddCurrent and @_BridgeCacheRemoveCurrent
  * NOTE: Saving this cache might be considered a security issue
  * To counter this security issue, arrange your own load/save code with proper encryption
->>>>>>> gh-pages
  */
 huepi.prototype._BridgeCacheSave = function()
 {
@@ -201,11 +188,7 @@ huepi.prototype._BridgeCacheSave = function()
   } catch (error) {     
     console.log('Unable to huepi._BridgeCacheSave() ' + error);
   }
-<<<<<<< HEAD
-}
-=======
 };
->>>>>>> gh-pages
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -222,6 +205,7 @@ huepi.prototype._BridgeCacheSave = function()
   var self = this;
   var LocalIPs = [];
   var OverallDeferred = $.Deferred();
+  self.ScanningNetwork = true;
   
   self.LocalBridges = [];
   DiscoverLocalIPs().then(function() {
@@ -256,22 +240,27 @@ huepi.prototype._BridgeCacheSave = function()
 
   function DiscoverLocalBridges() {
     var BridgeDeferred = $.Deferred();
+    var Parallel = 16;
 
     function CheckIP(Nr) {
       self.BridgeGetConfig(InitialIP+Nr).then(function(data){
-        self.LocalBridges.push({'internalipaddress': InitialIP+Nr, 'id': self.BridgeConfig.bridgeid.toLowerCase()});
+        self.LocalBridges.push({'internalipaddress': InitialIP+Nr, 'id': data.bridgeid.toLowerCase()});
       }).always(function(){
         OverallDeferred.notify(Math.floor(100*Nr/255));
-        if (Nr&lt;255)
+        if (self.ScanningNetwork === false) 
+          Nr = 256; // quit scan on (self.ScanningNetwork = false)
+        if ((Nr+Parallel)&lt;256)
           CheckIP(Nr+Parallel);
-        else BridgeDeferred.resolve();
+        else {
+          self.ScanningNetwork = false;
+          BridgeDeferred.resolve();
+        }
       });
     }
 
     for (var IPs=0; IPs&lt;LocalIPs.length; IPs++) {
-      var Parallel = 8;
       var InitialIP = LocalIPs[IPs].slice(0, LocalIPs[IPs].lastIndexOf('.')+1);
-      for (P=1; P&lt;=Parallel; P++)
+      for (P=0; P&lt;=Parallel; P++)
         CheckIP(P);
     }
 
@@ -298,36 +287,22 @@ huepi.prototype.PortalDiscoverLocalBridges = function()
   self.LocalBridges = [];
   $.ajax({ type: 'GET', url: "https://www.meethue.com/api/nupnp", success: function(data) {
     if (data.length > 0) {
-      if (data[0].internalipaddress) { // Default to 1st Bridge
+      if (data[0].internalipaddress) { // Bridge(s) Discovered
         self.LocalBridges = data;
-        self.BridgeIP = self.LocalBridges[0].internalipaddress;
-<<<<<<< HEAD
-<<<<<<< HEAD
-        self.BridgeID = self.LocalBridges[0].id.toLowerCase();
-=======
-        if (self.BridgeConfig.bridgeid) // SteveyO/Hue-Emulator doesn't supply bridgeid as of yet.
-=======
-        if (self.BridgeConfig.bridgeid) // NOTE:SteveyO/Hue-Emulator doesn't supply bridgeid as of yet.
->>>>>>> gh-pages
-          self.BridgeID = self.LocalBridges[0].id.toLowerCase();
-        else self.BridgeID = '';
->>>>>>> gh-pages
-        self.Username = self.BridgeCache[self.BridgeID];
-        if (self.Username === undefined)
-          self.Username = '';
+        if (self.BridgeIP === "") { // Default to 1st Bridge
+          self.BridgeIP = self.LocalBridges[0].internalipaddress;
+          if (self.BridgeConfig.bridgeid) // NOTE:SteveyO/Hue-Emulator doesn't supply bridgeid as of yet.
+            self.BridgeID = self.LocalBridges[0].id.toLowerCase();
+          else self.BridgeID = '';
+          self.Username = self.BridgeCache[self.BridgeID];
+          if (self.Username === undefined)
+            self.Username = '';
+        }
         deferred.resolve();
       } else deferred.reject();
     } else deferred.reject();
-<<<<<<< HEAD
-  }, error: function(xhr,status,error) { // $.ajax failed 
-<<<<<<< HEAD
-    deferred.reject() 
-=======
-=======
   }, error: function(xhr,status,error) {
->>>>>>> gh-pages
     deferred.reject();
->>>>>>> gh-pages
   } });
   return deferred.promise();
 };
@@ -346,44 +321,14 @@ huepi.prototype.PortalDiscoverLocalBridges = function()
  *
  * @param {string} BridgeIP - Optional BridgeIP name to GetConfig from, otherwise uses huepi.BridgeIP (this/self).
  */
-<<<<<<< HEAD
-<<<<<<< HEAD
-huepi.prototype.BridgeGetConfig = function()
-=======
- huepi.prototype.BridgeGetConfig = function()
->>>>>>> gh-pages
-=======
  huepi.prototype.BridgeGetConfig = function(BridgeIP)
->>>>>>> gh-pages
 { // GET /api/config -> data.config.whitelist.username
   var self = this;
   var deferred = $.Deferred();
 
-<<<<<<< HEAD
-  $.ajax({ type: 'GET', url: 'http://' + this.BridgeIP + '/api/config/', success: function(data) {
-<<<<<<< HEAD
-    if (data.bridgeid) {
-      self.BridgeConfig = data;
-      self.BridgeID = self.BridgeConfig.bridgeid.toLowerCase();
-      self.BridgeName = self.BridgeConfig.name;
-      self.Username = self.BridgeCache[self.BridgeID];
-      if (self.Username == undefined)
-=======
-///$.get('http://' + this.BridgeIP + '/api/gethuepi/config/', function(data) {
-    if (data.bridgeid) {
-      self.BridgeConfig = data;
-      if (self.BridgeConfig.bridgeid) // SteveyO/Hue-Emulator doesn't supply bridgeid as of yet.
-        self.BridgeID = self.BridgeConfig.bridgeid.toLowerCase();
-      else self.BridgeID = '';
-      self.BridgeName = self.BridgeConfig.name;
-      self.Username = self.BridgeCache[self.BridgeID];
-      if (self.Username === undefined)
->>>>>>> gh-pages
-        self.Username = '';
-      deferred.resolve();
-=======
   BridgeIP = BridgeIP || self.BridgeIP;
-  $.ajax({ type: 'GET', timeout: 2500, url: 'http://' + BridgeIP + '/api/+31402787500/config', success: function(data) {
+  //$.ajax({ type: 'GET', timeout: 2500, url: 'http://' + BridgeIP + '/api/+31402787500/config', success: function(data) {
+  $.ajax({ type: 'GET', timeout: 2500, url: 'http://' + BridgeIP + '/api/config', success: function(data) {
     if (data.bridgeid) {
       if (BridgeIP == self.BridgeIP) {
         self.BridgeConfig = data;
@@ -396,27 +341,14 @@ huepi.prototype.BridgeGetConfig = function()
           self.Username = '';
       }
       deferred.resolve(data);
->>>>>>> gh-pages
     } else { // this BridgeIP is not a hue Bridge
       deferred.reject();
     }
-<<<<<<< HEAD
-<<<<<<< HEAD
-  }, error: function(xhr,status,error) { // $.ajax failed 
-    deferred.reject() 
-  } }); 
-  return deferred.promise();
-}
-=======
-///}).fail(function() {
-=======
->>>>>>> gh-pages
   }, error: function(xhr,status,error) { // $.ajax failed 
     deferred.reject();
   } }); 
   return deferred.promise();
 };
->>>>>>> gh-pages
 
 /**
  * Update function to retreive Bridge data and store it in this object.
@@ -433,13 +365,9 @@ huepi.prototype.BridgeGetData = function()
   else $.ajax({ type: 'GET', url: 'http://' + this.BridgeIP + '/api/' + this.Username, success: function(data) {
     if (data.config !== undefined) { // if able to read Config, Username must be Whitelisted
       self.BridgeConfig = data.config;
-<<<<<<< HEAD
-      self.BridgeID = self.BridgeConfig.bridgeid.toLowerCase();
-=======
       if (self.BridgeConfig.bridgeid) // SteveyO/Hue-Emulator doesn't supply bridgeid as of yet.
         self.BridgeID = self.BridgeConfig.bridgeid.toLowerCase();
       else self.BridgeID = '';
->>>>>>> gh-pages
       self.BridgeName = self.BridgeConfig.name;
       self.Lights = data.lights;
       self.LightIds = [];
@@ -661,14 +589,16 @@ huepi.HelperRGBtoXY = function(Red, Green, Blue)
  */
 huepi.HelperGamutXYforModel = function(Px, Py, Model)
 {
+  Model = Model || "LCT001"; // default hue Bulb 2012
+  var ModelType = Model.slice(0,3);
   var PRed, PGreen, PBlue;
   var NormDot;
 
-  if (Model.slice(0, 3) === 'LCT') { // For the hue bulb the corners of the triangle are:
+  if (ModelType === 'LCT') { // For the hue bulb the corners of the triangle are:
     PRed = {x: 0.674, y: 0.322};
     PGreen = {x: 0.408, y: 0.517};
     PBlue = {x: 0.168, y: 0.041};
-  } else if ((Model.slice(0, 3) === 'LLC') || (Model.slice(0, 3) === 'LST')) { // For LivingColors Bloom, Aura and Iris the triangle corners are:
+  } else if ((ModelType === 'LLC') || (ModelType === 'LST')) { // For LivingColors Bloom, Aura and Iris the triangle corners are:
     PRed = {x: 0.703, y: 0.296};
     PGreen = {x: 0.214, y: 0.709};
     PBlue = {x: 0.139, y: 0.081};
@@ -816,7 +746,6 @@ huepi.HelperXYtoRGB = function(x, y, Brightness)
  */
 huepi.HelperXYtoRGBforModel = function(x, y, Brightness, Model)
 {
-  Model = Model || "LCT001"; // default hue Bulb 2012
   var GamutCorrected = huepi.HelperGamutXYforModel(x, y, Model);
   return huepi.HelperXYtoRGB(GamutCorrected.x, GamutCorrected.y, Brightness);
 };
@@ -1267,15 +1196,18 @@ huepi.prototype.LightSetRGB = function(LightNr, Red, Green, Blue, Transitiontime
 huepi.prototype.LightSetCT = function(LightNr, CT, Transitiontime)
 {
   var Model = this.Lights[this.LightGetId(LightNr)].modelid;
-  if (Model !== 'LCT001') { // CT->RGB->XY to ignore Brightness in RGB
-    var Color = huepi.HelperColortemperaturetoRGB(1000000 / CT);
-    var Point = huepi.HelperRGBtoXY(Color.Red, Color.Green, Color.Blue);
-    return this.LightSetXY(LightNr, Point.x, Point.y, Transitiontime);
+  var ModelType = Model.slice(0,3);
+
+  if ((ModelType === 'LCT') || (ModelType === 'LLC') || (ModelType === 'LST')) { // hue Color Lights
+    var State = new huepi.Lightstate();
+    State.SetCT(CT);
+    State.SetTransitiontime(Transitiontime);
+    return this.LightSetState(LightNr, State);
   }
-  var State = new huepi.Lightstate();
-  State.SetCT(CT);
-  State.SetTransitiontime(Transitiontime);
-  return this.LightSetState(LightNr, State);
+  // non hue Color Lights: CT->RGB->XY to ignore Brightness in RGB
+  var Color = huepi.HelperColortemperaturetoRGB(1000000 / CT);
+  var Point = huepi.HelperRGBtoXY(Color.Red, Color.Green, Color.Blue);
+  return this.LightSetXY(LightNr, Point.x, Point.y, Transitiontime);
 };
 
 /**
@@ -1821,116 +1753,6 @@ huepi.prototype.RulesGetData = function()
   });
 };
 
-<<<<<<< HEAD
-
-////////////////////////////////////////////////////////////////////////////////
-//
-// Change log
-//
-// 0.1
-// Initial Public Release
-//
-// 0.2
-// Renamed class Light.State -> Lightstate
-// Renamed function Bridge.GetConfig -> Bridge.Get
-// Renamed functions Config.* -> Bridge.*
-// Added Gamut Color Correction in Lightstate.SetHSB RGB+HSB Settings Will be Color Corrected to HUE Lamp -> xy
-//
-// 0.21
-// Rewrote Gamut Color Correction in Lightstate.SetHSB
-//
-// 0.3
-// HUEPI is now an Object
-// Renamed deeper namespaces to top namespace so HUEPI becomes one Object
-//   e.g. Group.SetOn() -> GroupSetOn()
-//
-// 0.4
-// Added Helper functions (refactured from 0.3)
-// HueAngSatBri HSB RGB for lights and groups are set via SetXY and SetBrightness
-// GroupSetXY splits group into Light and calls LightSetXY per Light
-// LightSetXY looks up lamp Model and applies Gamut Correction for Model
-// Note: Using Lightstate objects are not Gamut Corrected
-//
-// 0.5
-// Implemented Promisses by returning JQuery Promisses (Deffereds)
-// Declared local variables where applicable, cleaning up global namespace polution
-// Added LightsSearchForNew and LightsGetNew and LightSetName
-// Added GroupCreate GroupSetName GroupSetLights GroupSetAttributes GroupDelete
-//   These need more testing ;-)
-//
-// 0.6
-// Changed HUEPI object notation from literal to protoype notation
-//  to make a bigger difference between static helper methods and object interface
-// Group- and Light-SetColortemperature are set via SetCT now
-// Added huepi.HelperCTtoRGB to Allow ColorLights to be set with CT as RGB
-// GroupSetCT splits group into Light and calls LightSetCT per Light
-// LightSetCT looks up lamp Model and sets either CT or RGB based on Model
-// Note: Using Lightstate objects are not CT to RGB converted
-// PortalBridges[] is renamed to LocalBridges[]
-//
-// 0.61
-// LightSetCT = CT->RGB->XY to ignore Brightness in RGB
-// changed " string to ' string
-//
-// 0.62
-// renamed
-// BridgeGet to BridgeGetData
-// GroupGet to GroupsGetData
-// LightGet to LightsGetData
-// UsernameWhitelisted to BridgeUsernameWhitelisted
-//
-// 0.9
-// Added detection of NodeJS
-// Added WORKING JQuery NodeJS if running on NodeJS
-// Added Module Exports for NodeJS on NodeJS
-//
-// 0.95
-// renamed HUEPI to huepi to be more complient with modules and actual hue product name
-//
-// 0.9.6
-// Renamed HelperCTtoRGB to HelperColortemperaturetoRG
-// All Red, Green &amp; Blue arguments ranges to [0..1]
-//
-// 0.9.7
-// Using Matrices from RGB to XYZ [M] for sRGB D65 from http://www.brucelindbloom.com/index.html?Eqn_RGB_XYZ_Matrix.html
-// renamed This. to self.
-// added HelperXYtoRGBforModel
-// PortalDiscoverLocalBridges now follows redirects
-//
-// 0.9.8
-// Added LightIds &amp; GroupIds
-// Default is still index, which is transformed into Ids when talking to lights
-//   use Ids (string) in stead of Index (number) to access a specific Id
-//   this way its transparent and works for both Ids &amp; Indices
-// reordered parameters to HelperXYtoRGBforModel = function(x, y, Brightness, Model)
-//
-// using updated Philips hue Wide RGB D65, http://www.developers.meethue.com/documentation/color-conversions-rgb-xy
-//
-// 
-// FIX huepi.prototype.LightSetName 
-//
-//
-// 0.9.9
-// Changed Whitlisting on Bridge as required by Philips as of 1-2-2016
-// REMOVED this.BridgeUsernameWhitelisted as this is now implicit on BridgeGetData succes
-// Added BridgeGetConfig to retreive BridgeID, Name etc without whitlisting
-// Added BridgeCache to store and retreive Usernames by BridgeID
-//  Including BridgeCache Save &amp; Load Functions
-<<<<<<< HEAD
-//
-//
-//
-//
-=======
-//
-//
-//
-//
->>>>>>> gh-pages
-
-
-=======
->>>>>>> gh-pages
 </code></pre>
         </article>
     </section>
@@ -1947,19 +1769,7 @@ huepi.prototype.RulesGetData = function()
 <br class="clear">
 
 <footer>
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Sun Dec 13 2015 13:08:52 GMT+0100 (CET)
-=======
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.2</a> on Sun Dec 13 2015 13:06:44 GMT+0100 (CET)
->>>>>>> gh-pages
-=======
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Sun Jan 31 2016 12:10:26 GMT+0100 (CET)
->>>>>>> gh-pages
-=======
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Mon Mar 21 2016 15:06:19 GMT+0100 (CET)
->>>>>>> gh-pages
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Sat Apr 09 2016 14:55:14 GMT+0200 (CEST)
 </footer>
 
 <script> prettyPrint(); </script>
