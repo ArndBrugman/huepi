@@ -29,10 +29,10 @@
         var CTContext = document.getElementById("CTCanvas").getContext("2d");
         var XYCanvas = document.getElementById("XYCanvas");
         var XYContext = document.getElementById("XYCanvas").getContext("2d");
-        var size = GetUrlValue('size');
+        var size = GetUrlValue('size') || 512;
         HueCanvas.width = 
         CTCanvas.width = 
-        XYCanvas.width = size || 512;
+        XYCanvas.width = size;
         HueCanvas.height = HueCanvas.width;
         CTCanvas.height = Math.round(CTCanvas.width / 2);
         XYCanvas.height = XYCanvas.width;
@@ -45,32 +45,33 @@
         var xhalf = HueCanvas.width / 2;
         var yhalf = HueCanvas.height / 2;
         for (var x = 0; x < HueCanvas.width; x++) { // Every Pixel on ScanLine
-          var Colortemperature = 2000 + Math.round(x*(6500 - 2000)/CTCanvas.width); // 2000 to 6500 for 2012 model
+          var Colortemperature = 3500 + Math.round(x*(6125)/CTCanvas.width); // 2000 to 6500 for 2012 model
           var CTColor = huepi.HelperColortemperaturetoRGB(Colortemperature);
+        var XY = huepi.HelperRGBtoXY(CTColor.Red, CTColor.Green, CTColor.Blue);
+        var CTColor = huepi.HelperXYtoRGBforModel(XY.x, XY.y, 1);
           for (var y = 0; y < HueCanvas.height; y++) { // Every ScanLine
             var px = (x - xhalf) / xhalf; // [-1, 1]
             var py = (y - yhalf) / yhalf; // [-1, 1]
             var Hue = 360 - (Math.atan2(px, py) * 180 / Math.PI + 180); // [0..359]
             var Brightness = 1;
             var Saturation = 1;
-            if (Math.sqrt(px * px + py * py) < 0.5) // Inner Circle
-              Saturation = 2 * Math.sqrt(px * px + py * py);
+            if (Math.sqrt(px * px + py * py) <= 0.5) // Inner Circle
+              Saturation = Math.sqrt(2*px * 2*px + 2*py * 2*py);
             if (Math.sqrt(px * px + py * py) > 0.5) // Outer Circle
-              Brightness = 1 - 2 * (Math.sqrt(px * px + py * py) - 0.5);
+              Brightness = 1 ;//- 2 * (Math.sqrt(px * px + py * py) - 0.5);
             if (Math.sqrt(px * px + py * py) > 1) // Rest Of Square Outside Outer Circle
-              Brightness = 0;
-
+              Brightness = 1 ;// 0;
             var Color = huepi.HelperHueAngSatBritoRGB(Hue, Saturation, Brightness);
-
+//Color.Red = Color.Blue = Color.Green = Saturation;
             var Index = (x + y * HueCanvas.width) * 4; // Index of Pixel
             HueImagedata.data[Index + 0] = Color.Red *255;
             HueImagedata.data[Index + 1] = Color.Green *255;
             HueImagedata.data[Index + 2] = Color.Blue *255;
             // Colortemperature is only x gradient, draw same CTColor until CTCanvas.height
             if (y < CTCanvas.height) {
-              CTImagedata.data[Index + 0] = CTColor.Red *255 * (CTCanvas.height - y)/CTCanvas.height;
-              CTImagedata.data[Index + 1] = CTColor.Green *255 * (CTCanvas.height - y)/CTCanvas.height;
-              CTImagedata.data[Index + 2] = CTColor.Blue *255 * (CTCanvas.height - y)/CTCanvas.height;
+              CTImagedata.data[Index + 0] = CTColor.Red *255 ;//* (CTCanvas.height - y)/CTCanvas.height;
+              CTImagedata.data[Index + 1] = CTColor.Green *255 ;//* (CTCanvas.height - y)/CTCanvas.height;
+              CTImagedata.data[Index + 2] = CTColor.Blue *255 ;//* (CTCanvas.height - y)/CTCanvas.height;
               //CTImagedata.data[Index + 3] = 255* (CTCanvas.height - y)/CTCanvas.height;
             }
             var XYColor = huepi.HelperXYtoRGB(x / XYCanvas.width, 1 - (y / XYCanvas.height));
@@ -79,7 +80,7 @@
             XYImagedata.data[Index + 2] = XYColor.Blue *255;
           }
         }
-        // "Draw" Colortemperature line to XYImage using 2012 model CT range
+        /*/// "Draw" Colortemperature line to XYImage using 2012 model CT range
         for (var Colortemperature = 2000; Colortemperature < 6500; Colortemperature+=0.1) { // 2000 to 6500 for 2012 model
           var CTColor = huepi.HelperColortemperaturetoRGB(Colortemperature);
           var XY = huepi.HelperRGBtoXY(CTColor.Red, CTColor.Green, CTColor.Blue);
@@ -90,7 +91,7 @@
           XYImagedata.data[CTIndex + 0] =  0;
           XYImagedata.data[CTIndex + 1] =  0;
           XYImagedata.data[CTIndex + 2] =  0;
-        }
+        } //*/
         HueContext.putImageData(HueImagedata, 0, 0);
         document.getElementById('HueImage').src = HueCanvas.toDataURL();
         CTContext.putImageData(CTImagedata, 0, 0);
@@ -105,14 +106,15 @@
     </script>
 
     <div align="center">
-      <canvas style="border:1px solid #884422;display:none;" id="HUECanvas" width=256 height=256 >It seems your device doesn"t support the required HTML5 Canvas</canvas>
+      <canvas style="display:none;" id="HUECanvas" width=256 height=256 >It seems your device doesn"t support the required HTML5 Canvas</canvas>
       <img id="HueImage">
       <br>
-      <canvas style="border:1px solid #884422;display:none;" id="CTCanvas" width=256 height=128 >It seems your device doesn"t support the required HTML5 Canvas</canvas>
+      <canvas style="display:none;" id="CTCanvas" width=256 height=128 >It seems your device doesn"t support the required HTML5 Canvas</canvas>
       <img id="CTImage">
       <br>
-      <canvas style="border:1px solid #884422;display:none;" id="XYCanvas" width=256 height=256 >It seems your device doesn"t support the required HTML5 Canvas</canvas>
+      <canvas style="display:none;" id="XYCanvas" width=256 height=256 >It seems your device doesn"t support the required HTML5 Canvas</canvas>
       <img id="XYImage">
+      <br>
     </div>
 
   </body>
