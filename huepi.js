@@ -15,7 +15,7 @@
  */
 huepi = function(UseBridgeIP) {
   /** @member {string} - version of the huepi interface */
-  this.version = '1.0.5';
+  this.version = '1.0.6';
 
   /** @member {array} - Array of all Bridges on the local network */
   this.LocalBridges = [];
@@ -215,7 +215,7 @@ huepi.prototype._BridgeCacheSave = function()
     var Parallel = 16;
 
     function CheckIP(Nr) {
-      self.BridgeGetConfig(InitialIP+Nr).then(function(data){
+      self.BridgeGetConfig(InitialIP+Nr, 3000).then(function(data){
         self.LocalBridges.push({'internalipaddress': InitialIP+Nr, 'id': data.bridgeid.toLowerCase()});
       }).always(function(){
         OverallDeferred.notify(Math.floor(100*Nr/255));
@@ -230,9 +230,9 @@ huepi.prototype._BridgeCacheSave = function()
       });
     }
 
-    for (var IPs=0; IPs<LocalIPs.length; IPs++) {
+    for (var IPs=0; IPs<LocalIPs.length; IPs++) { // NEEDS A FIX: This DOesn't scan all Networks... InitialIP
       var InitialIP = LocalIPs[IPs].slice(0, LocalIPs[IPs].lastIndexOf('.')+1);
-      for (P=0; P<=Parallel; P++)
+      for (P=1; P<=Parallel; P++)
         CheckIP(P);
     }
 
@@ -293,16 +293,16 @@ huepi.prototype.PortalDiscoverLocalBridges = function()
  *
  * @param {string} BridgeIP - Optional BridgeIP name to GetConfig from, otherwise uses huepi.BridgeIP (this/self).
  */
- huepi.prototype.BridgeGetConfig = function(BridgeIP)
+huepi.prototype.BridgeGetConfig = function(ConfigBridgeIP, ConfigTimeOut)
 { // GET /api/config -> data.config.whitelist.username
   var self = this;
   var deferred = $.Deferred();
 
-  BridgeIP = BridgeIP || self.BridgeIP;
-  //$.ajax({ type: 'GET', timeout: 2500, url: 'http://' + BridgeIP + '/api/+31402787500/config', success: function(data) {
-  $.ajax({ type: 'GET', timeout: 2500, url: 'http://' + BridgeIP + '/api/config', success: function(data) {
+  ConfigBridgeIP = ConfigBridgeIP || self.BridgeIP;
+  ConfigTimeOut = ConfigTimeOut || 60000;
+  $.ajax({ type: 'GET', timeout: ConfigTimeOut, url: 'http://' + ConfigBridgeIP + '/api/config/', success: function(data) {
     if (data.bridgeid) {
-      if (BridgeIP == self.BridgeIP) {
+      if (ConfigBridgeIP === self.BridgeIP) {
         self.BridgeConfig = data;
         if (self.BridgeConfig.bridgeid) // SteveyO/Hue-Emulator doesn't supply bridgeid as of yet.
           self.BridgeID = self.BridgeConfig.bridgeid.toLowerCase();
@@ -316,7 +316,7 @@ huepi.prototype.PortalDiscoverLocalBridges = function()
     } else { // this BridgeIP is not a hue Bridge
       deferred.reject();
     }
-  }, error: function(xhr,status,error) { // $.ajax failed 
+  }, error: function(xhr,status,error) { // $.ajax failed
     deferred.reject();
   } }); 
   return deferred.promise();
@@ -728,11 +728,12 @@ huepi.HelperXYtoRGBforModel = function(x, y, Brightness, Model)
  */
 huepi.HelperColortemperaturetoRGB = function(Temperature)
 { // http://www.tannerhelland.com/4435/convert-temperature-rgb-algorithm-code/
+  // Update Available: https://github.com/neilbartlett/color-temperature/blob/master/index.js
   var Red, Green, Blue;
 
   Temperature = Temperature / 100;
   if (Temperature <= 66)
-    Red = /*255*/ 165+90*((Temperature)/(66));
+    Red = /*255;*/ 165+90*((Temperature)/(66));
   else {
     Red = Temperature - 60;
     Red = 329.698727466 * Math.pow(Red, -0.1332047592);
@@ -982,14 +983,15 @@ huepi.prototype.LightGetNr = function(LightId)
 huepi.prototype.LightsGetData = function()
 { // GET /api/username/lights
   var self = this;
-  var url = 'http://' + this.BridgeIP + '/api/' + this.Username + '/lights';
-  return $.get(url, function(data) {
+
+  return $.ajax({ type: 'GET', url: 'http://' + this.BridgeIP + '/api/' + this.Username + '/lights', success: function(data) {
     if (data) {
       self.Lights = data;
       self.LightIds = [];
       for (var key in self.Lights)
         self.LightIds.push(key);
-    }
+      }
+    } 
   });
 };
 
@@ -1009,8 +1011,7 @@ huepi.prototype.LightsSearchForNew = function()
  */
 huepi.prototype.LightsGetNew = function()
 { // GET /api/username/lights/new
-  var url = 'http://' + this.BridgeIP + '/api/' + this.Username + '/lights/new';
-  return $.get(url);
+  return $.ajax({ type: 'GET', url: 'http://' + this.BridgeIP + '/api/' + this.Username + '/lights/new', success: function(data) {} });
 };
 
 /**
@@ -1303,15 +1304,30 @@ huepi.prototype.GroupGetNr = function(GroupId)
 /**
  */
 huepi.prototype.GroupsGetData = function()
-{ // GET /api/username/lights
+{ // GET /api/username/groups
   var self = this;
-  var url = 'http://' + this.BridgeIP + '/api/' + this.Username + '/groups';
-  return $.get(url, function(data) {
+
+  return $.ajax({ type: 'GET', url: 'http://' + this.BridgeIP + '/api/' + this.Username + '/groups', success: function(data) {
     if (data) {
       self.Groups = data;
       self.GroupIds = [];
       for (var key in self.Groups)
         self.GroupIds.push(key);
+      }
+    }
+  });
+};
+
+/**
+ */
+huepi.prototype.GroupsGetZero = function()
+{ // GET /api/username/groups/0
+  var self = this;
+
+  return $.ajax({ type: 'GET', url: 'http://' + this.BridgeIP + '/api/' + this.Username + '/groups/0', success: function(data) {
+    if (data) {
+      self.Groups["0"] = data;
+      }
     }
   });
 };
@@ -1660,10 +1676,11 @@ huepi.prototype.GroupEffectNone = function(GroupNr, Transitiontime)
 huepi.prototype.SchedulesGetData = function()
 { // GET /api/username/schedules
   var self = this;
-  var url = 'http://' + this.BridgeIP + '/api/' + this.Username + '/schedules';
-  return $.get(url, function(data) {
+
+  return $.ajax({ type: 'GET', url: 'http://' + this.BridgeIP + '/api/' + this.Username + '/schedules', success: function(data) {
     if (data) {
       self.Schedules = data;
+      }
     }
   });
 };
@@ -1679,10 +1696,11 @@ huepi.prototype.SchedulesGetData = function()
 huepi.prototype.ScenesGetData = function()
 { // GET /api/username/scenes
   var self = this;
-  var url = 'http://' + this.BridgeIP + '/api/' + this.Username + '/scenes';
-  return $.get(url, function(data) {
+
+  return $.ajax({ type: 'GET', url: 'http://' + this.BridgeIP + '/api/' + this.Username + '/scenes', success: function(data) {
     if (data) {
       self.Scenes = data;
+      }
     }
   });
 };
@@ -1698,10 +1716,11 @@ huepi.prototype.ScenesGetData = function()
 huepi.prototype.SensorsGetData = function()
 { // GET /api/username/sensors
   var self = this;
-  var url = 'http://' + this.BridgeIP + '/api/' + this.Username + '/sensors';
-  return $.get(url, function(data) {
+
+  return $.ajax({ type: 'GET', url: 'http://' + this.BridgeIP + '/api/' + this.Username + '/sensors', success: function(data) {
     if (data) {
       self.Sensors = data;
+      }
     }
   });
 };
@@ -1717,10 +1736,11 @@ huepi.prototype.SensorsGetData = function()
 huepi.prototype.RulesGetData = function()
 { // GET /api/username/rules
   var self = this;
-  var url = 'http://' + this.BridgeIP + '/api/' + this.Username + '/rules';
-  return $.get(url, function(data) {
+
+  return $.ajax({ type: 'GET', url: 'http://' + this.BridgeIP + '/api/' + this.Username + '/rules', success: function(data) {
     if (data) {
       self.Rules = data;
+      }
     }
   });
 };
