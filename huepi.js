@@ -15,7 +15,7 @@
  */
 huepi = function(UseBridgeIP) {
   /** @member {string} - version of the huepi interface */
-  this.version = '1.0.6';
+  this.version = '1.0.7';
 
   /** @member {array} - Array of all Bridges on the local network */
   this.LocalBridges = [];
@@ -74,16 +74,6 @@ if (typeof module !== 'undefined' && module.exports)
     Object.prototype.toString.call(global.process) === '[object process]') {
     var domino = require('domino');
     var window = domino.createWindow('<html>huepi</html>');
-
-    if (typeof window.setTimeout === 'undefined') { // temporary fix for JQuery until these are available in domino window
-      window.setTimeout = setTimeout;
-      window.clearTimeout = clearTimeout;
-      window.setInterval = setInterval;
-      window.clearInterval = clearInterval;
-    } else {
-      console.log('huepi: Running in NodeJS, npm module domino window provides setTimeout. ');
-      console.log('huepi: Time to remove temporary fix for JQuery as these are available in domino window ');
-    }
 
     var document = window.document;
     var $ = require('jquery')(window);
@@ -291,7 +281,8 @@ huepi.prototype.PortalDiscoverLocalBridges = function()
  * available members (as of "apiversion": "1.11.0"):
  *   name, apiversion, swversion, mac, bridgeid, replacesbridgeid, factorynew, modelid
  *
- * @param {string} BridgeIP - Optional BridgeIP name to GetConfig from, otherwise uses huepi.BridgeIP (this/self).
+ * @param {string} ConfigBridgeIP - Optional BridgeIP to GetConfig from, otherwise uses huepi.BridgeIP (this/self).
+ * @param {string} ConfigTimeOut - Optional TimeOut for network request, otherwise uses 60 seconds.
  */
 huepi.prototype.BridgeGetConfig = function(ConfigBridgeIP, ConfigTimeOut)
 { // GET /api/config -> data.config.whitelist.username
@@ -311,6 +302,52 @@ huepi.prototype.BridgeGetConfig = function(ConfigBridgeIP, ConfigTimeOut)
         self.Username = self.BridgeCache[self.BridgeID];
         if (self.Username === undefined)
           self.Username = '';
+      }
+      deferred.resolve(data);
+    } else { // this BridgeIP is not a hue Bridge
+      deferred.reject();
+    }
+  }, error: function(xhr,status,error) { // $.ajax failed
+    deferred.reject();
+  } }); 
+  return deferred.promise();
+};
+
+/**
+ * Function to retreive BridgeDescription before Checking Whitelisting.
+ * ONCE call BridgeGetDescription Before BridgeGetData to validate we are talking to a hue Bridge
+ * 
+ * REMARK: Needs a fix of the hue bridge to allow CORS on xml endpoint too, just like on json endpoints already is implemented.
+ *
+ * @param {string} ConfigBridgeIP - Optional BridgeIP to GetConfig from, otherwise uses huepi.BridgeIP (this/self).
+ * @param {string} ConfigTimeOut - Optional TimeOut for network request, otherwise uses 60 seconds.
+ */
+huepi.prototype.BridgeGetDescription = function(ConfigBridgeIP, ConfigTimeOut)
+{ // GET /description.xml -> /device/serialNumber
+  var self = this;
+  var deferred = $.Deferred();
+
+  ConfigBridgeIP = ConfigBridgeIP || self.BridgeIP;
+  ConfigTimeOut = ConfigTimeOut || 60000;
+
+  //$.support.cors = true; // cross domain, Cross-origin resource sharing
+  //$.ajaxSetup( { contentType: 'text/plain', xhrFields: { withCredentials: false }, headers: { "Origin": ConfigBridgeIP } });
+  $.ajax({ type: 'GET', timeout: ConfigTimeOut, url: 'http://' + ConfigBridgeIP + '/description.xml', success: function(data) {
+    var $data = $(data);
+    if ($data.find('url').text() === "hue_logo_0.png") {
+      if (ConfigBridgeIP === self.BridgeIP) {
+        if ($data.find("serialNumber").text() !== '') 
+          self.BridgeID = $data.find("serialNumber").text().toLowerCase();
+        else self.BridgeID = '';
+        self.BridgeName = $data.find("friendlyName").text();
+        self.Username = self.BridgeCache[self.BridgeID];
+        if (self.Username === undefined) {
+          // Correct 001788[....]200xxx -> 001788FFFE200XXX short and long serialnumer difference
+          self.BridgeID = self.BridgeID.slice(0,6) + 'fffe' + self.BridgeID.slice(6,12);
+          self.Username = self.BridgeCache[self.BridgeID];
+          if (self.Username === undefined)
+            self.Username = '';
+        }
       }
       deferred.resolve(data);
     } else { // this BridgeIP is not a hue Bridge
@@ -1171,13 +1208,13 @@ huepi.prototype.LightSetCT = function(LightNr, CT, Transitiontime)
   var Model = this.Lights[this.LightGetId(LightNr)].modelid;
   var ModelType = Model.slice(0,3);
 
-  if ((ModelType === 'LCT') || (ModelType === 'LLC') || (ModelType === 'LST')) { // hue Color Lights
+  if ((ModelType === 'LCT') || (ModelType === 'LLC') || (ModelType === 'LST') || (ModelType === 'LTW')) { // hue CT Capable Lights
     var State = new huepi.Lightstate();
     State.SetCT(CT);
     State.SetTransitiontime(Transitiontime);
     return this.LightSetState(LightNr, State);
   }
-  // non hue Color Lights: CT->RGB->XY to ignore Brightness in RGB
+  // hue CT Incapable Lights: CT->RGB->XY to ignore Brightness in RGB
   var Color = huepi.HelperColortemperaturetoRGB(1000000 / CT);
   var Point = huepi.HelperRGBtoXY(Color.Red, Color.Green, Color.Blue);
   return this.LightSetXY(LightNr, Point.x, Point.y, Transitiontime);
