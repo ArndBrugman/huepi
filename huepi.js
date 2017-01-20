@@ -418,7 +418,7 @@ huepi.prototype.BridgeCreateUser = function(DeviceName)
 
   DeviceName = DeviceName || 'WebInterface';
   $.ajax({ type: 'POST', dataType: 'json', contentType: 'application/json', url: 'http://' + this.BridgeIP + '/api',
-  data: '{"devicetype": "huepi#"' + DeviceName + '}', success: function(data) {
+  data: '{"devicetype": "huepi#' + DeviceName + '"}', success: function(data) {
     if (data[0]) {
       if (data[0].success) {
         self.Username = data[0].success.username;
@@ -823,7 +823,7 @@ huepi.HelperRGBtoColortemperature = function(Red, Green, Blue)
   var TestRGB;
   var Epsilon = 0.4;
   var MinTemperature = 2200;
-  var MaxTemperature = 65000;
+  var MaxTemperature = 6500;
 
   while ( (MaxTemperature - MinTemperature) > Epsilon) {
     Temperature = (MaxTemperature + MinTemperature) / 2;
@@ -1283,7 +1283,7 @@ huepi.prototype.LightSetXY = function(LightNr, X, Y, Transitiontime)
   // hue XY Incapable Lights: XY->RGB->CT to ignore Brightness in RGB
   var Color = huepi.HelperXYtoRGB(X, Y);
   var Colortemperature = huepi.HelperRGBtoColortemperature(Color.Red, Color.Green, Color.Blue);
-  return this.LightSetCT(LightNr, Colortemperature, Transitiontime);
+  return this.LightSetColortemperature(LightNr, Colortemperature, Transitiontime);
 };
 
 /**
