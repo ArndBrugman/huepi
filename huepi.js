@@ -418,7 +418,7 @@ huepi.prototype.BridgeCreateUser = function(DeviceName)
 
   DeviceName = DeviceName || 'WebInterface';
   $.ajax({ type: 'POST', dataType: 'json', contentType: 'application/json', url: 'http://' + this.BridgeIP + '/api',
-  data: '{"devicetype": "huepi#"' + DeviceName + '}', success: function(data) {
+  data: '{"devicetype": "huepi#' + DeviceName + '"}', success: function(data) {
     if (data[0]) {
       if (data[0].success) {
         self.Username = data[0].success.username;
