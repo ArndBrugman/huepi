@@ -1,0 +1,48 @@
+{
+  "name": "huepi",
+  "version": "1.0.10",
+  "description": "hue (Philips Wireless Lighting) Api interface for JavaScript",
+  "main": "huepi.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ArndBrugman/huepi.git"
+  },
+  "ignore": [
+    "**/.*",
+    "Docs",
+    "hue Bulbs, Strips and Modules.xlsx",
+    "hueGamut",
+    "hueImage",
+    "hueMediate",
+    "hueNode",
+    "index.html",
+    "IP-ID-UsernameFlow.pptx"
+  ],
+  "moduleType": [
+    "node"
+  ],
+  "keywords": [
+    "hue",
+    "Philips",
+    "Wireless",
+    "Lighting",
+    "API"
+  ],
+  "authors": [
+    "Arnd Brugman"
+  ],
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/ArndBrugman/huepi/issues"
+  },
+  "dependencies": {
+    "jquery": "2.x.x",
+    "domino": "1.x.x",
+    "xmlhttprequest": "1.x.x"
+  },
+  "homepage": "https://github.com/ArndBrugman/huepi",
+  "private": false
+}
