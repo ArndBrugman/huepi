@@ -815,7 +815,7 @@ huepi.HelperColortemperaturetoRGB = function(Temperature)
  * @param {float} Red - Range [0..1]
  * @param {float} Green - Range [0..1]
  * @param {float} Blue - Range [0..1]
- * @returns {number} Temperature ranges [2200..65000]
+ * @returns {number} Temperature ranges [2200..6500]
  */
 huepi.HelperRGBtoColortemperature = function(Red, Green, Blue)
 { // Approximation from https://github.com/neilbartlett/color-temperature/blob/master/index.js
@@ -1251,7 +1251,7 @@ huepi.prototype.LightSetCT = function(LightNr, CT, Transitiontime)
 
 /**
  * @param {number} LightNr
- * @param {number} Colortemperature Range [2200..65000] for the 2012 model
+ * @param {number} Colortemperature Range [2200..6500] for the 2012 model
  * @param {number} Transitiontime optional
  */
 huepi.prototype.LightSetColortemperature = function(LightNr, Colortemperature, Transitiontime)
@@ -1645,7 +1645,7 @@ huepi.prototype.GroupSetCT = function(GroupNr, CT, Transitiontime)
 
 /**
  * @param {number} GroupNr
- * @param {number} Colortemperature Range [2200..65000] for the 2012 model
+ * @param {number} Colortemperature Range [2200..6500] for the 2012 model
  * @param {number} Transitiontime optional
  */
 huepi.prototype.GroupSetColortemperature = function(GroupNr, Colortemperature, Transitiontime)
