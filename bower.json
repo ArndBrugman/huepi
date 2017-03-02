@@ -39,9 +39,9 @@
     "url": "https://github.com/ArndBrugman/huepi/issues"
   },
   "dependencies": {
-    "jquery": "2.x.x",
-    "domino": "1.x.x",
-    "xmlhttprequest": "1.x.x"
+    "jquery": "^2.x.x",
+    "domino": "^1.x.x",
+    "xmlhttprequest": "^1.x.x"
   },
   "homepage": "https://github.com/ArndBrugman/huepi",
   "private": false
