@@ -74,10 +74,13 @@ var huepi = function() {
 //
 if (typeof module !== 'undefined' && typeof module.exports !== 'undefined')
 {
+  var $;
+  var XMLHttpRequest;
+
   if (typeof global !== 'undefined' && typeof global.process !== 'undefined' &&
    Object.prototype.toString.call(global.process) === '[object process]') {
-    var $ = require('jQuery')(require('domino').createWindow('<html>huepi</html>'));
-    var XMLHttpRequest = require('xmlhttprequest').XMLHttpRequest;
+    $ = require('jQuery')(require('domino').createWindow('<html>huepi</html>'));
+    XMLHttpRequest = require('xmlhttprequest').XMLHttpRequest;
     $.support.cors = true; // cross domain, Cross-origin resource sharing
     $.ajaxSettings.xhr = function() {
       return new XMLHttpRequest();
@@ -85,15 +88,15 @@ if (typeof module !== 'undefined' && typeof module.exports !== 'undefined')
   }
   module.exports = huepi;
 } else if (typeof define === 'function' && define.amd) {
-  var $ = require('jQuery')(require('domino').createWindow('<html>huepi</html>'));
-  var XMLHttpRequest = require('xmlhttprequest').XMLHttpRequest;
+  $ = require('jQuery')(require('domino').createWindow('<html>huepi</html>'));
+  XMLHttpRequest = require('xmlhttprequest').XMLHttpRequest;
   $.support.cors = true; // cross domain, Cross-origin resource sharing
   $.ajaxSettings.xhr = function() {
     return new XMLHttpRequest();
   };
   define([], function() { return huepi; });
 } else {
-  var $ = jQuery;
+  $ = jQuery;
   window.huepi = huepi;
 }
 
@@ -224,7 +227,9 @@ huepi.prototype._BridgeCacheSave = function()
         return IPDeferred.resolve();
       }
       var LocalIP = /^candidate:.+ (\S+) \d+ typ/.exec(e.candidate.candidate)[1];
-      if (LocalIPs.indexOf(LocalIP) === -1) LocalIPs.push(LocalIP);
+      if (LocalIPs.indexOf(LocalIP) === -1) {
+        LocalIPs.push(LocalIP);
+      }
     };
     PeerConnection.createOffer(function(sdp) {
       PeerConnection.setLocalDescription(sdp);
@@ -397,8 +402,9 @@ huepi.prototype.BridgeGetDescription = function(ConfigBridgeIP, ConfigTimeOut)
           // Correct 001788[....]200xxx -> 001788FFFE200XXX short and long serialnumer difference
           self.BridgeID = self.BridgeID.slice(0,6) + 'fffe' + self.BridgeID.slice(6,12);
           self.Username = self.BridgeCache[self.BridgeID];
-          if (typeof self.Username === 'undefined')
+          if (typeof self.Username === 'undefined') {
             self.Username = '';
+          }
         }
       }
       deferred.resolve(data);
