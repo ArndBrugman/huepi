@@ -41,11 +41,11 @@
 /**
  * huepi Object, Entry point for all interaction with Lights etc via the Bridge.
  *
- * @class
+ * @class huepi
  */
 var huepi = function() {
   /** @member {string} - version of the huepi interface */
-  this.version = '1.1.0';
+  this.version = '1.2.0';
 
   /** @member {array} - Array of all Bridges on the local network */
   this.LocalBridges = [];
@@ -138,6 +138,30 @@ huepi.prototype._BridgeCacheRemoveCurrent = function()
 };
 
 /**
+ * Selects the first Bridge from LocalBridges found in BridgeCache and stores in BridgeIP
+ *  defaults to 1st Bridge in LocalBridges if no bridge from LocalBridges is found in BridgeCache
+ *
+ * Internally called in PortalDiscoverLocalBridges and NetworkDiscoverLocalBridges
+ */
+huepi.prototype._BridgeCacheSelectFromLocalBridges = function()
+{
+  if (this.LocalBridges.length > 0) { // Local Bridges are found
+    this.BridgeIP = this.LocalBridges[0].internalipaddress || ''; // Default to 1st Bridge Found
+    this.BridgeID = this.LocalBridges[0].id.toLowerCase() || '';
+    if (!this.BridgeCache[this.BridgeID]) { // if this.BridgeID not found in BridgeCache
+      for (var BridgeNr=1; BridgeNr&lt;this.LocalBridges.length; BridgeNr++) { // Search and store Found
+        if (this.BridgeCache[this.LocalBridges[BridgeNr].id.toLowerCase]) {
+          this.BridgeID = this.LocalBridges[BridgeNr].id.toLowerCase();
+          this.BridgeIP = this.LocalBridges[BridgeNr].internalipaddress;
+          break;
+        }
+      }
+    }
+  }
+  this.Username = this.BridgeCache[this.BridgeID] || '';
+};
+
+/**
  * Saves the BridgeCache, typically on Whitelist new Device or Device no longer whitelisted
  *   as is the case with with @BridgeCacheAutosave on @_BridgeCacheAddCurrent and @_BridgeCacheRemoveCurrent
  * NOTE: Saving this cache might be considered a security issue
@@ -175,11 +199,15 @@ huepi.prototype._BridgeCacheSave = function()
   var OverallDeferred = $.Deferred();
   self.ScanningNetwork = true;
 
+  self.BridgeIP =
+  self.BridgeID =
+  self.BridgeName =
+  self.Username = '';
   self.LocalBridges = [];
   DiscoverLocalIPs().then(function() {
     DiscoverLocalBridges().then(function() {
-      if (self.LocalBridges.length > 0) { // Default to 1st Bridge
-        self.BridgeIP = self.LocalBridges[0].internalipaddress;
+      if (self.LocalBridges.length > 0) {
+        self._BridgeCacheSelectFromLocalBridges();
         OverallDeferred.resolve();
       } else OverallDeferred.reject();
     });
@@ -254,20 +282,16 @@ huepi.prototype.PortalDiscoverLocalBridges = function()
   var self = this;
   var deferred = $.Deferred();
 
+  self.BridgeIP =
+  self.BridgeID =
+  self.BridgeName =
+  self.Username = '';
   self.LocalBridges = [];
   $.ajax({ type: 'GET', url: 'https://www.meethue.com/api/nupnp', success: function(data) {
     if (data.length > 0) {
       if (data[0].internalipaddress) { // Bridge(s) Discovered
         self.LocalBridges = data;
-        if (self.BridgeIP === '') { // Default to 1st Bridge
-          self.BridgeIP = self.LocalBridges[0].internalipaddress;
-          if (self.BridgeConfig.bridgeid) // NOTE:SteveyO/Hue-Emulator doesn't supply bridgeid as of yet.
-            self.BridgeID = self.LocalBridges[0].id.toLowerCase();
-          else self.BridgeID = '';
-          self.Username = self.BridgeCache[self.BridgeID];
-          if (self.Username === undefined)
-            self.Username = '';
-        }
+        self._BridgeCacheSelectFromLocalBridges();
         deferred.resolve();
       } else deferred.reject();
     } else deferred.reject();
@@ -301,7 +325,7 @@ huepi.prototype.BridgeGetConfig = function(ConfigBridgeIP, ConfigTimeOut)
   ConfigTimeOut = ConfigTimeOut || 60000;
   $.ajax({ type: 'GET', timeout: ConfigTimeOut, url: 'http://' + ConfigBridgeIP + '/api/config/', success: function(data) {
     if (data.bridgeid) {
-      if (ConfigBridgeIP === self.BridgeIP) {
+      if (self.BridgeIP === ConfigBridgeIP) {
         self.BridgeConfig = data;
         if (self.BridgeConfig.bridgeid) // SteveyO/Hue-Emulator doesn't supply bridgeid as of yet.
           self.BridgeID = self.BridgeConfig.bridgeid.toLowerCase();
@@ -462,6 +486,28 @@ huepi.prototype.BridgeDeleteUser = function(UsernameToDelete)
 //
 
 /**
+ * @param {string} Model
+ * @returns {boolean} Model is capable of CT
+ */
+huepi.HelperModelCapableCT = function(Model)
+{ // CT Capable	LCT* LLM* LTW* LLC020 LST002
+  var ModelType = Model.slice(0,3);
+
+  return ((ModelType === 'LCT') || (ModelType === 'LLM') || (ModelType === 'LTW') || (Model === 'LLC020') || (Model === 'LST002'));
+};
+
+/**
+* @param {string} Model
+* @returns {boolean} Model is capable of XY
+*/
+huepi.HelperModelCapableXY = function(Model)
+{ // XY Capable	LCT* LLC* LST* LLM001 LLC020 LST002
+  var ModelType = Model.slice(0,3);
+
+  return ((ModelType === 'LCT') || (ModelType === 'LLC') || (ModelType === 'LST') || (Model === 'LLM001') || (Model === 'LLC020') || (Model === 'LST002'));
+};
+
+/**
  * @param {float} Red - Range [0..1]
  * @param {float} Green - Range [0..1]
  * @param {float} Blue - Range [0..1]
@@ -488,25 +534,6 @@ huepi.HelperRGBtoHueAngSatBri = function(Red, Green, Blue)
     Bri = Max;
   }
   return {Ang: Ang, Sat: Sat, Bri: Bri};
-};
-
-/**
- * Convert skewed Yellow/Green Hue to Correct HueAng
- * @param {float} Hue - Range [0..65535]
- * @returns {float} - Range [0..360]
- *
- */
-huepi.HelperHuetoHueAng = function(Hue)
-{ // Converted along the skewed yellow green
-  var Ang = 360 * Hue / 65535;
-
-  if (Ang>0) {
-    if (Ang&lt;90)
-      Ang = Ang - Ang * 0.17 * (Ang/90); // Longer Red, shorter Green
-    else if (Ang&lt;180)
-      Ang = Ang - (180-Ang) *  0.17 * ((180-Ang)/90); // Longer Red, shorter Green
-  }
-  return Ang;
 };
 
 /**
@@ -569,6 +596,84 @@ huepi.HelperHueAngSatBritoRGB = function(Ang, Sat, Bri)
  * @param {float} Red - Range [0..1]
  * @param {float} Green - Range [0..1]
  * @param {float} Blue - Range [0..1]
+ * @returns {number} Temperature ranges [2200..6500]
+ */
+huepi.HelperRGBtoColortemperature = function(Red, Green, Blue)
+{ // Approximation from https://github.com/neilbartlett/color-temperature/blob/master/index.js
+  var Temperature;
+  var TestRGB;
+  var Epsilon = 0.4;
+  var MinTemperature = 2200;
+  var MaxTemperature = 6500;
+
+  while ( (MaxTemperature - MinTemperature) > Epsilon) {
+    Temperature = (MaxTemperature + MinTemperature) / 2;
+    TestRGB = huepi.HelperColortemperaturetoRGB(Temperature);
+    if ((TestRGB.Blue / TestRGB.Red) >= (Blue / Red)) {
+      MaxTemperature = Temperature;
+    } else {
+      MinTemperature = Temperature;
+    }
+  }
+  return Math.round(Temperature);
+};
+
+/**
+ * @param {number} Temperature ranges [1000..6600]
+ * @returns {object} [Red, Green, Blue] ranges [0..1] [0..1] [0..1]
+ */
+huepi.HelperColortemperaturetoRGB = function(Temperature)
+{ // http://www.tannerhelland.com/4435/convert-temperature-rgb-algorithm-code/
+  // Update Available: https://github.com/neilbartlett/color-temperature/blob/master/index.js
+  var Red, Green, Blue;
+
+  Temperature = Temperature / 100;
+  if (Temperature &lt;= 66)
+    Red = /*255;*/ 165+90*((Temperature)/(66));
+  else {
+    Red = Temperature - 60;
+    Red = 329.698727466 * Math.pow(Red, -0.1332047592);
+    if (Red &lt; 0)
+      Red = 0;
+    if (Red > 255)
+      Red = 255;
+  }
+  if (Temperature &lt;= 66) {
+    Green = Temperature;
+    Green = 99.4708025861 * Math.log(Green) - 161.1195681661;
+    if (Green &lt; 0)
+      Green = 0;
+    if (Green > 255)
+      Green = 255;
+  } else {
+    Green = Temperature - 60;
+    Green = 288.1221695283 * Math.pow(Green, -0.0755148492);
+    if (Green &lt; 0)
+      Green = 0;
+    if (Green > 255)
+      Green = 255;
+  }
+  if (Temperature >= 66)
+    Blue = 255;
+  else {
+    if (Temperature &lt;= 19)
+      Blue = 0;
+    else {
+      Blue = Temperature - 10;
+      Blue = 138.5177312231 * Math.log(Blue) - 305.0447927307;
+      if (Blue &lt; 0)
+        Blue = 0;
+      if (Blue > 255)
+        Blue = 255;
+    }
+  }
+  return {Red: Red/255, Green: Green/255, Blue: Blue/255};
+};
+
+/**
+ * @param {float} Red - Range [0..1]
+ * @param {float} Green - Range [0..1]
+ * @param {float} Blue - Range [0..1]
  * @returns {object} [x, y] - Ranges [0..1] [0..1]
  */
 huepi.HelperRGBtoXY = function(Red, Green, Blue)
@@ -594,84 +699,6 @@ huepi.HelperRGBtoXY = function(Red, Green, Blue)
   if ((X + Y + Z) === 0)
     return {x: 0, y: 0};
   return {x: X / (X + Y + Z), y: Y / (X + Y + Z)};
-};
-
-/**
- * Tests if the Px,Py resides within the Gamut for the model.
- * Otherwise it will calculated the closesed point on the Gamut.
- * @param {float} Px - Range [0..1]
- * @param {float} Py - Range [0..1]
- * @param {string} Model - Modelname of the Light to Gamutcorrect Px, Py for
- * @returns {object} [x, y] - Ranges [0..1] [0..1]
- */
-huepi.HelperGamutXYforModel = function(Px, Py, Model)
-{ // https://developers.meethue.com/documentation/supported-lights
-  Model = Model || 'LCT001'; // default hue Bulb 2012
-  var ModelType = Model.slice(0,3);
-  var PRed, PGreen, PBlue;
-  var NormDot;
-
-  if ( ((ModelType === 'LST') || (ModelType === 'LLC')) &amp;&amp; (Model !=='LLC020')  &amp;&amp; (Model !=='LLC002') ) { // For LivingColors Bloom, Aura and Iris etc the triangle corners are:
-    PRed = {x: 0.704, y: 0.296}; // Gamut A
-    PGreen = {x: 0.2151, y: 0.7106};
-    PBlue = {x: 0.138, y: 0.080};
-  } else if ( ((ModelType === 'LCT') || (ModelType === 'LLM')) &amp;&amp; (Model !=='LCT010') &amp;&amp; (Model !=='LCT014') &amp;&amp; (Model !=='LCT011') ) { // For the hue bulb and beyond led modules etc the corners of the triangle are:
-    PRed = {x: 0.675, y: 0.322}; // Gamut B
-    PGreen = {x: 0.409, y: 0.518};
-    PBlue = {x: 0.167, y: 0.040};
-  } else { // Exceptions and Unknown default to
-    PRed = {x: 0.692, y: 0.308}; // Gamut C
-    PGreen = {x: 0.17, y: 0.7};
-    PBlue = {x: 0.153, y: 0.048};
-  }
-
-  var VBR = {x: PRed.x - PBlue.x, y: PRed.y - PBlue.y}; // Blue to Red
-  var VRG = {x: PGreen.x - PRed.x, y: PGreen.y - PRed.y}; // Red to Green
-  var VGB = {x: PBlue.x - PGreen.x, y: PBlue.y - PGreen.y}; // Green to Blue
-
-  var GBR = (PGreen.x - PBlue.x) * VBR.y - (PGreen.y - PBlue.y) * VBR.x; // Sign Green on Blue to Red
-  var BRG = (PBlue.x - PRed.x) * VRG.y - (PBlue.y - PRed.y) * VRG.x; // Sign Blue on Red to Green
-  var RGB = (PRed.x - PGreen.x) * VGB.y - (PRed.y - PGreen.y) * VGB.x; // Sign Red on Green to Blue
-
-  var VBP = {x: Px - PBlue.x, y: Py - PBlue.y}; // Blue to Point
-  var VRP = {x: Px - PRed.x, y: Py - PRed.y}; // Red to Point
-  var VGP = {x: Px - PGreen.x, y: Py - PGreen.y}; // Green to Point
-
-  var PBR = VBP.x * VBR.y - VBP.y * VBR.x; // Sign Point on Blue to Red
-  var PRG = VRP.x * VRG.y - VRP.y * VRG.x; // Sign Point on Red to Green
-  var PGB = VGP.x * VGB.y - VGP.y * VGB.x; // Sign Point on Green to Blue
-
-  if ((GBR * PBR >= 0) &amp;&amp; (BRG * PRG >= 0) &amp;&amp; (RGB * PGB >= 0)) // All Signs Match so Px,Py must be in triangle
-    return {x: Px, y: Py};
-
-  //  Outside Triangle, Find Closesed point on Edge or Pick Vertice...
-  else if (GBR * PBR &lt;= 0) { // Outside Blue to Red
-    NormDot = (VBP.x * VBR.x + VBP.y * VBR.y) / (VBR.x * VBR.x + VBR.y * VBR.y);
-    if ((NormDot >= 0.0) &amp;&amp; (NormDot &lt;= 1.0)) // Within Edge
-      return {x: PBlue.x + NormDot * VBR.x, y: PBlue.y + NormDot * VBR.y};
-    else if (NormDot &lt; 0.0) // Outside Edge, Pick Vertice
-      return {x: PBlue.x, y: PBlue.y}; // Start
-    else
-      return {x: PRed.x, y: PRed.y}; // End
-  }
-  else if (BRG * PRG &lt;= 0) { // Outside Red to Green
-    NormDot = (VRP.x * VRG.x + VRP.y * VRG.y) / (VRG.x * VRG.x + VRG.y * VRG.y);
-    if ((NormDot >= 0.0) &amp;&amp; (NormDot &lt;= 1.0)) // Within Edge
-      return {x: PRed.x + NormDot * VRG.x, y: PRed.y + NormDot * VRG.y};
-    else if (NormDot &lt; 0.0) // Outside Edge, Pick Vertice
-      return {x: PRed.x, y: PRed.y}; // Start
-    else
-      return {x: PGreen.x, y: PGreen.y}; // End
-  }
-  else if (RGB * PGB &lt;= 0) { // Outside Green to Blue
-    NormDot = (VGP.x * VGB.x + VGP.y * VGB.y) / (VGB.x * VGB.x + VGB.y * VGB.y);
-    if ((NormDot >= 0.0) &amp;&amp; (NormDot &lt;= 1.0)) // Within Edge
-      return {x: PGreen.x + NormDot * VGB.x, y: PGreen.y + NormDot * VGB.y};
-    else if (NormDot &lt; 0.0) // Outside Edge, Pick Vertice
-      return {x: PGreen.x, y: PGreen.y}; // Start
-    else
-      return {x: PBlue.x, y: PBlue.y}; // End
-  }
 };
 
 /**
@@ -768,81 +795,143 @@ huepi.HelperXYtoRGBforModel = function(x, y, Brightness, Model)
 };
 
 /**
- * @param {number} Temperature ranges [1000..66000]
- * @returns {object} [Red, Green, Blue] ranges [0..1] [0..1] [0..1]
+ * Tests if the Px,Py resides within the Gamut for the model.
+ * Otherwise it will calculated the closesed point on the Gamut.
+ * @param {float} Px - Range [0..1]
+ * @param {float} Py - Range [0..1]
+ * @param {string} Model - Modelname of the Light to Gamutcorrect Px, Py for
+ * @returns {object} [x, y] - Ranges [0..1] [0..1]
  */
-huepi.HelperColortemperaturetoRGB = function(Temperature)
-{ // http://www.tannerhelland.com/4435/convert-temperature-rgb-algorithm-code/
-  // Update Available: https://github.com/neilbartlett/color-temperature/blob/master/index.js
-  var Red, Green, Blue;
+huepi.HelperGamutXYforModel = function(Px, Py, Model)
+{ // https://developers.meethue.com/documentation/supported-lights
+  Model = Model || 'LCT001'; // default hue Bulb 2012
+  var ModelType = Model.slice(0,3);
+  var PRed, PGreen, PBlue;
+  var NormDot;
 
-  Temperature = Temperature / 100;
-  if (Temperature &lt;= 66)
-    Red = /*255;*/ 165+90*((Temperature)/(66));
-  else {
-    Red = Temperature - 60;
-    Red = 329.698727466 * Math.pow(Red, -0.1332047592);
-    if (Red &lt; 0)
-      Red = 0;
-    if (Red > 255)
-      Red = 255;
+  if ( ((ModelType === 'LST') || (ModelType === 'LLC')) &amp;&amp; (Model !=='LLC020') &amp;&amp; (Model !=='LLC002') &amp;&amp; (Model !== 'LST002') ) { // For LivingColors Bloom, Aura and Iris etc the triangle corners are:
+    PRed = {x: 0.704, y: 0.296}; // Gamut A
+    PGreen = {x: 0.2151, y: 0.7106};
+    PBlue = {x: 0.138, y: 0.080};
+  } else if ( ((ModelType === 'LCT') || (ModelType === 'LLM')) &amp;&amp; (Model !=='LCT010') &amp;&amp; (Model !=='LCT014') &amp;&amp; (Model !=='LCT011')  &amp;&amp; (Model !=='LCT012') ) { // For the hue bulb and beyond led modules etc the corners of the triangle are:
+    PRed = {x: 0.675, y: 0.322}; // Gamut B
+    PGreen = {x: 0.409, y: 0.518};
+    PBlue = {x: 0.167, y: 0.040};
+  } else { // Exceptions and Unknown default to
+    PRed = {x: 0.692, y: 0.308}; // Gamut C
+    PGreen = {x: 0.17, y: 0.7};
+    PBlue = {x: 0.153, y: 0.048};
   }
-  if (Temperature &lt;= 66) {
-    Green = Temperature;
-    Green = 99.4708025861 * Math.log(Green) - 161.1195681661;
-    if (Green &lt; 0)
-      Green = 0;
-    if (Green > 255)
-      Green = 255;
-  } else {
-    Green = Temperature - 60;
-    Green = 288.1221695283 * Math.pow(Green, -0.0755148492);
-    if (Green &lt; 0)
-      Green = 0;
-    if (Green > 255)
-      Green = 255;
+
+  var VBR = {x: PRed.x - PBlue.x, y: PRed.y - PBlue.y}; // Blue to Red
+  var VRG = {x: PGreen.x - PRed.x, y: PGreen.y - PRed.y}; // Red to Green
+  var VGB = {x: PBlue.x - PGreen.x, y: PBlue.y - PGreen.y}; // Green to Blue
+
+  var GBR = (PGreen.x - PBlue.x) * VBR.y - (PGreen.y - PBlue.y) * VBR.x; // Sign Green on Blue to Red
+  var BRG = (PBlue.x - PRed.x) * VRG.y - (PBlue.y - PRed.y) * VRG.x; // Sign Blue on Red to Green
+  var RGB = (PRed.x - PGreen.x) * VGB.y - (PRed.y - PGreen.y) * VGB.x; // Sign Red on Green to Blue
+
+  var VBP = {x: Px - PBlue.x, y: Py - PBlue.y}; // Blue to Point
+  var VRP = {x: Px - PRed.x, y: Py - PRed.y}; // Red to Point
+  var VGP = {x: Px - PGreen.x, y: Py - PGreen.y}; // Green to Point
+
+  var PBR = VBP.x * VBR.y - VBP.y * VBR.x; // Sign Point on Blue to Red
+  var PRG = VRP.x * VRG.y - VRP.y * VRG.x; // Sign Point on Red to Green
+  var PGB = VGP.x * VGB.y - VGP.y * VGB.x; // Sign Point on Green to Blue
+
+  if ((GBR * PBR >= 0) &amp;&amp; (BRG * PRG >= 0) &amp;&amp; (RGB * PGB >= 0)) // All Signs Match so Px,Py must be in triangle
+    return {x: Px, y: Py};
+
+  //  Outside Triangle, Find Closesed point on Edge or Pick Vertice...
+  else if (GBR * PBR &lt;= 0) { // Outside Blue to Red
+    NormDot = (VBP.x * VBR.x + VBP.y * VBR.y) / (VBR.x * VBR.x + VBR.y * VBR.y);
+    if ((NormDot >= 0.0) &amp;&amp; (NormDot &lt;= 1.0)) // Within Edge
+      return {x: PBlue.x + NormDot * VBR.x, y: PBlue.y + NormDot * VBR.y};
+    else if (NormDot &lt; 0.0) // Outside Edge, Pick Vertice
+      return {x: PBlue.x, y: PBlue.y}; // Start
+    else
+      return {x: PRed.x, y: PRed.y}; // End
   }
-  if (Temperature >= 66)
-    Blue = 255;
-  else {
-    if (Temperature &lt;= 19)
-      Blue = 0;
-    else {
-      Blue = Temperature - 10;
-      Blue = 138.5177312231 * Math.log(Blue) - 305.0447927307;
-      if (Blue &lt; 0)
-        Blue = 0;
-      if (Blue > 255)
-        Blue = 255;
-    }
+  else if (BRG * PRG &lt;= 0) { // Outside Red to Green
+    NormDot = (VRP.x * VRG.x + VRP.y * VRG.y) / (VRG.x * VRG.x + VRG.y * VRG.y);
+    if ((NormDot >= 0.0) &amp;&amp; (NormDot &lt;= 1.0)) // Within Edge
+      return {x: PRed.x + NormDot * VRG.x, y: PRed.y + NormDot * VRG.y};
+    else if (NormDot &lt; 0.0) // Outside Edge, Pick Vertice
+      return {x: PRed.x, y: PRed.y}; // Start
+    else
+      return {x: PGreen.x, y: PGreen.y}; // End
   }
-  return {Red: Red/255, Green: Green/255, Blue: Blue/255};
+  else if (RGB * PGB &lt;= 0) { // Outside Green to Blue
+    NormDot = (VGP.x * VGB.x + VGP.y * VGB.y) / (VGB.x * VGB.x + VGB.y * VGB.y);
+    if ((NormDot >= 0.0) &amp;&amp; (NormDot &lt;= 1.0)) // Within Edge
+      return {x: PGreen.x + NormDot * VGB.x, y: PGreen.y + NormDot * VGB.y};
+    else if (NormDot &lt; 0.0) // Outside Edge, Pick Vertice
+      return {x: PGreen.x, y: PGreen.y}; // Start
+    else
+      return {x: PBlue.x, y: PBlue.y}; // End
+  }
 };
 
 /**
- * @param {float} Red - Range [0..1]
- * @param {float} Green - Range [0..1]
- * @param {float} Blue - Range [0..1]
+ * @param {float} Ang - Range [0..360]
+ * @param {float} Sat - Range [0..1]
+ * @param {float} Bri - Range [0..1]
  * @returns {number} Temperature ranges [2200..6500]
  */
-huepi.HelperRGBtoColortemperature = function(Red, Green, Blue)
-{ // Approximation from https://github.com/neilbartlett/color-temperature/blob/master/index.js
-  var Temperature;
-  var TestRGB;
-  var Epsilon = 0.4;
-  var MinTemperature = 2200;
-  var MaxTemperature = 6500;
+huepi.HelperHueAngSatBritoColortemperature = function(Ang, Sat, Bri)
+{
+  var RGB = huepi.HelperHueAngSatBritoRGB(Ang, Sat, Bri);
+  return huepi.HelperRGBtoColortemperature(RGB.Red, RGB.Green, RGB.Blue);
+};
 
-  while ( (MaxTemperature - MinTemperature) > Epsilon) {
-    Temperature = (MaxTemperature + MinTemperature) / 2;
-    TestRGB = huepi.HelperColortemperaturetoRGB(Temperature);
-    if ((TestRGB.Blue / TestRGB.Red) >= (Blue / Red)) {
-      MaxTemperature = Temperature;
-    } else {
-      MinTemperature = Temperature;
-    }
-  }
-  return Math.round(Temperature);
+/**
+ * @param {number} Temperature ranges [1000..6600]
+ * @returns {object} [Ang, Sat, Bri] - Ranges [0..360] [0..1] [0..1]
+ */
+huepi.HelperColortemperaturetoHueAngSatBri = function(Temperature)
+{
+  var RGB = huepi.HelperColortemperaturetoRGB(Temperature);
+  return huepi.HelperRGBtoHueAngSatBri(RGB.Red, RGB.Green, RGB.Blue);
+};
+
+/**
+ * @param {float} x
+ * @param {float} y
+ * @param {float} Brightness Optional
+ * @returns {number} Temperature ranges [1000..6600]
+ */
+huepi.HelperXYtoColortemperature = function(x, y, Brightness)
+{
+  var RGB = huepi.HelperXYtoRGB(x, y, Brightness);
+  return huepi.HelperRGBtoColortemperature(RGB.Red, RGB.Green, RGB.Blue);
+};
+
+/**
+ * @param {number} Temperature ranges [1000..6600]
+ * @returns {object} [x, y] - Ranges [0..1] [0..1]
+ */
+huepi.HelperColortemperaturetoXY = function(Temperature)
+{
+  var RGB = huepi.HelperColortemperaturetoRGB(Temperature);
+  return huepi.HelperRGBtoXY(RGB.Red, RGB.Green, RGB.Blue);
+};
+
+/**
+ * @param {number} CT in Mired (micro reciprocal degree)
+ * @returns {number} ColorTemperature
+ */
+ huepi.HelperCTtoColortemperature = function(CT)
+{
+  return Math.round(1000000 / CT);
+};
+
+/**
+ * @param {number} ColorTemperature
+ * @returns {number} CT in Mired (micro reciprocal degree)
+ */
+ huepi.HelperColortemperaturetoCT = function(Temperature)
+{
+  return Math.round(1000000 / Temperature);
 };
 
 /**
@@ -876,7 +965,7 @@ huepi.HelperToStringArray = function(Items) {
  * huepi.Lightstate Object.
  * Internal object to recieve all settings that are about to be send to the Bridge as a string.
  *
- * @class
+ * @class huepi.Lightstate
  */
 huepi.Lightstate = function()
 {
@@ -948,7 +1037,7 @@ huepi.Lightstate = function()
     return this.SetHueAngSatBri(HueAngSatBri.Ang, HueAngSatBri.Sat, HueAngSatBri.Bri);
   };
   /**
-   * @param {number} Ct Micro Reciprocal Degree of Colortemperature (Ct = 1000000 / Colortemperature)
+   * @param {number} Ct Micro Reciprocal Degree of Colortemperature (Ct = 10^6 / Colortemperature)
    */
   this.SetCT = function(Ct) {
     this.ct = Math.round(Ct);
@@ -958,8 +1047,7 @@ huepi.Lightstate = function()
    * @param {number} Colortemperature Range [2200..6500] for the 2012 lights
    */
   this.SetColortemperature = function(Colortemperature) {
-    this.ct = Math.round((1000000 / Colortemperature)); // Kelvin to micro reciprocal degree
-    return this;
+    return this.SetCT(huepi.HelperColortemperaturetoCT(Colortemperature));
   };
   /**
    * @param {float} X
@@ -1240,21 +1328,18 @@ huepi.prototype.LightSetRGB = function(LightNr, Red, Green, Blue, Transitiontime
 huepi.prototype.LightSetCT = function(LightNr, CT, Transitiontime)
 {
   var Model = this.Lights[this.LightGetId(LightNr)].modelid;
-  var ModelType = Model.slice(0,3);
 
-  if (ModelType === 'LWB') return; // Only Dimmable, neither CT nor XY...
-
-  // CT Capable	LCT* LLM* LTW* LLC020 LST002
-  if ((ModelType === 'LCT') || (ModelType === 'LLM') || (ModelType === 'LTW') || (Model === 'LLC020') || (Model === 'LST002')) { // hue CT Capable Lights
+  if (huepi.HelperModelCapableCT(Model)) {
     var State = new huepi.Lightstate();
     State.SetCT(CT);
     State.SetTransitiontime(Transitiontime);
     return this.LightSetState(LightNr, State);
+  } else if (huepi.HelperModelCapableXY(Model))
+  {  // hue CT Incapable Lights: CT->RGB->XY to ignore Brightness in RGB}
+    var Color = huepi.HelperColortemperaturetoRGB(huepi.HelperCTtoColortemperature(CT));
+    var Point = huepi.HelperRGBtoXY(Color.Red, Color.Green, Color.Blue);
+    return this.LightSetXY(LightNr, Point.x, Point.y, Transitiontime);
   }
-  // hue CT Incapable Lights: CT->RGB->XY to ignore Brightness in RGB
-  var Color = huepi.HelperColortemperaturetoRGB(1000000 / CT);
-  var Point = huepi.HelperRGBtoXY(Color.Red, Color.Green, Color.Blue);
-  return this.LightSetXY(LightNr, Point.x, Point.y, Transitiontime);
 };
 
 /**
@@ -1264,7 +1349,7 @@ huepi.prototype.LightSetCT = function(LightNr, CT, Transitiontime)
  */
 huepi.prototype.LightSetColortemperature = function(LightNr, Colortemperature, Transitiontime)
 {
-  return this.LightSetCT(LightNr, 1000000 / Colortemperature, Transitiontime);
+  return this.LightSetCT(LightNr, huepi.HelperColortemperaturetoCT(Colortemperature), Transitiontime);
 };
 
 /**
@@ -1276,22 +1361,19 @@ huepi.prototype.LightSetColortemperature = function(LightNr, Colortemperature, T
 huepi.prototype.LightSetXY = function(LightNr, X, Y, Transitiontime)
 {
   var Model = this.Lights[this.LightGetId(LightNr)].modelid;
-  var ModelType = Model.slice(0,3);
 
-  if (ModelType === 'LWB') return; // Only Dimmable, neither CT nor XY...
-
-  // XY Capable	LCT* LLC* LST* LLM001 LLC020 LST002
-  if ((ModelType === 'LCT') || (ModelType === 'LLC') || (ModelType === 'LST') || (Model === 'LLM001') || (Model === 'LST002')) { // hue XY Capable Lights
-    var Gamuted = huepi.HelperGamutXYforModel(X, Y, Model);
+  if (huepi.HelperModelCapableXY(Model)) {
     var State = new huepi.Lightstate();
+    var Gamuted = huepi.HelperGamutXYforModel(X, Y, Model);
     State.SetXY(Gamuted.x, Gamuted.y);
     State.SetTransitiontime(Transitiontime);
     return this.LightSetState(LightNr, State);
+  } else if (huepi.HelperModelCapableCT(Model)) {
+    // hue XY Incapable Lights: XY->RGB->CT to ignore Brightness in RGB
+    var Color = huepi.HelperXYtoRGB(X, Y);
+    var Colortemperature = huepi.HelperRGBtoColortemperature(Color.Red, Color.Green, Color.Blue);
+    return this.LightSetColortemperature(LightNr, Colortemperature, Transitiontime);
   }
-  // hue XY Incapable Lights: XY->RGB->CT to ignore Brightness in RGB
-  var Color = huepi.HelperXYtoRGB(X, Y);
-  var Colortemperature = huepi.HelperRGBtoColortemperature(Color.Red, Color.Green, Color.Blue);
-  return this.LightSetColortemperature(LightNr, Colortemperature, Transitiontime);
 };
 
 /**
@@ -1658,7 +1740,7 @@ huepi.prototype.GroupSetCT = function(GroupNr, CT, Transitiontime)
  */
 huepi.prototype.GroupSetColortemperature = function(GroupNr, Colortemperature, Transitiontime)
 {
-  return this.GroupSetCT(GroupNr, 1000000 / Colortemperature, Transitiontime);
+  return this.GroupSetCT(GroupNr, huepi.HelperColortemperaturetoCT(Colortemperature), Transitiontime);
 };
 
 /**
@@ -1876,13 +1958,13 @@ return huepi;
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="-_anonymous_-huepi.Lightstate.html">Lightstate</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="huepi.html">huepi</a></li><li><a href="huepi.Lightstate.html">Lightstate</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.3</a> on Thu Mar 02 2017 16:33:17 GMT+0100 (CET)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.3</a> on Thu Mar 23 2017 17:53:09 GMT+0100 (CET)
 </footer>
 
 <script> prettyPrint(); </script>
