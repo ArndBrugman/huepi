@@ -1,6 +1,6 @@
 {
   "name": "huepi",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "hue (Philips Wireless Lighting) Api interface for JavaScript",
   "main": "huepi.js",
   "scripts": {

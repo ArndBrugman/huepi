@@ -82,7 +82,6 @@
   <body>
     <script type='text/javascript' >
       var MyHue = new huepi();
-      // OBSOLETE! May not be set externally, comes from bridge when whitelisting! MyHue.Username = '085efe879ee3ed83c04efc28a0da03d3';
       var HeartbeatInterval;
       var HueImage = new Image();
       HueImage.src = 'images/HUE.png';
@@ -101,7 +100,7 @@
       window.onresize = function() {
         Redraw();
       }
-      
+
       function Redraw() {
         var HueCanvas = document.getElementById('HUECanvas');
         var HueContext = document.getElementById('HUECanvas').getContext('2d');
@@ -145,7 +144,6 @@
         window.onresize();
         ConnectToHueBridge();
         HeartbeatInterval = setInterval(StatusHeartbeat, 2500);
-        //StatusHeartbeat(); // Execute Immediate Too!
       }
 
       function onPause() {
@@ -158,7 +156,7 @@
           $('#HUEBridgeName').text('Bridge Name: ' +MyHue.BridgeName);
           $('#HUEStatus').text('Connected');
           $('#HUEInfoBar').slideUp(1500);
-          
+
           $('#brightnessslider').val(MyHue.Lights[2].state.bri); // Get brightness of 2nd light for now...
           $('#brightnessslider').slider('refresh');
           DemoBehaviour();
@@ -260,7 +258,7 @@
         } else if (MyHue.Lights[6].state.colormode === 'ct') {
           RGB = huepi.HelperColortemperaturetoRGB(Math.round(1000000.0 / MyHue.Lights[6].state.ct));
         }
-        
+
         console.log('\n');
         console.log('ColorMode ' + MyHue.Lights[6].state.colormode);
         console.log('hue       ' + MyHue.Lights[6].state.hue);
@@ -273,7 +271,7 @@
         xy = huepi.HelperRGBtoXY(RGB.Red, RGB.Green, RGB.Blue);
         HueAngSatBri = huepi.HelperRGBtoHueAngSatBri(RGB.Red, RGB.Green, RGB.Blue);
         HueAngSatBri.Bri = MyHue.Lights[6].state.bri / 255;
-          
+
         console.log(RGB);
         console.log(xy);
         console.log(HueAngSatBri);
