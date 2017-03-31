@@ -18,7 +18,7 @@
  */
 var huepi = function() {
   /** @member {string} - version of the huepi interface */
-  this.version = '1.2.0';
+  this.version = '1.2.1';
 
   /** @member {array} - Array of all Bridges on the local network */
   this.LocalBridges = [];
@@ -160,10 +160,12 @@ huepi.prototype._BridgeCacheSelectFromLocalBridges = function()
     this.BridgeID = this.LocalBridges[0].id.toLowerCase() || '';
     if (!this.BridgeCache[this.BridgeID]) { // if this.BridgeID not found in BridgeCache
       for (var BridgeNr=1; BridgeNr<this.LocalBridges.length; BridgeNr++) { // Search and store Found
-        if (this.BridgeCache[this.LocalBridges[BridgeNr].id.toLowerCase]) {
-          this.BridgeID = this.LocalBridges[BridgeNr].id.toLowerCase();
+        this.BridgeID = this.LocalBridges[BridgeNr].id.toLowerCase();
+        if (this.BridgeCache[this.BridgeID]) {
           this.BridgeIP = this.LocalBridges[BridgeNr].internalipaddress;
           break;
+        } else {
+          this.BridgeID = '';
         }
       }
     }
@@ -427,9 +429,9 @@ huepi.prototype.BridgeGetData = function()
   var self = this;
   var deferred = $.Deferred();
 
-  if (this.Username === '')
+  if (this.Username === '') {
     deferred.reject();
-  else $.ajax({ type: 'GET', url: 'http://' + this.BridgeIP + '/api/' + this.Username, success: function(data) {
+  } else $.ajax({ type: 'GET', url: 'http://' + this.BridgeIP + '/api/' + this.Username, success: function(data) {
     if (typeof data.config !== 'undefined') { // if able to read Config, Username must be Whitelisted
       self.BridgeConfig = data.config;
       if (self.BridgeConfig.bridgeid) // SteveyO/Hue-Emulator doesn't supply bridgeid as of yet.
