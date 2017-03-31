@@ -13,11 +13,12 @@
 /**
  * huepi Object, Entry point for all interaction with Lights etc via the Bridge.
  *
- * @class huepi
+ * @class
+ * @alias huepi
  */
 var huepi = function() {
   /** @member {string} - version of the huepi interface */
-  this.version = '1.2.0';
+  this.version = '1.2.1';
 
   /** @member {array} - Array of all Bridges on the local network */
   this.LocalBridges = [];
@@ -66,6 +67,41 @@ var huepi = function() {
 
 ////////////////////////////////////////////////////////////////////////////////
 //
+// Detect Running in NodeJS; module exisists and module.exports exists
+//  and type of global.process = object process
+//
+//  requires domino window to create jQuery with window attached.
+//
+if (typeof module !== 'undefined' && typeof module.exports !== 'undefined')
+{
+  var $;
+  var XMLHttpRequest;
+
+  if (typeof global !== 'undefined' && typeof global.process !== 'undefined' &&
+   Object.prototype.toString.call(global.process) === '[object process]') {
+    $ = require('jQuery')(require('domino').createWindow('<html>huepi</html>'));
+    XMLHttpRequest = require('xmlhttprequest').XMLHttpRequest;
+    $.support.cors = true; // cross domain, Cross-origin resource sharing
+    $.ajaxSettings.xhr = function() {
+      return new XMLHttpRequest();
+    };
+  }
+  module.exports = huepi;
+} else if (typeof define === 'function' && define.amd) {
+  $ = require('jQuery')(require('domino').createWindow('<html>huepi</html>'));
+  XMLHttpRequest = require('xmlhttprequest').XMLHttpRequest;
+  $.support.cors = true; // cross domain, Cross-origin resource sharing
+  $.ajaxSettings.xhr = function() {
+    return new XMLHttpRequest();
+  };
+  define([], function() { return huepi; });
+} else {
+  $ = jQuery;
+  window.huepi = huepi;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+//
 // Private _BridgeCache Functions, Internal Used
 //
 //
@@ -95,17 +131,19 @@ huepi.prototype._BridgeCacheAddCurrent = function()
 {
   console.log('_BridgeCacheAddCurrent ' + this.BridgeID +' '+ this.Username);
   this.BridgeCache[this.BridgeID] = this.Username;
-  if (this.BridgeCacheAutosave)
+  if (this.BridgeCacheAutosave) {
     this._BridgeCacheSave();
+  }
 };
 
 huepi.prototype._BridgeCacheRemoveCurrent = function()
 {
-  if (this.BridgeCache[this.BridgeID] == this.Username) {
+  if (this.BridgeCache[this.BridgeID] === this.Username) {
     console.log('_BridgeCacheRemoveCurrent ' + this.BridgeID +' '+ this.Username);
     delete this.BridgeCache[this.BridgeID];
-    if (this.BridgeCacheAutosave)
+    if (this.BridgeCacheAutosave) {
       this._BridgeCacheSave();
+    }
   }
 };
 
@@ -122,10 +160,12 @@ huepi.prototype._BridgeCacheSelectFromLocalBridges = function()
     this.BridgeID = this.LocalBridges[0].id.toLowerCase() || '';
     if (!this.BridgeCache[this.BridgeID]) { // if this.BridgeID not found in BridgeCache
       for (var BridgeNr=1; BridgeNr<this.LocalBridges.length; BridgeNr++) { // Search and store Found
-        if (this.BridgeCache[this.LocalBridges[BridgeNr].id.toLowerCase]) {
-          this.BridgeID = this.LocalBridges[BridgeNr].id.toLowerCase();
+        this.BridgeID = this.LocalBridges[BridgeNr].id.toLowerCase();
+        if (this.BridgeCache[this.BridgeID]) {
           this.BridgeIP = this.LocalBridges[BridgeNr].internalipaddress;
           break;
+        } else {
+          this.BridgeID = '';
         }
       }
     }
@@ -170,20 +210,11 @@ huepi.prototype._BridgeCacheSave = function()
   var LocalIPs = [];
   var OverallDeferred = $.Deferred();
   self.ScanningNetwork = true;
-
   self.BridgeIP =
   self.BridgeID =
   self.BridgeName =
   self.Username = '';
   self.LocalBridges = [];
-  DiscoverLocalIPs().then(function() {
-    DiscoverLocalBridges().then(function() {
-      if (self.LocalBridges.length > 0) {
-        self._BridgeCacheSelectFromLocalBridges();
-        OverallDeferred.resolve();
-      } else OverallDeferred.reject();
-    });
-  });
 
   function DiscoverLocalIPs() {
     var IPDeferred = $.Deferred();
@@ -198,7 +229,9 @@ huepi.prototype._BridgeCacheSave = function()
         return IPDeferred.resolve();
       }
       var LocalIP = /^candidate:.+ (\S+) \d+ typ/.exec(e.candidate.candidate)[1];
-      if (LocalIPs.indexOf(LocalIP) == -1) LocalIPs.push(LocalIP);
+      if (LocalIPs.indexOf(LocalIP) === -1) {
+        LocalIPs.push(LocalIP);
+      }
     };
     PeerConnection.createOffer(function(sdp) {
       PeerConnection.setLocalDescription(sdp);
@@ -217,11 +250,12 @@ huepi.prototype._BridgeCacheSave = function()
         var Segment = IPAddress.slice(0, IPAddress.lastIndexOf('.')+1);
         var Nr = parseInt(IPAddress.slice(IPAddress.lastIndexOf('.')+1, IPAddress.length));
         OverallDeferred.notify(Math.floor(100*Nr/255));
-        if (self.ScanningNetwork === false)
+        if (self.ScanningNetwork === false) {
           Nr = 256; // Stop scanning if (self.ScanningNetwork = false)
-        if ((Nr+Parallel)<256)
+        }
+        if ((Nr+Parallel)<256) {
           CheckIP(Segment+(Nr+Parallel));
-        else {
+        } else {
           self.ScanningNetwork = false;
           BridgeDeferred.resolve();
         }
@@ -230,12 +264,24 @@ huepi.prototype._BridgeCacheSave = function()
 
     for (var IPs=0; IPs<LocalIPs.length; IPs++) {
       var InitialIP = LocalIPs[IPs].slice(0, LocalIPs[IPs].lastIndexOf('.')+1);
-      for (var P=1; P<=Parallel; P++)
+      for (var P=1; P<=Parallel; P++) {
         CheckIP(InitialIP+P);
+      }
     }
 
     return BridgeDeferred.promise();
   }
+
+  DiscoverLocalIPs().then(function() {
+    DiscoverLocalBridges().then(function() {
+      if (self.LocalBridges.length > 0) {
+        self._BridgeCacheSelectFromLocalBridges();
+        OverallDeferred.resolve();
+      } else {
+        OverallDeferred.reject();
+      }
+    });
+  });
 
   return OverallDeferred.promise();
 };
@@ -265,9 +311,13 @@ huepi.prototype.PortalDiscoverLocalBridges = function()
         self.LocalBridges = data;
         self._BridgeCacheSelectFromLocalBridges();
         deferred.resolve();
-      } else deferred.reject();
-    } else deferred.reject();
-  }, error: function(xhr,status,error) {
+      } else {
+        deferred.reject();
+      }
+    } else {
+      deferred.reject();
+    }
+  }, error: function(/*xhr,status,error*/) {
     deferred.reject();
   } });
   return deferred.promise();
@@ -301,17 +351,20 @@ huepi.prototype.BridgeGetConfig = function(ConfigBridgeIP, ConfigTimeOut)
         self.BridgeConfig = data;
         if (self.BridgeConfig.bridgeid) // SteveyO/Hue-Emulator doesn't supply bridgeid as of yet.
           self.BridgeID = self.BridgeConfig.bridgeid.toLowerCase();
-        else self.BridgeID = '';
+        else {
+          self.BridgeID = '';
+        }
         self.BridgeName = self.BridgeConfig.name;
         self.Username = self.BridgeCache[self.BridgeID];
-        if (self.Username === undefined)
+        if (typeof self.Username === 'undefined') {
           self.Username = '';
+        }
       }
       deferred.resolve(data);
     } else { // this BridgeIP is not a hue Bridge
       deferred.reject();
     }
-  }, error: function(xhr,status,error) { // $.ajax failed
+  }, error: function(/*xhr,status,error*/) { // $.ajax failed
     deferred.reject();
   } });
   return deferred.promise();
@@ -342,22 +395,25 @@ huepi.prototype.BridgeGetDescription = function(ConfigBridgeIP, ConfigTimeOut)
       if (ConfigBridgeIP === self.BridgeIP) {
         if ($data.find('serialNumber').text() !== '')
           self.BridgeID = $data.find('serialNumber').text().toLowerCase();
-        else self.BridgeID = '';
+        else {
+          self.BridgeID = '';
+        }
         self.BridgeName = $data.find('friendlyName').text();
         self.Username = self.BridgeCache[self.BridgeID];
-        if (self.Username === undefined) {
+        if (typeof self.Username === 'undefined') {
           // Correct 001788[....]200xxx -> 001788FFFE200XXX short and long serialnumer difference
           self.BridgeID = self.BridgeID.slice(0,6) + 'fffe' + self.BridgeID.slice(6,12);
           self.Username = self.BridgeCache[self.BridgeID];
-          if (self.Username === undefined)
+          if (typeof self.Username === 'undefined') {
             self.Username = '';
+          }
         }
       }
       deferred.resolve(data);
     } else { // this BridgeIP is not a hue Bridge
       deferred.reject();
     }
-  }, error: function(xhr,status,error) { // $.ajax failed
+  }, error: function(/*xhr,status,error*/) { // $.ajax failed
     deferred.reject();
   } });
   return deferred.promise();
@@ -373,14 +429,16 @@ huepi.prototype.BridgeGetData = function()
   var self = this;
   var deferred = $.Deferred();
 
-  if (this.Username === '')
+  if (this.Username === '') {
     deferred.reject();
-  else $.ajax({ type: 'GET', url: 'http://' + this.BridgeIP + '/api/' + this.Username, success: function(data) {
-    if (data.config !== undefined) { // if able to read Config, Username must be Whitelisted
+  } else $.ajax({ type: 'GET', url: 'http://' + this.BridgeIP + '/api/' + this.Username, success: function(data) {
+    if (typeof data.config !== 'undefined') { // if able to read Config, Username must be Whitelisted
       self.BridgeConfig = data.config;
       if (self.BridgeConfig.bridgeid) // SteveyO/Hue-Emulator doesn't supply bridgeid as of yet.
         self.BridgeID = self.BridgeConfig.bridgeid.toLowerCase();
-      else self.BridgeID = '';
+      else {
+        self.BridgeID = '';
+      }
       self.BridgeName = self.BridgeConfig.name;
       self.Lights = data.lights;
       self.LightIds = [];
@@ -402,7 +460,7 @@ huepi.prototype.BridgeGetData = function()
       self.Username = '';
       deferred.reject();
     }
-  }, error: function(xhr,status,error) { // $.ajax failed
+  }, error: function(/*xhr,status,error*/) { // $.ajax failed
     deferred.reject();
   } });
   return deferred.promise();
@@ -428,9 +486,13 @@ huepi.prototype.BridgeCreateUser = function(DeviceName)
         self.Username = data[0].success.username;
         self._BridgeCacheAddCurrent();
         deferred.resolve();
-      } else deferred.reject();
-    } else deferred.reject();
-  }, error: function(xhr,status,error) { // $.ajax failed
+      } else {
+        deferred.reject();
+      }
+    } else {
+      deferred.reject();
+    }
+  }, error: function(/*xhr,status,error*/) { // $.ajax failed
     deferred.reject();
   } });
   return deferred.promise();
@@ -500,7 +562,7 @@ huepi.HelperRGBtoHueAngSatBri = function(Red, Green, Blue)
     }
     Sat = (Max - Min) / Max;
     Bri = Max;
-  } else { // Max == Min
+  } else { // Max === Min
     Ang = 0;
     Sat = 0;
     Bri = Max;
@@ -937,7 +999,7 @@ huepi.HelperToStringArray = function(Items) {
  * huepi.Lightstate Object.
  * Internal object to recieve all settings that are about to be send to the Bridge as a string.
  *
- * @class huepi.Lightstate
+ * @class
  */
 huepi.Lightstate = function()
 {
@@ -1142,7 +1204,7 @@ huepi.prototype.LightsSearchForNew = function()
  */
 huepi.prototype.LightsGetNew = function()
 { // GET /api/username/lights/new
-  return $.ajax({ type: 'GET', url: 'http://' + this.BridgeIP + '/api/' + this.Username + '/lights/new', success: function(data) {} });
+  return $.ajax({ type: 'GET', url: 'http://' + this.BridgeIP + '/api/' + this.Username + '/lights/new', success: function(/*data*/) {} });
 };
 
 /**
@@ -1885,38 +1947,7 @@ huepi.prototype.RulesGetData = function()
 };
 
 
-////////////////////////////////////////////////////////////////////////////////
-//
-// Detect Running in NodeJS; module exisists and module.exports exists
-//  and type of global.process = object process
-//
-//  requires domino window to create jQuery with window attached.
-//
-if (typeof module !== 'undefined' && typeof module.exports !== 'undefined')
-{
-  if (typeof global !== 'undefined' && typeof global.process !== 'undefined' &&
-   Object.prototype.toString.call(global.process) === '[object process]') {
-    var $ = require('jQuery')(require('domino').createWindow('<html>huepi</html>'));
-    var XMLHttpRequest = require('xmlhttprequest').XMLHttpRequest;
-    $.support.cors = true; // cross domain, Cross-origin resource sharing
-    $.ajaxSettings.xhr = function() {
-      return new XMLHttpRequest();
-    };
-  }
-  module.exports = huepi;
-} else if (typeof define === 'function' && define.amd) {
-  var $ = require('jQuery')(require('domino').createWindow('<html>huepi</html>'));
-  var XMLHttpRequest = require('xmlhttprequest').XMLHttpRequest;
-  $.support.cors = true; // cross domain, Cross-origin resource sharing
-  $.ajaxSettings.xhr = function() {
-    return new XMLHttpRequest();
-  };
-  define([], function() { return huepi; });
-} else {
-  var $ = jQuery;
-  window.huepi = huepi;
-}
-
 return huepi;
+
 
 })();
