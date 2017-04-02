@@ -18,7 +18,7 @@
  */
 var huepi = function() {
   /** @member {string} - version of the huepi interface */
-  this.version = '1.2.1';
+  this.version = '1.2.2';
 
   /** @member {array} - Array of all Bridges on the local network */
   this.LocalBridges = [];
@@ -70,7 +70,7 @@ var huepi = function() {
 // Detect Running in NodeJS; module exisists and module.exports exists
 //  and type of global.process = object process
 //
-//  requires domino window to create jQuery with window attached.
+//  requires domino window to create jquery with window attached.
 //
 if (typeof module !== 'undefined' && typeof module.exports !== 'undefined')
 {
@@ -79,7 +79,7 @@ if (typeof module !== 'undefined' && typeof module.exports !== 'undefined')
 
   if (typeof global !== 'undefined' && typeof global.process !== 'undefined' &&
    Object.prototype.toString.call(global.process) === '[object process]') {
-    $ = require('jQuery')(require('domino').createWindow('<html>huepi</html>'));
+    $ = require('jquery')(require('domino').createWindow('<html>huepi</html>'));
     XMLHttpRequest = require('xmlhttprequest').XMLHttpRequest;
     $.support.cors = true; // cross domain, Cross-origin resource sharing
     $.ajaxSettings.xhr = function() {
@@ -88,7 +88,7 @@ if (typeof module !== 'undefined' && typeof module.exports !== 'undefined')
   }
   module.exports = huepi;
 } else if (typeof define === 'function' && define.amd) {
-  $ = require('jQuery')(require('domino').createWindow('<html>huepi</html>'));
+  $ = require('jquery')(require('domino').createWindow('<html>huepi</html>'));
   XMLHttpRequest = require('xmlhttprequest').XMLHttpRequest;
   $.support.cors = true; // cross domain, Cross-origin resource sharing
   $.ajaxSettings.xhr = function() {
