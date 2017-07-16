@@ -325,7 +325,7 @@ huepi.prototype.PortalDiscoverLocalBridges = function()
         if (data[0].internalipaddress) { // Bridge(s) Discovered
           this.LocalBridges = data;
           this._BridgeCacheSelectFromLocalBridges();
-          resolve();
+          resolve(result);
         } else {
           reject();
         }
@@ -422,7 +422,7 @@ huepi.prototype.BridgeGetDescription = function(ConfigBridgeIP, ConfigTimeOut)
               this.Username = '';
             }
           }
-          resolve(data);
+          resolve(result.data);
         } else { // this BridgeIP is not a hue Bridge
           reject('this BridgeIP is not a hue Bridge');
         }
