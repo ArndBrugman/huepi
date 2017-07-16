@@ -14,7 +14,8 @@
     <script src='http://code.jquery.com/jquery-1.11.2.min.js' type='text/javascript' ></script>
     <script src='http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.js' type='text/javascript' ></script>
     <link rel='stylesheet' href='http://code.jquery.com/mobile/1.4.5/jquery.mobile-1.4.5.min.css'/>
-
+    
+    <script src='https://unpkg.com/axios/dist/axios.min.js' type='text/javascript'></script>
     <script src='../huepi.js' type='text/javascript'></script>
 
     <script src='cordova.js' type='text/javascript' onload="javascript:window.isCordovaApp = true;"></script>
@@ -259,22 +260,22 @@
           RGB = huepi.HelperColortemperaturetoRGB(Math.round(1000000.0 / MyHue.Lights[6].state.ct));
         }
 
-        console.log('\n');
+        /*console.log('\n');
         console.log('ColorMode ' + MyHue.Lights[6].state.colormode);
         console.log('hue       ' + MyHue.Lights[6].state.hue);
         console.log('hueAng    ' + MyHue.Lights[6].state.hue * 360 / 65355);
         console.log('sat       ' + MyHue.Lights[6].state.sat);
         console.log('xy        ' + MyHue.Lights[6].state.xy);
         console.log('ct        ' + MyHue.Lights[6].state.ct);
-        console.log('ColorTemp ' + Math.round(1000000 / MyHue.Lights[6].state.ct));
+        console.log('ColorTemp ' + Math.round(1000000 / MyHue.Lights[6].state.ct));*/
 
         xy = huepi.HelperRGBtoXY(RGB.Red, RGB.Green, RGB.Blue);
         HueAngSatBri = huepi.HelperRGBtoHueAngSatBri(RGB.Red, RGB.Green, RGB.Blue);
         HueAngSatBri.Bri = MyHue.Lights[6].state.bri / 255;
 
-        console.log(RGB);
+        /*console.log(RGB);
         console.log(xy);
-        console.log(HueAngSatBri);
+        console.log(HueAngSatBri);*/
 
         //MyHue.LightSetXY(7, xy.x, xy.y);
         MyHue.LightSetHueAngSatBri(7, HueAngSatBri.Ang, HueAngSatBri.Sat, HueAngSatBri.Bri);
