@@ -9,6 +9,8 @@
 // Requires axios for http calls and uses regular modern Promisses
 //
 ////////////////////////////////////////////////////////////////////////////////
+var axios = require('axios');
+var http = axios.create();
 
 /**
  * huepi Object, Entry point for all interaction with Lights etc via the Bridge.
@@ -310,8 +312,6 @@ huepi.prototype._BridgeCacheSave = function()
  */
 huepi.prototype.PortalDiscoverLocalBridges = function()
 {
-  var http = axios.create();
-
   this.BridgeIP =
   this.BridgeID =
   this.BridgeName =
@@ -356,8 +356,6 @@ huepi.prototype.PortalDiscoverLocalBridges = function()
  */
 huepi.prototype.BridgeGetConfig = function(ConfigBridgeIP, ConfigTimeOut)
 { // GET /api/config -> data.config.whitelist.username
-  var http = axios.create();
-
   ConfigBridgeIP = ConfigBridgeIP || this.BridgeIP;
   ConfigTimeOut = ConfigTimeOut || 60000;
 
@@ -400,8 +398,6 @@ huepi.prototype.BridgeGetConfig = function(ConfigBridgeIP, ConfigTimeOut)
  */
 huepi.prototype.BridgeGetDescription = function(ConfigBridgeIP, ConfigTimeOut)
 { // GET /description.xml -> /device/serialNumber
-  var http = axios.create();
-
   ConfigBridgeIP = ConfigBridgeIP || this.BridgeIP;
   ConfigTimeOut = ConfigTimeOut || 60000;
 
@@ -440,8 +436,6 @@ huepi.prototype.BridgeGetDescription = function(ConfigBridgeIP, ConfigTimeOut)
  */
 huepi.prototype.BridgeGetData = function()
 { // GET /api/username -> data.config.whitelist.username
-  var http = axios.create();
-
   var deferred = new Promise((resolve, reject) => {
     if (this.Username === '') {
       reject('Username must be set before calling BridgeGetData');
@@ -493,8 +487,6 @@ huepi.prototype.BridgeGetData = function()
  */
 huepi.prototype.BridgeCreateUser = function(DeviceName)
 { // POST /api {'devicetype': 'AppName#DeviceName' }
-  var http = axios.create();
-  
   DeviceName = DeviceName || 'WebInterface';
 
   var deferred = new Promise((resolve, reject) => {  
@@ -520,8 +512,6 @@ huepi.prototype.BridgeCreateUser = function(DeviceName)
  */
 huepi.prototype.BridgeDeleteUser = function(UsernameToDelete)
 { // DELETE /api/username/config/whitelist/username {'devicetype': 'iPhone', 'username': '1234567890'}
-  var http = axios.create();
-
   return http.delete('http://' + this.BridgeIP + '/api/' + this.Username + '/config/whitelist/' + UsernameToDelete);
 };
 
@@ -1187,11 +1177,9 @@ huepi.prototype.LightGetNr = function(LightId)
  */
 huepi.prototype.LightsGetData = function()
 { // GET /api/username/lights
-  var http = axios.create();
-
-  var deferred = new Promise((resolve, reject) => {  
+  var deferred = new Promise((resolve, reject) => {
     http.get('http://' + this.BridgeIP + '/api/' + this.Username + '/lights').then((result) => {
-      data=result.data;
+      var data = result.data;
       if (data) {
         this.Lights = data;
         this.LightIds = [];
@@ -1211,8 +1199,6 @@ huepi.prototype.LightsGetData = function()
  */
 huepi.prototype.LightsSearchForNew = function()
 { // POST /api/username/lights
-  var http = axios.create();
-
   return http.post('http://' + this.BridgeIP + '/api/' + this.Username + '/lights');
 };
 
@@ -1220,8 +1206,6 @@ huepi.prototype.LightsSearchForNew = function()
  */
 huepi.prototype.LightsGetNew = function()
 { // GET /api/username/lights/new
-  var http = axios.create();
-
   return http.get('http://' + this.BridgeIP + '/api/' + this.Username + '/lights/new');
 };
 
@@ -1231,8 +1215,6 @@ huepi.prototype.LightsGetNew = function()
  */
 huepi.prototype.LightSetName = function(LightNr, Name)
 { // PUT /api/username/lights
-  var http = axios.create();
-
   return http.put('http://' + this.BridgeIP + '/api/' + this.Username + '/lights/' + this.LightGetId(LightNr), '{"name" : "' + Name + '"}');
 };
 
@@ -1242,8 +1224,6 @@ huepi.prototype.LightSetName = function(LightNr, Name)
  */
 huepi.prototype.LightSetState = function(LightNr, State)
 { // PUT /api/username/lights/[LightNr]/state
-  var http = axios.create();
-
   return http.put('http://' + this.BridgeIP + '/api/' + this.Username + '/lights/' + this.LightGetId(LightNr) + '/state', State.Get());
 };
 
@@ -1516,11 +1496,9 @@ huepi.prototype.GroupGetNr = function(GroupId)
  */
 huepi.prototype.GroupsGetData = function()
 { // GET /api/username/groups
-  var http = axios.create();
-
   var deferred = new Promise((resolve, reject) => {  
     http.get('http://' + this.BridgeIP + '/api/' + this.Username + '/groups').then((result) => {
-      data=result.data;
+      var data = result.data;
       if (data) {
         this.Groups = data;
         this.GroupIds = [];
@@ -1539,11 +1517,9 @@ huepi.prototype.GroupsGetData = function()
  */
 huepi.prototype.GroupsGetZero = function()
 { // GET /api/username/groups/0
-  var http = axios.create();
-
   var deferred = new Promise((resolve, reject) => {  
     http.get('http://' + this.BridgeIP + '/api/' + this.Username + '/groups/0').then((result) => {
-      data=result.data;
+      var data = result.data;
       if (data) {
         this.Groups['0'] = data;
       } else
@@ -1562,8 +1538,6 @@ huepi.prototype.GroupsGetZero = function()
  */
 huepi.prototype.GroupCreate = function(Name, Lights)
 { // POST /api/username/groups
-  var http = axios.create();
-
   return http.post('http://' + this.BridgeIP + '/api/' + this.Username + '/groups/','{"name": "' + Name + '" , "lights":' + huepi.HelperToStringArray(Lights) + '}');
 };
 
@@ -1573,8 +1547,6 @@ huepi.prototype.GroupCreate = function(Name, Lights)
  */
 huepi.prototype.GroupSetName = function(GroupNr, Name)
 { // PUT /api/username/groups/[GroupNr]
-  var http = axios.create();
-
   return http.put('http://' + this.BridgeIP + '/api/' + this.Username + '/groups/' + this.GroupGetId(GroupNr), '{"name": "' + Name + '"}');
 };
 
@@ -1585,8 +1557,6 @@ huepi.prototype.GroupSetName = function(GroupNr, Name)
  */
 huepi.prototype.GroupSetLights = function(GroupNr, Lights)
 { // PUT /api/username/groups/[GroupNr]
-  var http = axios.create();
-
   return http.put('http://' + this.BridgeIP + '/api/' + this.Username + '/groups/' + this.GroupGetId(GroupNr), '{"lights":' + huepi.HelperToStringArray(Lights) + '}');
 };
 
@@ -1598,8 +1568,6 @@ huepi.prototype.GroupSetLights = function(GroupNr, Lights)
  */
 huepi.prototype.GroupSetAttributes = function(GroupNr, Name, Lights)
 { // PUT /api/username/groups/[GroupNr]
-  var http = axios.create();
-
   return http.put('http://' + this.BridgeIP + '/api/' + this.Username + '/groups/' + this.GroupGetId(GroupNr), '{"name": "' +Name + '", "lights":' + huepi.HelperToStringArray(Lights) + '}');
 };
 
@@ -1608,8 +1576,6 @@ huepi.prototype.GroupSetAttributes = function(GroupNr, Name, Lights)
  */
 huepi.prototype.GroupDelete = function(GroupNr)
 { // DELETE /api/username/groups/[GroupNr]
-  var http = axios.create();
-
   return http.delete('http://' + this.BridgeIP + '/api/' + this.Username + '/groups/' + this.GroupGetId(GroupNr));
 };
 
@@ -1619,8 +1585,6 @@ huepi.prototype.GroupDelete = function(GroupNr)
  */
 huepi.prototype.GroupSetState = function(GroupNr, State)
 { // PUT /api/username/groups/[GroupNr]/action
-  var http = axios.create();
-
   return http.put( 'http://' + this.BridgeIP + '/api/' + this.Username + '/groups/' + this.GroupGetId(GroupNr) + '/action', State.Get());
 };
 
@@ -1875,11 +1839,9 @@ huepi.prototype.GroupEffectNone = function(GroupNr, Transitiontime)
  */
 huepi.prototype.SchedulesGetData = function()
 { // GET /api/username/schedules
-  var http = axios.create();
-
   var deferred = new Promise((resolve, reject) => {  
     http.get('http://' + this.BridgeIP + '/api/' + this.Username + '/schedules').then((result) => {
-      data=result.data;
+      var data = result.data;
       if (data) {
         this.Schedules = data;
       } else
@@ -1901,11 +1863,9 @@ huepi.prototype.SchedulesGetData = function()
  */
 huepi.prototype.ScenesGetData = function()
 { // GET /api/username/scenes
-  var http = axios.create();
-
   var deferred = new Promise((resolve, reject) => {  
     http.get('http://' + this.BridgeIP + '/api/' + this.Username + '/scenes').then((result) => {
-      data=result.data;
+      var data = result.data;
       if (data) {
         this.Scenes = data;
       } else
@@ -1927,11 +1887,9 @@ huepi.prototype.ScenesGetData = function()
  */
 huepi.prototype.SensorsGetData = function()
 { // GET /api/username/sensors
-  var http = axios.create();
-
   var deferred = new Promise((resolve, reject) => {  
     http.get('http://' + this.BridgeIP + '/api/' + this.Username + '/sensors').then((result) => {
-      data=result.data;
+      var data = result.data;
       if (data) {
         this.Sensors = data;
       } else
@@ -1953,11 +1911,9 @@ huepi.prototype.SensorsGetData = function()
  */
 huepi.prototype.RulesGetData = function()
 { // GET /api/username/rules
-  var http = axios.create();
-
   var deferred = new Promise((resolve, reject) => {  
     http.get('http://' + this.BridgeIP + '/api/' + this.Username + '/rules').then((result) => {
-      data=result.data;
+      var data = result.data;
       if (data) {
         this.Rules = data;
       } else
