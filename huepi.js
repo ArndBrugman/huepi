@@ -9,8 +9,6 @@
 // Requires axios for http calls and uses regular modern Promisses
 //
 ////////////////////////////////////////////////////////////////////////////////
-var axios = require('axios');
-var http = axios.create();
 
 /**
  * huepi Object, Entry point for all interaction with Lights etc via the Bridge.
@@ -85,10 +83,15 @@ huepi.runningInRequire = (typeof define === 'function' && define.amd);
 huepi.runningInBrowser = (typeof navigator !== 'undefined' && typeof window !== 'undefined');
 
 if (huepi.runningInNode) {
+  global.axios = require('axios');
+  global.http = axios.create();
   module.exports = huepi;
 } else if (huepi.runningInRequire) {
+  window.axios = require('axios');
+  window.http = axios.create();
   define([], function() { return huepi; });
 } else if (huepi.runningInBrowser) {
+  window.http = axios.create();
   window.huepi = huepi;
 } else {
   //unknown environment
