@@ -82,7 +82,10 @@ huepi.runningInRequire = (typeof define === 'function' && define.amd);
 /** @member {bool} - Indicating if huepi is running in Browser */
 huepi.runningInBrowser = (typeof navigator !== 'undefined' && typeof window !== 'undefined');
 
-if (huepi.runningInNode) {
+if (huepi.runningInBrowser) {
+  window.http = axios.create();
+  window.huepi = huepi;
+} else if (huepi.runningInNode) {
   global.axios = require('axios');
   global.http = axios.create();
   module.exports = huepi;
@@ -90,9 +93,6 @@ if (huepi.runningInNode) {
   window.axios = require('axios');
   window.http = axios.create();
   define([], function() { return huepi; });
-} else if (huepi.runningInBrowser) {
-  window.http = axios.create();
-  window.huepi = huepi;
 } else {
   //unknown environment
 }
@@ -110,10 +110,10 @@ huepi.prototype._BridgeCacheLoad = function()
 {
   this.BridgeCache = { };
   try {
-    if (typeof navigator !== 'undefined' && typeof window !== 'undefined') { // running in Browser
+    if (huepi.runningInBrowser) {
       var huepiBridgeCache = localStorage.huepiBridgeCache || '{}';
       this.BridgeCache = JSON.parse(huepiBridgeCache); // Load
-    } else if (typeof module !== 'undefined' && module.exports) { // running in NodeJS
+    } else if (huepi.runningInNode) {
       var fs = require('fs');
       var buffer = fs.readFileSync('huepiBridgeCache.json');
       this.BridgeCache = JSON.parse(buffer.toString());
@@ -179,9 +179,9 @@ huepi.prototype._BridgeCacheSelectFromLocalBridges = function()
 huepi.prototype._BridgeCacheSave = function()
 {
   try {
-    if (typeof navigator !== 'undefined' && typeof window !== 'undefined') { // running in Browser
+    if (huepi.runningInBrowser) {
       localStorage.huepiBridgeCache = JSON.stringify(this.BridgeCache); // Save
-    } else if (typeof module !== 'undefined' && module.exports) { // running in NodeJS
+    } else if (huepi.runningInNode) {
       var fs = require('fs');
       fs.writeFileSync('huepiBridgeCache.json',JSON.stringify(this.BridgeCache));
     }
