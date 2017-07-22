@@ -1510,6 +1510,7 @@ huepi.prototype.GroupsGetData = function()
         this.GroupIds = [];
         for (var key in this.Groups)
           this.GroupIds.push(key);
+        resolve(result.data);
       } else
       reject();
     }).catch(function(xhr,status,error) { // .get failed
@@ -1528,6 +1529,7 @@ huepi.prototype.GroupsGetZero = function()
       var data = result.data;
       if (data) {
         this.Groups['0'] = data;
+        resolve(result.data);
       } else
       reject();
     }).catch(function(xhr,status,error) { // .get failed
@@ -1850,6 +1852,7 @@ huepi.prototype.SchedulesGetData = function()
       var data = result.data;
       if (data) {
         this.Schedules = data;
+        resolve(result.data);
       } else
       reject();
     }).catch(function(xhr,status,error) { // .get failed
@@ -1874,6 +1877,7 @@ huepi.prototype.ScenesGetData = function()
       var data = result.data;
       if (data) {
         this.Scenes = data;
+        resolve(result.data);
       } else
       reject();
     }).catch(function(xhr,status,error) { // .get failed
@@ -1898,6 +1902,7 @@ huepi.prototype.SensorsGetData = function()
       var data = result.data;
       if (data) {
         this.Sensors = data;
+        resolve(result.data);
       } else
       reject();
     }).catch(function(xhr,status,error) { // .get failed
@@ -1922,6 +1927,7 @@ huepi.prototype.RulesGetData = function()
       var data = result.data;
       if (data) {
         this.Rules = data;
+        resolve(result.data);
       } else
       reject();
     }).catch(function(xhr,status,error) { // .get failed
@@ -1931,8 +1937,7 @@ huepi.prototype.RulesGetData = function()
   return deferred;
 };
 
+// return huepi;
 
-//return huepi;
 
-
-//})(this);
+//})();
