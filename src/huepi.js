@@ -13,10 +13,8 @@ var HuepiLightstate = require('./huepilightstate.js');
  * huepi Object, Entry point for all interaction with Lights etc via the Bridge.
  *
  * @class
- * @alias huepi
+ * @alias Huepi
  */
-module.exports =
-module.exports.default =
 class Huepi {
   constructor() {
     /** @member {string} - version of the huepi interface */
@@ -71,7 +69,7 @@ class Huepi {
     /** @member {array} - Array of all Rules of the Current(active) Bridge,
      * NOTE: There are no Setter functions yet */
     this.Rules = [];
-  };
+  }
 
   // //////////////////////////////////////////////////////////////////////////////
   //
@@ -99,7 +97,7 @@ class Huepi {
     } catch (error) {
       console.log('Unable to _BridgeCacheLoad() ' + error);
     }
-  };
+  }
 
   _BridgeCacheAddCurrent() {
     console.log('_BridgeCacheAddCurrent ' + this.BridgeID + ' ' + this.Username);
@@ -107,7 +105,7 @@ class Huepi {
     if (this.BridgeCacheAutosave) {
       this._BridgeCacheSave();
     }
-  };
+  }
 
   _BridgeCacheRemoveCurrent() {
     if (this.BridgeCache[this.BridgeID] === this.Username) {
@@ -117,7 +115,7 @@ class Huepi {
         this._BridgeCacheSave();
       }
     }
-  };
+  }
 
   /**
    * Selects the first Bridge from LocalBridges found in BridgeCache and stores in BridgeIP
@@ -142,7 +140,7 @@ class Huepi {
       }
     }
     this.Username = this.BridgeCache[this.BridgeID] || '';
-  };
+  }
 
   /**
    * Saves the BridgeCache, typically on Whitelist new Device or Device no longer whitelisted
@@ -163,7 +161,7 @@ class Huepi {
     } catch (error) {
       console.log('Unable to _BridgeCacheSave() ' + error);
     }
-  };
+  }
 
   // //////////////////////////////////////////////////////////////////////////////
   //
@@ -269,7 +267,7 @@ class Huepi {
         });
       });
     });
-  };
+  }
 
   // //////////////////////////////////////////////////////////////////////////////
   //
@@ -398,7 +396,7 @@ class Huepi {
         reject(message);
       });
     });
-  };
+  }
 
   /**
    * Update function to retreive Bridge data and store it in this object.
@@ -478,7 +476,7 @@ class Huepi {
         reject(message);
       });
     });
-  };
+  }
 
   /**
    * @param {string} UsernameToDelete - Username that will be revoked from the Whitelist.
@@ -488,7 +486,7 @@ class Huepi {
   // DELETE /api/username/config/whitelist/username {'devicetype': 'iPhone', 'username': '1234567890'}
     return fetch('http://' + this.BridgeIP + '/api/' + this.Username + '/config/whitelist/' + UsernameToDelete,
       { method: 'DELETE' });
-  };
+  }
 
   // //////////////////////////////////////////////////////////////////////////////
   //
@@ -505,7 +503,7 @@ class Huepi {
 
     return ((ModelType === 'LCT') || (ModelType === 'LLM') || (ModelType === 'LTW') ||
     (Model === 'LLC020') || (Model === 'LST002'));
-  };
+  }
 
   /**
   * @param {string} Model
@@ -516,7 +514,7 @@ class Huepi {
 
     return ((ModelType === 'LCT') || (ModelType === 'LLC') || (ModelType === 'LST') ||
     (Model === 'LLM001') || (Model === 'LLC020') || (Model === 'LST002'));
-  };
+  }
 
   /**
    * @param {float} Red - Range [0..1]
@@ -545,7 +543,7 @@ class Huepi {
       Bri = Max;
     }
     return { Ang: Ang, Sat: Sat, Bri: Bri };
-  };
+  }
 
   /**
    * @param {float} Ang - Range [0..360]
@@ -601,7 +599,7 @@ class Huepi {
       }
     }
     return { Red: Red, Green: Green, Blue: Blue };
-  };
+  }
 
   /**
    * @param {float} Red - Range [0..1]
@@ -627,7 +625,7 @@ class Huepi {
       }
     }
     return Math.round(Temperature);
-  };
+  }
 
   /**
    * @param {number} Temperature ranges [1000..6600]
@@ -687,7 +685,7 @@ class Huepi {
       }
     }
     return { Red: Red / 255, Green: Green / 255, Blue: Blue / 255 };
-  };
+  }
 
   /**
    * @param {float} Red - Range [0..1]
@@ -724,7 +722,7 @@ class Huepi {
       return { x: 0, y: 0 };
     }
     return { x: X / (X + Y + Z), y: Y / (X + Y + Z) };
-  };
+  }
 
   /**
    * @param {float} x
@@ -812,7 +810,7 @@ class Huepi {
       Blue = 0;
     }
     return { Red: Red, Green: Green, Blue: Blue };
-  };
+  }
 
   /**
    * @param {float} x
@@ -825,7 +823,7 @@ class Huepi {
     let GamutCorrected = Huepi.HelperGamutXYforModel(x, y, Model);
 
     return Huepi.HelperXYtoRGB(GamutCorrected.x, GamutCorrected.y, Brightness);
-  };
+  }
 
   /**
    * Tests if the Px,Py resides within the Gamut for the model.
@@ -904,7 +902,7 @@ class Huepi {
       return { x: PBlue.x, y: PBlue.y }; // End
     }
     return { x: 0.5, y: 0.5 }; // Silence return warning
-  };
+  }
 
   /**
    * @param {float} Ang - Range [0..360]
@@ -917,7 +915,7 @@ class Huepi {
 
     RGB = Huepi.HelperHueAngSatBritoRGB(Ang, Sat, Bri);
     return Huepi.HelperRGBtoColortemperature(RGB.Red, RGB.Green, RGB.Blue);
-  };
+  }
 
   /**
    * @param {number} Temperature ranges [1000..6600]
@@ -928,7 +926,7 @@ class Huepi {
 
     RGB = Huepi.HelperColortemperaturetoRGB(Temperature);
     return Huepi.HelperRGBtoHueAngSatBri(RGB.Red, RGB.Green, RGB.Blue);
-  };
+  }
 
   /**
    * @param {float} x
@@ -941,7 +939,7 @@ class Huepi {
 
     RGB = Huepi.HelperXYtoRGB(x, y, Brightness);
     return Huepi.HelperRGBtoColortemperature(RGB.Red, RGB.Green, RGB.Blue);
-  };
+  }
 
   /**
    * @param {number} Temperature ranges [1000..6600]
@@ -952,7 +950,7 @@ class Huepi {
 
     RGB = Huepi.HelperColortemperaturetoRGB(Temperature);
     return Huepi.HelperRGBtoXY(RGB.Red, RGB.Green, RGB.Blue);
-  };
+  }
 
   /**
    * @param {number} CT in Mired (micro reciprocal degree)
@@ -960,7 +958,7 @@ class Huepi {
    */
   static HelperCTtoColortemperature(CT) {
     return Math.round(1000000 / CT);
-  };
+  }
 
   /**
    * @param {number} ColorTemperature
@@ -968,7 +966,7 @@ class Huepi {
    */
   static HelperColortemperaturetoCT(Temperature) {
     return Math.round(1000000 / Temperature);
-  };
+  }
 
   /**
    * @param {multiple} Items - Items to convert to StringArray
@@ -990,7 +988,7 @@ class Huepi {
       return Result;
     } // else if (typeof Items === 'string') {
     return '"' + Items + '"';
-  };
+  }
 
   // //////////////////////////////////////////////////////////////////////////////
   //
@@ -1009,7 +1007,7 @@ class Huepi {
       }
     }
     return LightNr;
-  };
+  }
 
   /**
    * @param {string} LightId - LightId
@@ -1020,7 +1018,7 @@ class Huepi {
       return this.LightIds.indexOf(LightId) + 1;
     }
     return LightId;
-  };
+  }
 
   /**
    */
@@ -1052,14 +1050,14 @@ class Huepi {
   // POST /api/username/lights
     return fetch('http://' + this.BridgeIP + '/api/' + this.Username + '/lights',
       { method: 'POST' });
-  };
+  }
 
   /**
    */
   LightsGetNew() {
   // GET /api/username/lights/new
     return fetch('http://' + this.BridgeIP + '/api/' + this.Username + '/lights/new');
-  };
+  }
 
   /**
    * @param {number} LightNr
@@ -1069,7 +1067,7 @@ class Huepi {
   // PUT /api/username/lights
     return fetch('http://' + this.BridgeIP + '/api/' + this.Username + '/lights/' + this.LightGetId(LightNr),
       { method: 'PUT', body: '{"name" : "' + Name + '"}' });
-  };
+  }
 
   /**
    * @param {number} LightNr
@@ -1079,7 +1077,7 @@ class Huepi {
   // PUT /api/username/lights/[LightNr]/state
     return fetch('http://' + this.BridgeIP + '/api/' + this.Username + '/lights/' + this.LightGetId(LightNr) + '/state',
       { method: 'PUT', body: State.Get() });
-  };
+  }
 
   /**
    * @param {number} LightNr
@@ -1092,7 +1090,7 @@ class Huepi {
     State.On();
     State.SetTransitiontime(Transitiontime);
     return this.LightSetState(LightNr, State);
-  };
+  }
 
   /**
    * @param {number} LightNr
@@ -1105,7 +1103,7 @@ class Huepi {
     State.Off();
     State.SetTransitiontime(Transitiontime);
     return this.LightSetState(LightNr, State);
-  };
+  }
 
   /**
    * Sets Gamut Corrected values for HSB
@@ -1127,7 +1125,7 @@ class Huepi {
       this.LightSetBrightness(LightNr, Brightness, Transitiontime),
       this.LightSetXY(LightNr, Point.x, Point.y, Transitiontime)
     ]);
-  };
+  }
 
   /**
    * @param {number} LightNr
@@ -1141,7 +1139,7 @@ class Huepi {
     State.SetHue(Hue);
     State.SetTransitiontime(Transitiontime);
     return this.LightSetState(LightNr, State);
-  };
+  }
 
   /**
    * @param {number} LightNr
@@ -1155,7 +1153,7 @@ class Huepi {
     State.SetSaturation(Saturation);
     State.SetTransitiontime(Transitiontime);
     return this.LightSetState(LightNr, State);
-  };
+  }
 
   /**
    * @param {number} LightNr
@@ -1169,7 +1167,7 @@ class Huepi {
     State.SetBrightness(Brightness);
     State.SetTransitiontime(Transitiontime);
     return this.LightSetState(LightNr, State);
-  };
+  }
 
   /**
    * @param {number} LightNr
@@ -1185,7 +1183,7 @@ class Huepi {
     }
     Ang = Ang % 360;
     return this.LightSetHSB(LightNr, Ang / 360 * 65535, Sat * 255, Bri * 255, Transitiontime);
-  };
+  }
 
   /**
    * @param {number} LightNr
@@ -1202,7 +1200,7 @@ class Huepi {
       this.LightSetBrightness(LightNr, HueAngSatBri.Bri * 255),
       this.LightSetXY(LightNr, Point.x, Point.y, Transitiontime)
     ]);
-  };
+  }
 
   /**
    * @param {number} LightNr
@@ -1225,7 +1223,7 @@ class Huepi {
     let Point = Huepi.HelperRGBtoXY(Color.Red, Color.Green, Color.Blue);
 
     return this.LightSetXY(LightNr, Point.x, Point.y, Transitiontime);
-  };
+  }
 
   /**
    * @param {number} LightNr
@@ -1234,7 +1232,7 @@ class Huepi {
    */
   LightSetColortemperature(LightNr, Colortemperature, Transitiontime) {
     return this.LightSetCT(LightNr, Huepi.HelperColortemperaturetoCT(Colortemperature), Transitiontime);
-  };
+  }
 
   /**
    * @param {number} LightNr
@@ -1260,7 +1258,7 @@ class Huepi {
     let Colortemperature = Huepi.HelperRGBtoColortemperature(Color.Red, Color.Green, Color.Blue);
 
     return this.LightSetColortemperature(LightNr, Colortemperature, Transitiontime);
-  };
+  }
 
   /**
    * @param {number} LightNr
@@ -1273,7 +1271,7 @@ class Huepi {
     State.AlertSelect();
     State.SetTransitiontime(Transitiontime);
     return this.LightSetState(LightNr, State);
-  };
+  }
 
   /**
    * @param {number} LightNr
@@ -1286,7 +1284,7 @@ class Huepi {
     State.AlertLSelect();
     State.SetTransitiontime(Transitiontime);
     return this.LightSetState(LightNr, State);
-  };
+  }
 
   /**
    * @param {number} LightNr
@@ -1299,7 +1297,7 @@ class Huepi {
     State.AlertNone();
     State.SetTransitiontime(Transitiontime);
     return this.LightSetState(LightNr, State);
-  };
+  }
 
   /**
    * @param {number} LightNr
@@ -1312,7 +1310,7 @@ class Huepi {
     State.EffectColorloop();
     State.SetTransitiontime(Transitiontime);
     return this.LightSetState(LightNr, State);
-  };
+  }
 
   /**
    * @param {number} LightNr
@@ -1325,7 +1323,7 @@ class Huepi {
     State.EffectNone();
     State.SetTransitiontime(Transitiontime);
     return this.LightSetState(LightNr, State);
-  };
+  }
 
   // //////////////////////////////////////////////////////////////////////////////
   //
@@ -1348,7 +1346,7 @@ class Huepi {
       }
     }
     return GroupNr;
-  };
+  }
 
   /**
    * @param {string} GroupId - GroupId
@@ -1359,7 +1357,7 @@ class Huepi {
       return this.GroupIds.indexOf(GroupId) + 1;
     }
     return GroupId;
-  };
+  }
 
   /**
    */
@@ -1383,7 +1381,7 @@ class Huepi {
         reject(message);
       });
     });
-  };
+  }
 
   /**
    */
@@ -1403,7 +1401,7 @@ class Huepi {
         reject(message);
       });
     });
-  };
+  }
 
   /**
    * Note: Bridge doesn't accept lights in a Group that are unreachable at moment of creation
@@ -1415,7 +1413,7 @@ class Huepi {
     return fetch('http://' + this.BridgeIP + '/api/' + this.Username +
       '/groups/',
       { method: 'POST', body: '{"name": "' + Name + '" , "lights":' + Huepi.HelperToStringArray(Lights) + '}' });
-  };
+  }
 
   /**
    * @param {number} GroupNr
@@ -1425,7 +1423,7 @@ class Huepi {
   // PUT /api/username/groups/[GroupNr]
     return fetch('http://' + this.BridgeIP + '/api/' + this.Username + '/groups/' + this.GroupGetId(GroupNr),
       { method: 'PUT', body: '{"name": "' + Name + '"}' });
-  };
+  }
 
   /**
    * Note: Bridge doesn't accept lights in a Group that are unreachable at moment of creation
@@ -1436,7 +1434,7 @@ class Huepi {
   // PUT /api/username/groups/[GroupNr]
     return fetch('http://' + this.BridgeIP + '/api/' + this.Username + '/groups/' + this.GroupGetId(GroupNr),
       { method: 'PUT', body: '{"lights":' + Huepi.HelperToStringArray(Lights) + '}' });
-  };
+  }
 
   /**
    * Note: Bridge doesn't accept lights in a Group that are unreachable at moment of creation
@@ -1448,7 +1446,7 @@ class Huepi {
   // PUT /api/username/groups/[GroupNr]
     return fetch('http://' + this.BridgeIP + '/api/' + this.Username + '/groups/' + this.GroupGetId(GroupNr),
       { method: 'PUT', body: '{"name": "' + Name + '", "lights":' + Huepi.HelperToStringArray(Lights) + '}' });
-  };
+  }
 
   /**
    * @param {number} GroupNr
@@ -1457,7 +1455,7 @@ class Huepi {
   // DELETE /api/username/groups/[GroupNr]
     return fetch('http://' + this.BridgeIP + '/api/' + this.Username + '/groups/' + this.GroupGetId(GroupNr),
       { method: 'DELETE' });
-  };
+  }
 
   /**
    * @param {number} GroupNr
@@ -1468,7 +1466,7 @@ class Huepi {
     return fetch('http://' + this.BridgeIP + '/api/' + this.Username + '/groups/' +
      this.GroupGetId(GroupNr) + '/action',
       { method: 'PUT', body: State.Get() });
-  };
+  }
 
   /**
    * @param {number} GroupNr
@@ -1481,7 +1479,7 @@ class Huepi {
     State.On();
     State.SetTransitiontime(Transitiontime);
     return this.GroupSetState(GroupNr, State);
-  };
+  }
 
   /**
    * @param {number} GroupNr
@@ -1494,7 +1492,7 @@ class Huepi {
     State.Off();
     State.SetTransitiontime(Transitiontime);
     return this.GroupSetState(GroupNr, State);
-  };
+  }
 
   /**
    * Sets Gamut Corrected values for HSB
@@ -1516,7 +1514,7 @@ class Huepi {
       this.GroupSetBrightness(GroupNr, Brightness, Transitiontime),
       this.GroupSetXY(GroupNr, Point.x, Point.y, Transitiontime)
     ]);
-  };
+  }
 
   /**
    * @param {number} GroupNr
@@ -1530,7 +1528,7 @@ class Huepi {
     State.SetHue(Hue);
     State.SetTransitiontime(Transitiontime);
     return this.GroupSetState(GroupNr, State);
-  };
+  }
 
   /**
    * @param {number} GroupNr
@@ -1544,7 +1542,7 @@ class Huepi {
     State.SetSaturation(Saturation);
     State.SetTransitiontime(Transitiontime);
     return this.GroupSetState(GroupNr, State);
-  };
+  }
 
   /**
    * @param {number} GroupNr
@@ -1558,7 +1556,7 @@ class Huepi {
     State.SetBrightness(Brightness);
     State.SetTransitiontime(Transitiontime);
     return this.GroupSetState(GroupNr, State);
-  };
+  }
 
   /**
    * @param {number} GroupNr
@@ -1573,7 +1571,7 @@ class Huepi {
     }
     Ang = Ang % 360;
     return this.GroupSetHSB(GroupNr, Ang / 360 * 65535, Sat * 255, Bri * 255, Transitiontime);
-  };
+  }
 
   /**
    * @param {number} GroupNr
@@ -1586,7 +1584,7 @@ class Huepi {
     let HueAngSatBri = Huepi.HelperRGBtoHueAngSatBri(Red, Green, Blue);
 
     return this.GroupSetHueAngSatBri(GroupNr, HueAngSatBri.Ang, HueAngSatBri.Sat, HueAngSatBri.Bri, Transitiontime);
-  };
+  }
 
   /**
    * @param {number} GroupNr
@@ -1618,7 +1616,7 @@ class Huepi {
     State.SetCT(CT);
     State.SetTransitiontime(Transitiontime);
     return this.GroupSetState(GroupNr, State);
-  };
+  }
 
   /**
    * @param {number} GroupNr
@@ -1627,7 +1625,7 @@ class Huepi {
    */
   GroupSetColortemperature(GroupNr, Colortemperature, Transitiontime) {
     return this.GroupSetCT(GroupNr, Huepi.HelperColortemperaturetoCT(Colortemperature), Transitiontime);
-  };
+  }
 
   /**
    * @param {number} GroupNr
@@ -1660,7 +1658,7 @@ class Huepi {
     State.SetXY(X, Y);
     State.SetTransitiontime(Transitiontime);
     return this.GroupSetState(GroupNr, State);
-  };
+  }
 
   /**
    * @param {number} GroupNr
@@ -1673,7 +1671,7 @@ class Huepi {
     State.AlertSelect();
     State.SetTransitiontime(Transitiontime);
     return this.GroupSetState(GroupNr, State);
-  };
+  }
 
   /**
    * @param {number} GroupNr
@@ -1686,7 +1684,7 @@ class Huepi {
     State.AlertLSelect();
     State.SetTransitiontime(Transitiontime);
     return this.GroupSetState(GroupNr, State);
-  };
+  }
 
   /**
    * @param {number} GroupNr
@@ -1699,7 +1697,7 @@ class Huepi {
     State.AlertNone();
     State.SetTransitiontime(Transitiontime);
     return this.GroupSetState(GroupNr, State);
-  };
+  }
 
   /**
    * @param {number} GroupNr
@@ -1712,7 +1710,7 @@ class Huepi {
     State.EffectColorloop();
     State.SetTransitiontime(Transitiontime);
     return this.GroupSetState(GroupNr, State);
-  };
+  }
 
   /**
    * @param {number} GroupNr
@@ -1725,7 +1723,7 @@ class Huepi {
     State.EffectNone();
     State.SetTransitiontime(Transitiontime);
     return this.GroupSetState(GroupNr, State);
-  };
+  }
 
   // //////////////////////////////////////////////////////////////////////////////
   //
@@ -1751,7 +1749,7 @@ class Huepi {
         reject(message);
       });
     });
-  };
+  }
 
   // //////////////////////////////////////////////////////////////////////////////
   //
@@ -1777,7 +1775,7 @@ class Huepi {
         reject(message);
       });
     });
-  };
+  }
 
   // //////////////////////////////////////////////////////////////////////////////
   //
@@ -1803,7 +1801,7 @@ class Huepi {
         reject(message);
       });
     });
-  };
+  }
 
   // //////////////////////////////////////////////////////////////////////////////
   //
@@ -1829,6 +1827,9 @@ class Huepi {
         reject(message);
       });
     });
-  };
+  }
 
-};
+}
+
+module.exports =
+module.exports.default = Huepi;
