@@ -1,6 +1,6 @@
 global.fetch = require('node-fetch');
 global.fs = require('fs');
-var Huepi = require('../src/huepi');
+var Huepi = require('../huepi').Huepi;
 
 var MyHue = new Huepi();
 var HeartbeatInterval;
