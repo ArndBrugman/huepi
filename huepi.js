@@ -1577,6 +1577,58 @@ class Huepi {
   /**
    * Note: Bridge doesn't accept lights in a Group that are unreachable at moment of creation
    * @param {number} GroupNr
+   * @param {number} LightNr
+   */
+  GroupHasLight(GroupNr, LightNr) {
+    if (this.GroupGetId(GroupNr) != '0') {
+      if (this.Groups[this.GroupGetId(GroupNr)].lights.indexOf(this.LightGetId(LightNr))>=0) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * Note: Bridge doesn't accept lights in a Group that are unreachable at moment of creation
+   * @param {number} GroupNr
+   * @param {number} LightNr
+   */
+  GroupRemoveLight(GroupNr, LightNr) {
+    if (this.GroupHasLight(GroupNr, this.LightGetId(LightNr))) {
+      this.Groups[this.GroupGetId(GroupNr)].lights.splice(
+        this.Groups[this.GroupGetId(GroupNr)].lights.indexOf(this.LightGetId(LightNr)), 1);
+      this.GroupSetLights(this.GroupGetId(GroupNr), this.Groups[this.GroupGetId(GroupNr)].lights);
+    }
+  }
+
+  /**
+   * Note: Bridge doesn't accept lights in a Group that are unreachable at moment of creation
+   * @param {number} GroupNr
+   * @param {number} LightNr
+   */
+  GroupToggleLight(GroupNr, LightNr) {
+    if (this.GroupHasLight(GroupNr, this.LightGetId(LightNr))) {
+      this.GroupRemoveLight(GroupNr, LightNr);
+    } else {
+      this.GroupAddLight(GroupNr, LightNr);
+    }
+  }
+
+  /**
+   * Note: Bridge doesn't accept lights in a Group that are unreachable at moment of creation
+   * @param {number} GroupNr
+   * @param {number} LightNr
+   */
+  GroupAddLight(GroupNr, LightNr) {
+    if (!this.GroupHasLight(GroupNr, this.LightGetId(LightNr))) {
+      this.Groups[this.GroupGetId(GroupNr)].lights.push(this.LightGetId(LightNr));
+      this.GroupSetLights(this.GroupGetId(GroupNr), this.Groups[this.GroupGetId(GroupNr)].lights);
+    }
+  }
+
+  /**
+   * Note: Bridge doesn't accept lights in a Group that are unreachable at moment of creation
+   * @param {number} GroupNr
    * @param {string} Name New name of the light Range [1..32]
    * @param {multiple} Lights LightNr or Array of Lights to Group
    */
