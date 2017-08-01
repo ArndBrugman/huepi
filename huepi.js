@@ -7,6 +7,8 @@
 //
 // //////////////////////////////////////////////////////////////////////////////
 
+(function(exports){
+
 /**
  * HuepiLightstate Object.
  * Internal object to recieve all settings that are about to be send to the Bridge as a string.
@@ -372,7 +374,7 @@ class Huepi {
               } else {
                 Offset[P] += Parallel;
               }
-            })
+            });
           }
         }
         resolve();
@@ -1967,5 +1969,7 @@ class Huepi {
 
 }
 
-module.exports = {Huepi, HuepiLightstate};
-module.exports.default = Huepi;
+exports.Huepi = Huepi;
+exports.HuepiLightstate = HuepiLightstate;
+
+})(typeof exports === 'undefined' ? this : exports);

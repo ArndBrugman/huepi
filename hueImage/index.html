@@ -47,9 +47,9 @@
         var yhalf = HueCanvas.height / 2;
         for (var x = 0; x < HueCanvas.width; x++) { // Every Pixel on ScanLine
           var Colortemperature = 3500 + Math.round(x*(6125)/CTCanvas.width); // 2000 to 6500 for 2012 model
-          var CTColor = huepi.HelperColortemperaturetoRGB(Colortemperature);
-        var XY = huepi.HelperRGBtoXY(CTColor.Red, CTColor.Green, CTColor.Blue);
-        var CTColor = huepi.HelperXYtoRGBforModel(XY.x, XY.y, 1);
+          var CTColor = Huepi.HelperColortemperaturetoRGB(Colortemperature);
+        var XY = Huepi.HelperRGBtoXY(CTColor.Red, CTColor.Green, CTColor.Blue);
+        var CTColor = Huepi.HelperXYtoRGBforModel(XY.x, XY.y, 1);
           for (var y = 0; y < HueCanvas.height; y++) { // Every ScanLine
             var px = (x - xhalf) / xhalf; // [-1, 1]
             var py = (y - yhalf) / yhalf; // [-1, 1]
@@ -62,7 +62,7 @@
               Brightness = 1 ;//- 2 * (Math.sqrt(px * px + py * py) - 0.5);
             if (Math.sqrt(px * px + py * py) > 1) // Rest Of Square Outside Outer Circle
               Brightness = 1 ;// 0;
-            var Color = huepi.HelperHueAngSatBritoRGB(Hue, Saturation, Brightness);
+            var Color = Huepi.HelperHueAngSatBritoRGB(Hue, Saturation, Brightness);
 //Color.Red = Color.Blue = Color.Green = Saturation;
             var Index = (x + y * HueCanvas.width) * 4; // Index of Pixel
             HueImagedata.data[Index + 0] = Color.Red *255;
@@ -75,7 +75,7 @@
               CTImagedata.data[Index + 2] = CTColor.Blue *255 ;//* (CTCanvas.height - y)/CTCanvas.height;
               //CTImagedata.data[Index + 3] = 255* (CTCanvas.height - y)/CTCanvas.height;
             }
-            var XYColor = huepi.HelperXYtoRGB(x / XYCanvas.width, 1 - (y / XYCanvas.height));
+            var XYColor = Huepi.HelperXYtoRGB(x / XYCanvas.width, 1 - (y / XYCanvas.height));
             XYImagedata.data[Index + 0] = XYColor.Red *255;
             XYImagedata.data[Index + 1] = XYColor.Green *255;
             XYImagedata.data[Index + 2] = XYColor.Blue *255;
@@ -83,8 +83,8 @@
         }
         /*/// "Draw" Colortemperature line to XYImage using 2012 model CT range
         for (var Colortemperature = 2000; Colortemperature < 6500; Colortemperature+=0.1) { // 2000 to 6500 for 2012 model
-          var CTColor = huepi.HelperColortemperaturetoRGB(Colortemperature);
-          var XY = huepi.HelperRGBtoXY(CTColor.Red, CTColor.Green, CTColor.Blue);
+          var CTColor = Huepi.HelperColortemperaturetoRGB(Colortemperature);
+          var XY = Huepi.HelperRGBtoXY(CTColor.Red, CTColor.Green, CTColor.Blue);
           // transform XY to ImageCoordinates
           XY.x = Math.round(XY.x * XYCanvas.width);
           XY.y = Math.round(( 1 - XY.y) * XYCanvas.height);
