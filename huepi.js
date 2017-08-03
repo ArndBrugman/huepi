@@ -9,6 +9,8 @@
 
 (function(exports){
 
+  'use strict';
+
 /**
  * HuepiLightstate Object.
  * Internal object to recieve all settings that are about to be send to the Bridge as a string.
@@ -18,10 +20,11 @@
  */
 class HuepiLightstate {
   constructor() { }
-  // /** */
-  // //SetOn(On) {
-  //  on = On;
-  // };
+  /**
+  SetOn(On) {
+    this.on = On;
+    return this;
+  } */
   /** */
   On() {
     this.on = true;
@@ -109,10 +112,11 @@ class HuepiLightstate {
     this.xy = [X, Y];
     return this;
   }
-  // /** */
-  // SetAlert(Alert) {
-  //   alert = Alert;
-  // };
+  /**
+  SetAlert(Alert) {
+    this.alert = Alert;
+    return this;
+  } */
   /** */
   AlertSelect() {
     this.alert = 'select';
@@ -128,10 +132,11 @@ class HuepiLightstate {
     this.alert = 'none';
     return this;
   }
-  // /** */
-  // SetEffect(Effect) {
-  //   effect = Effect;
-  // };
+  /**
+  SetEffect(Effect) {
+    this.effect = Effect;
+    return this;
+  }; */
   /** */
   EffectColorloop() {
     this.effect = 'colorloop';
@@ -225,7 +230,7 @@ class Huepi {
 
   // //////////////////////////////////////////////////////////////////////////////
   //
-  // Private _BridgeCache Functions, Internal Used
+  // Private _BridgeCache Functions, Internally Used
   //
   //
 
@@ -364,9 +369,9 @@ class Huepi {
         for (let P = 1; P <= Parallel; P++) {
           let Offset;
 
-          Offset[P] = 0;
+          Offset[P] = P;
           while (Offset[P] < 256) {
-            this.BridgeGetConfig(InitialIP + P, 3000).then((data) => {
+            this.BridgeGetConfig(InitialIP + Offset[P], 3000).then((data) => {
               this.LocalBridges.push({ 'internalipaddress': InitialIP + P, 'id': data.bridgeid.toLowerCase() });
             }).then().catch().then(() => { // like a .done or .always
               if (this.ScanningNetwork === false) {
@@ -2024,4 +2029,4 @@ class Huepi {
 exports.Huepi = Huepi;
 exports.HuepiLightstate = HuepiLightstate;
 
-})(typeof exports === 'undefined' ? this : exports);
+}) (typeof exports !== 'undefined' ? exports : this);
