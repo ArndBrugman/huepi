@@ -3,7 +3,7 @@
 // hue (Philips Wireless Lighting) Api interface for JavaScript
 //  +-> HUEPI sounds like Joepie which makes me smile during development...
 //
-// Requires fetch for http calls and uses regular modern Promisses
+// Requires axios for http calls and uses regular modern Promisses
 //
 // //////////////////////////////////////////////////////////////////////////////
 
@@ -358,33 +358,48 @@ class Huepi {
   /**
    *
    */
-  _NetworkDiscoverLocalBridges(LocalIPs) {
-    let Parallel = 16;
+  _NetworkCheckLocalIP(InitialIP, Offset, Parallel, OnResolve) { 
+    this.BridgeGetConfig(InitialIP + Offset, 1000).then((data) => {
+      let Bridge = data;
 
-    this.ScanProgress = 0;
-    return new Promise((resolve) => {
-      for (let IPs = 0; IPs < LocalIPs.length; IPs++) {
-        let InitialIP = LocalIPs[IPs].slice(0, LocalIPs[IPs].lastIndexOf('.') + 1);
-
-        for (let P = 1; P <= Parallel; P++) {
-          let Offset;
-
-          Offset[P] = P;
-          while (Offset[P] < 256) {
-            this.BridgeGetConfig(InitialIP + Offset[P], 3000).then((data) => {
-              this.LocalBridges.push({ 'internalipaddress': InitialIP + P, 'id': data.bridgeid.toLowerCase() });
-            }).then().catch().then(() => { // like a .done or .always
-              if (this.ScanningNetwork === false) {
-                Offset[P] = 256; // Stop scanning if (this.ScanningNetwork = false)
-              } else {
-                Offset[P] += Parallel;
-              }
-            });
-          }
-        }
-        resolve();
+      Bridge.internalipaddress = InitialIP + Offset;
+      Bridge.id = data.bridgeid.toLowerCase();
+      this.LocalBridges.push(Bridge);
+    }).catch((error) => {
+    }).then(() => { // then().catch().then() is similar to .done(), .always() or .finally()
+      this.ScanProgress = Math.round(100*Offset/255);
+      if (this.ScanningNetwork === false) {
+        Offset = 256; // Stop scanning if (this.ScanningNetwork = false)
+      } else {
+        Offset += Parallel;
+      }
+      if (Offset < 256) {
+        this._NetworkCheckLocalIP(InitialIP, Offset, Parallel, OnResolve);
+      } else {
+        this.ScanningNetwork = false;
+        OnResolve();
       }
     });
+  }
+
+  /**
+   *
+   */
+  _NetworkDiscoverLocalBridges(LocalIPs) {
+    let Parallel = 16;
+    let Promisses = [];
+
+    this.ScanProgress = 0;
+    for (let IPs = 0; IPs < LocalIPs.length; IPs++) {
+      let InitialIP = LocalIPs[IPs].slice(0, LocalIPs[IPs].lastIndexOf('.') + 1);
+
+      for (let Offset = 1; Offset <= Parallel; Offset++) {
+        Promisses.push( new Promise((resolve, reject) => {
+          this._NetworkCheckLocalIP(InitialIP, Offset, Parallel, resolve);
+        }) );
+      }
+    }
+    return Promise.all(Promisses);
   }
 
   /**
@@ -428,8 +443,8 @@ class Huepi {
       this.Username = '';
     this.LocalBridges = [];
     return new Promise((resolve, reject) => {
-      fetch('https://www.meethue.com/api/nupnp').then((response) => {
-        return response.json();
+      Huepi.http.get('https://www.meethue.com/api/nupnp').then((response) => {
+        return response.data;
       }).then((data) => {
         if (data.length > 0) {
           if (data[0].internalipaddress) { // Bridge(s) Discovered
@@ -468,8 +483,8 @@ class Huepi {
     ConfigTimeOut = ConfigTimeOut || 60000;
 
     return new Promise((resolve, reject) => {
-      fetch('http://' + ConfigBridgeIP + '/api/config/', { timeout: ConfigTimeOut }).then((response) => {
-        return response.json();
+      Huepi.http.get('http://' + ConfigBridgeIP + '/api/config/', { timeout: ConfigTimeOut }).then((response) => {
+        return response.data;
       }).then((data) => {
         if (data.bridgeid) {
           if (this.BridgeIP === ConfigBridgeIP) {
@@ -510,8 +525,8 @@ class Huepi {
     ConfigTimeOut = ConfigTimeOut || 60000;
 
     return new Promise((resolve, reject) => {
-      fetch('http://' + ConfigBridgeIP + '/description.xml', { timeout: ConfigTimeOut }).then((response) => {
-        return response.json();
+      Huepi.http.get('http://' + ConfigBridgeIP + '/description.xml', { timeout: ConfigTimeOut }).then((response) => {
+        return response.data;
       }).then((data) => {
         if (data.indexOf('hue_logo_0.png') > 0) {
           if (data.indexOf('<serialNumber>') > 0) {
@@ -551,8 +566,8 @@ class Huepi {
       if (this.Username === '') {
         reject('Username must be set before calling BridgeGetData');
       } else {
-        fetch('http://' + this.BridgeIP + '/api/' + this.Username).then((response) => {
-          return response.json();
+        Huepi.http.get('http://' + this.BridgeIP + '/api/' + this.Username).then((response) => {
+          return response.data;
         }).then((data) => {
           if (typeof data.config !== 'undefined') { // if able to read Config, Username must be Whitelisted
             this.BridgeConfig = data.config;
@@ -604,9 +619,9 @@ class Huepi {
     DeviceName = DeviceName || 'WebInterface';
 
     return new Promise((resolve, reject) => {
-      fetch('http://' + this.BridgeIP + '/api',
-      { method: 'POST', body: '{"devicetype": "huepi#' + DeviceName + '"}'}).then((response) => {
-        return response.json();
+      Huepi.http.post('http://' + this.BridgeIP + '/api',
+      {"devicetype": "huepi#' + DeviceName + '"}).then((response) => {
+        return response.data;
       }).then((data) => {
         if ((data[0]) && (data[0].success)) {
           this.Username = data[0].success.username;
@@ -627,8 +642,7 @@ class Huepi {
    */
   BridgeDeleteUser(UsernameToDelete) {
   // DELETE /api/username/config/whitelist/username {'devicetype': 'iPhone', 'username': '1234567890'}
-    return fetch('http://' + this.BridgeIP + '/api/' + this.Username + '/config/whitelist/' + UsernameToDelete,
-      { method: 'DELETE' });
+    return Huepi.http.delete('http://' + this.BridgeIP + '/api/' + this.Username + '/config/whitelist/' + UsernameToDelete);
   }
 
   // //////////////////////////////////////////////////////////////////////////////
@@ -1111,28 +1125,6 @@ class Huepi {
     return Math.round(1000000 / Temperature);
   }
 
-  /**
-   * @param {multiple} Items - Items to convert to StringArray
-   * @returns {string} String array containing Items
-   */
-  static HelperToStringArray(Items) {
-    if (typeof Items === 'number') {
-      return '"' + Items.toString() + '"';
-    } else if (Object.prototype.toString.call(Items) === '[object Array]') {
-      let Result = '[';
-
-      for (let ItemNr = 0; ItemNr < Items.length; ItemNr++) {
-        Result += Huepi.HelperToStringArray(Items[ItemNr]);
-        if (ItemNr < Items.length - 1) {
-          Result += ',';
-        }
-      }
-      Result = Result + ']';
-      return Result;
-    } // else if (typeof Items === 'string') {
-    return '"' + Items + '"';
-  }
-
   // //////////////////////////////////////////////////////////////////////////////
   //
   // Light Functions
@@ -1168,8 +1160,8 @@ class Huepi {
   LightsGetData() {
   // GET /api/username/lights
     return new Promise((resolve, reject) => {
-      fetch('http://' + this.BridgeIP + '/api/' + this.Username + '/lights').then((response) => {
-        return response.json();
+      Huepi.http.get('http://' + this.BridgeIP + '/api/' + this.Username + '/lights').then((response) => {
+        return response.data;
       }).then((data) => {
         if (data) {
           this.Lights = data;
@@ -1191,15 +1183,14 @@ class Huepi {
    */
   LightsSearchForNew() {
   // POST /api/username/lights
-    return fetch('http://' + this.BridgeIP + '/api/' + this.Username + '/lights',
-      { method: 'POST' });
+    return Huepi.http.post('http://' + this.BridgeIP + '/api/' + this.Username + '/lights');
   }
 
   /**
    */
   LightsGetNew() {
   // GET /api/username/lights/new
-    return fetch('http://' + this.BridgeIP + '/api/' + this.Username + '/lights/new');
+    return Huepi.http.get('http://' + this.BridgeIP + '/api/' + this.Username + '/lights/new');
   }
 
   /**
@@ -1208,8 +1199,8 @@ class Huepi {
    */
   LightSetName(LightNr, Name) {
   // PUT /api/username/lights
-    return fetch('http://' + this.BridgeIP + '/api/' + this.Username + '/lights/' + this.LightGetId(LightNr),
-      { method: 'PUT', body: '{"name" : "' + Name + '"}' });
+    return Huepi.http.put('http://' + this.BridgeIP + '/api/' + this.Username + '/lights/' + this.LightGetId(LightNr),
+      {"name" : Name} );
   }
 
   /**
@@ -1218,8 +1209,8 @@ class Huepi {
    */
   LightSetState(LightNr, State) {
   // PUT /api/username/lights/[LightNr]/state
-    return fetch('http://' + this.BridgeIP + '/api/' + this.Username + '/lights/' + this.LightGetId(LightNr) + '/state',
-      { method: 'PUT', body: State.Get() });
+    return Huepi.http.put('http://' + this.BridgeIP + '/api/' + this.Username + '/lights/' + this.LightGetId(LightNr) + '/state',
+      State.Get() );
   }
 
   /**
@@ -1507,8 +1498,8 @@ class Huepi {
   GroupsGetData() {
   // GET /api/username/groups
     return new Promise((resolve, reject) => {
-      fetch('http://' + this.BridgeIP + '/api/' + this.Username + '/groups').then((response) => {
-        return response.json();
+      Huepi.http.get('http://' + this.BridgeIP + '/api/' + this.Username + '/groups').then((response) => {
+        return response.data;
       }).then((data) => {
         if (data) {
           this.Groups = data;
@@ -1531,8 +1522,8 @@ class Huepi {
   GroupsGetZero() {
   // GET /api/username/groups/0
     return new Promise((resolve, reject) => {
-      fetch('http://' + this.BridgeIP + '/api/' + this.Username + '/groups/0').then((response) => {
-        return response.json();
+      Huepi.http.get('http://' + this.BridgeIP + '/api/' + this.Username + '/groups/0').then((response) => {
+        return response.data;
       }).then((data) => {
         if (data) {
           this.Groups['0'] = data;
@@ -1553,9 +1544,8 @@ class Huepi {
    */
   GroupCreate(Name, Lights) {
   // POST /api/username/groups
-    return fetch('http://' + this.BridgeIP + '/api/' + this.Username +
-      '/groups/',
-      { method: 'POST', body: '{"name": "' + Name + '" , "lights":' + Huepi.HelperToStringArray(Lights) + '}' });
+    return Huepi.http.put('http://' + this.BridgeIP + '/api/' + this.Username + '/groups/',
+      {"name": Name, "lights": Lights} );
   }
 
   /**
@@ -1564,8 +1554,8 @@ class Huepi {
    */
   GroupSetName(GroupNr, Name) {
   // PUT /api/username/groups/[GroupNr]
-    return fetch('http://' + this.BridgeIP + '/api/' + this.Username + '/groups/' + this.GroupGetId(GroupNr),
-      { method: 'PUT', body: '{"name": "' + Name + '"}' });
+    return Huepi.http.put('http://' + this.BridgeIP + '/api/' + this.Username + '/groups/' + this.GroupGetId(GroupNr),
+      {"name": Name} );
   }
 
   /**
@@ -1575,8 +1565,8 @@ class Huepi {
    */
   GroupSetLights(GroupNr, Lights) {
   // PUT /api/username/groups/[GroupNr]
-    return fetch('http://' + this.BridgeIP + '/api/' + this.Username + '/groups/' + this.GroupGetId(GroupNr),
-      { method: 'PUT', body: '{"lights":' + Huepi.HelperToStringArray(Lights) + '}' });
+    return Huepi.http.put('http://' + this.BridgeIP + '/api/' + this.Username + '/groups/' + this.GroupGetId(GroupNr),
+      {"lights": Lights} );
   }
 
   /**
@@ -1639,8 +1629,8 @@ class Huepi {
    */
   GroupSetAttributes(GroupNr, Name, Lights) {
   // PUT /api/username/groups/[GroupNr]
-    return fetch('http://' + this.BridgeIP + '/api/' + this.Username + '/groups/' + this.GroupGetId(GroupNr),
-      { method: 'PUT', body: '{"name": "' + Name + '", "lights":' + Huepi.HelperToStringArray(Lights) + '}' });
+    return Huepi.http.put('http://' + this.BridgeIP + '/api/' + this.Username + '/groups/' + this.GroupGetId(GroupNr),
+      {"name": Name, "lights":Lights} );
   }
 
   /**
@@ -1648,8 +1638,7 @@ class Huepi {
    */
   GroupDelete(GroupNr) {
   // DELETE /api/username/groups/[GroupNr]
-    return fetch('http://' + this.BridgeIP + '/api/' + this.Username + '/groups/' + this.GroupGetId(GroupNr),
-      { method: 'DELETE' });
+    return Huepi.http.delete('http://' + this.BridgeIP + '/api/' + this.Username + '/groups/' + this.GroupGetId(GroupNr));
   }
 
   /**
@@ -1658,9 +1647,8 @@ class Huepi {
    */
   GroupSetState(GroupNr, State) {
   // PUT /api/username/groups/[GroupNr]/action
-    return fetch('http://' + this.BridgeIP + '/api/' + this.Username + '/groups/' +
-     this.GroupGetId(GroupNr) + '/action',
-      { method: 'PUT', body: State.Get() });
+    return Huepi.http.put('http://' + this.BridgeIP + '/api/' + this.Username + '/groups/' + this.GroupGetId(GroupNr) + '/action', 
+     State.Get() );
   }
 
   /**
@@ -1931,8 +1919,8 @@ class Huepi {
   SchedulesGetData() {
   // GET /api/username/schedules
     return new Promise((resolve, reject) => {
-      fetch('http://' + this.BridgeIP + '/api/' + this.Username + '/schedules').then((response) => {
-        return response.json();
+      Huepi.http.get('http://' + this.BridgeIP + '/api/' + this.Username + '/schedules').then((response) => {
+        return response.data;
       }).then((data) => {
         if (data) {
           this.Schedules = data;
@@ -1957,8 +1945,8 @@ class Huepi {
   ScenesGetData() {
   // GET /api/username/scenes
     return new Promise((resolve, reject) => {
-      fetch('http://' + this.BridgeIP + '/api/' + this.Username + '/scenes').then((response) => {
-        return response.json();
+      Huepi.http.get('http://' + this.BridgeIP + '/api/' + this.Username + '/scenes').then((response) => {
+        return response.data;
       }).then((data) => {
         if (data) {
           this.Scenes = data;
@@ -1983,8 +1971,8 @@ class Huepi {
   SensorsGetData() {
   // GET /api/username/sensors
     return new Promise((resolve, reject) => {
-      fetch('http://' + this.BridgeIP + '/api/' + this.Username + '/sensors').then((response) => {
-        return response.json();
+      Huepi.http.get('http://' + this.BridgeIP + '/api/' + this.Username + '/sensors').then((response) => {
+        return response.data;
       }).then((data) => {
         if (data) {
           this.Sensors = data;
@@ -2009,8 +1997,8 @@ class Huepi {
   RulesGetData() {
   // GET /api/username/rules
     return new Promise((resolve, reject) => {
-      fetch('http://' + this.BridgeIP + '/api/' + this.Username + '/rules').then((response) => {
-        return response.json();
+      Huepi.http.get('http://' + this.BridgeIP + '/api/' + this.Username + '/rules').then((response) => {
+        return response.data;
       }).then((data) => {
         if (data) {
           this.Rules = data;
@@ -2026,6 +2014,10 @@ class Huepi {
 
 }
 
+Huepi.http = null;
+if (typeof axios !== 'undefined') {
+  Huepi.http = axios.create();
+}
 exports.Huepi = Huepi;
 exports.HuepiLightstate = HuepiLightstate;
 

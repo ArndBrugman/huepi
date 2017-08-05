@@ -41,7 +41,7 @@
     "url": "https://github.com/ArndBrugman/huepi/issues"
   },
   "dependencies": {
-    "node-fetch": "^1.7.1"
+    "axios": "^0.16.2"
   },
   "homepage": "https://github.com/ArndBrugman/huepi"
 }

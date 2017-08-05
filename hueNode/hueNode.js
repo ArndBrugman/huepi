@@ -1,4 +1,4 @@
-global.fetch = require('node-fetch');
+global.axios = require('axios');
 global.fs = require('fs');
 var Huepi = require('../huepi').Huepi;
 
