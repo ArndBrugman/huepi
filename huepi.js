@@ -19,7 +19,11 @@
  * @alias HuepiLightstate
  */
 class HuepiLightstate {
-  constructor() { }
+  constructor(State) {
+    if (State) {
+      this.Merge(State)
+    }
+  }
   /**
   SetOn(On) {
     this.on = On;
@@ -163,7 +167,15 @@ class HuepiLightstate {
   Get() {
     return JSON.stringify(this);
   }
-
+  /**
+   * @param {HuepiLightstate} NewState to Merge into this
+   */
+  Merge(NewState) {
+    for (let key in NewState) {
+      this[key] = NewState[key];
+    }
+    return this;
+  }
 }
 
 /**
@@ -1209,6 +1221,12 @@ class Huepi {
    */
   LightSetState(LightNr, State) {
   // PUT /api/username/lights/[LightNr]/state
+    if (this.Lights[this.LightGetId(LightNr)]) { // Merge in Cache
+      console.log(' Light SetState', this.Lights[this.LightGetId(LightNr)].state);
+      var NewState = new HuepiLightstate(this.Lights[this.LightGetId(LightNr)].state);
+      this.Lights[this.LightGetId(LightNr)].state = NewState.Merge(State);
+      console.log(' LightState Set', this.Lights[this.LightGetId(LightNr)].state.Get());
+    } // Merge in Cache
     return Huepi.http.put('http://' + this.BridgeIP + '/api/' + this.Username + '/lights/' + this.LightGetId(LightNr) + '/state',
       State.Get() );
   }
@@ -1647,6 +1665,12 @@ class Huepi {
    */
   GroupSetState(GroupNr, State) {
   // PUT /api/username/groups/[GroupNr]/action
+    if (this.Groups[this.GroupGetId(GroupNr)]) { // Merge in Cache
+      console.log(' Group SetState', this.Groups[this.GroupGetId(GroupNr)].action);
+      var NewState = new HuepiLightstate(this.Groups[this.GroupGetId(GroupNr)].action);
+      this.Groups[this.GroupGetId(GroupNr)].action = NewState.Merge(State);
+      console.log(' GroupState Set', this.Groups[this.GroupGetId(GroupNr)].action.Get());
+    } // Merge in Cache
     return Huepi.http.put('http://' + this.BridgeIP + '/api/' + this.Username + '/groups/' + this.GroupGetId(GroupNr) + '/action', 
      State.Get() );
   }
