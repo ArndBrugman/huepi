@@ -5,8 +5,6 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
 
-    <script src='http://code.jquery.com/jquery-1.11.2.min.js' type='text/javascript' ></script>
-
     <script src='https://unpkg.com/axios/dist/axios.min.js' type='text/javascript'></script>
     <script src='../huepi.js' type='text/javascript'></script>
 
@@ -50,22 +48,21 @@
         for (var x = 0; x < HueCanvas.width; x++) { // Every Pixel on ScanLine
           var Colortemperature = 3500 + Math.round(x*(6125)/CTCanvas.width); // 2000 to 6500 for 2012 model
           var CTColor = Huepi.HelperColortemperaturetoRGB(Colortemperature);
-        var XY = Huepi.HelperRGBtoXY(CTColor.Red, CTColor.Green, CTColor.Blue);
-        var CTColor = Huepi.HelperXYtoRGBforModel(XY.x, XY.y, 1);
+          var XY = Huepi.HelperRGBtoXY(CTColor.Red, CTColor.Green, CTColor.Blue);
+          var CTColor = Huepi.HelperXYtoRGBforModel(XY.x, XY.y, 1);
           for (var y = 0; y < HueCanvas.height; y++) { // Every ScanLine
             var px = (x - xhalf) / xhalf; // [-1, 1]
             var py = (y - yhalf) / yhalf; // [-1, 1]
             var Hue = 360 - (Math.atan2(px, py) * 180 / Math.PI + 180); // [0..359]
             var Brightness = 1;
             var Saturation = 1;
-            if (Math.sqrt(px * px + py * py) <= 0.5) // Inner Circle
-              Saturation = Math.sqrt(2*px * 2*px + 2*py * 2*py);
-            if (Math.sqrt(px * px + py * py) > 0.5) // Outer Circle
-              Brightness = 1 ;//- 2 * (Math.sqrt(px * px + py * py) - 0.5);
-            if (Math.sqrt(px * px + py * py) > 1) // Rest Of Square Outside Outer Circle
-              Brightness = 1 ;// 0;
+            if (Math.sqrt(px * px + py * py) <= 0.7) // Inner Circle
+              Saturation = 1/0.666666 * Math.sqrt(px * px + py * py);
+            if (Saturation > 1.0) Saturation = 1.0;
+            if (Math.sqrt(px * px + py * py) >= 0.0) // Blend Circle
+              Brightness = 1 - 2.87 * (Math.sqrt(px * px + py * py) - 0.666666);
+            if (Brightness > 1.0) Brightness = 1.0;
             var Color = Huepi.HelperHueAngSatBritoRGB(Hue, Saturation, Brightness);
-//Color.Red = Color.Blue = Color.Green = Saturation;
             var Index = (x + y * HueCanvas.width) * 4; // Index of Pixel
             HueImagedata.data[Index + 0] = Color.Red *255;
             HueImagedata.data[Index + 1] = Color.Green *255;
@@ -81,6 +78,9 @@
             XYImagedata.data[Index + 0] = XYColor.Red *255;
             XYImagedata.data[Index + 1] = XYColor.Green *255;
             XYImagedata.data[Index + 2] = XYColor.Blue *255;
+            if (Math.sqrt(px * px * px * px + py * py * py * py) >= 0.666666)
+              XYImagedata.data[Index + 3] = 0 *255;
+            else XYImagedata.data[Index + 3] = 1 *255;
           }
         }
         /*/// "Draw" Colortemperature line to XYImage using 2012 model CT range
@@ -108,7 +108,7 @@
       }
     </script>
 
-    <div align="center">
+    <div align="center" style="background-color:white">
       <canvas style="display:none;" id="HUECanvas" width=256 height=256 >It seems your device doesn"t support the required HTML5 Canvas</canvas>
       <img id="HueImage">
       <br>
